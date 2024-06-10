@@ -1,0 +1,8 @@
+README.md
+setup.py
+hyperSel/__init__.py
+hyperSel/main.py
+hyperSel.egg-info/PKG-INFO
+hyperSel.egg-info/SOURCES.txt
+hyperSel.egg-info/dependency_links.txt
+hyperSel.egg-info/top_level.txt
