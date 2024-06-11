@@ -1,2 +1,6 @@
 instructions.txt
 upload_pypi.bat
+upload_github.bat
+update_package_num.bat
+notes.txt
+venv/
