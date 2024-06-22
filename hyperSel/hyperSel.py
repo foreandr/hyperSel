@@ -7,12 +7,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-
 import time
 from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import Select
-import os
-import re
 import gc
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
