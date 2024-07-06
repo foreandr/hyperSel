@@ -11,6 +11,7 @@ import time
 from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import Select
 import gc
+import requests
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
