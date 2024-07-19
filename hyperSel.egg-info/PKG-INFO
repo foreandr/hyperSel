@@ -1,7 +1,8 @@
 Metadata-Version: 2.1
 Name: hyperSel
-Version: 2.5
+Version: 2.9
 Requires-Dist: selenium==4.21.0
 Requires-Dist: beautifulsoup4==4.12.3
 Requires-Dist: webdriver-manager==4.0.1
 Requires-Dist: lxml==5.2.2
+Requires-Dist: requests==2.32.3
