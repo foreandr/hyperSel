@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import Select
 import gc
 import requests
+import random
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
@@ -191,6 +192,18 @@ def create_select_object_from_element(element):
     select = Select(element)
     return select
 
+def go_to_site(driver, site, tries=10):
+    for i in range(tries):
+        try:
+            driver.get(site)
+            return True
+        except Exception as e:
+            print(e)
+            continue
+        
+    print("FAILED TO GO TO SITE AFTER N TRIES")
+    return False
+            
 def open_site_selenium(site, show_browser=False):
     options = Options()
     if not show_browser:
@@ -206,7 +219,7 @@ def open_site_selenium(site, show_browser=False):
     options.add_argument("--start-minimized")  # Start minimized
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(site)
+    go_to_site(driver, site)
     return driver
 
 def maximize_the_window(driver):

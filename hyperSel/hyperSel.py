@@ -100,24 +100,13 @@ def scroll_n_times_or_to_bottom(driver, num_scrolls, time_between_scrolls=0, log
         print("TIMES SCROLLED", scroll_count)
 
 def scroll_to_bottom_of_element(driver, element, time_between_scrolls=0):
-    initial_scroll_height = element.size['height']
-    print("initial_scroll_height", initial_scroll_height)
     scroll_iters = 0
     while True:
         if scroll_iters >= 10:
             break
         scroll_iters +=1
-
         driver.execute_script("arguments[0].scrollTo(0, arguments[0].scrollHeight);", element)
-        
-        time.sleep(time_between_scrolls)  # Add a delay if needed
-        
-        new_scroll_height = element.size['height']
-        print("new_scroll_height", new_scroll_height)
-
-        #if new_scroll_height == initial_scroll_height:
-        #    break
-        initial_scroll_height = new_scroll_height
+        time.sleep(time_between_scrolls)
         
 def scroll_element_n_times(driver, element, time_between_scrolls, num_scrolls):
     scroll_iters = 0

@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
 
 setup(
     name="hyperSel",
-    version=2.10,
+    version=2.11,
     packages=find_packages(),
     install_requires=[
-        "selenium==4.21.0",
-        "beautifulsoup4==4.12.3",
-        "webdriver-manager==4.0.1",
-        "lxml==5.2.2",
-        "requests==2.32.3",
+        "selenium",
+        "beautifulsoup4",
+        "webdriver-manager",
+        "lxml",
+        "requests",
     ],
     include_package_data=True, 
 )
