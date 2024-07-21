@@ -3,3 +3,4 @@ beautifulsoup4
 webdriver-manager
 lxml
 requests
+undetected-chromedriver

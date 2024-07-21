@@ -5,14 +5,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
+
 
 import time
 from bs4 import BeautifulSoup
-from selenium.webdriver.support.ui import Select
 import gc
 import requests
 import random
+import undetected_chromedriver as uc
+
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
@@ -198,17 +201,18 @@ def open_site_selenium(site, show_browser=False):
     if not show_browser:
         options.add_argument("--headless") # Run in headless mode
 
-
     options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
-    options.add_argument("--start-maximized")
-    options.add_argument("--log-level=3")
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument("--disable-logging")  # Disable logging
-    options.add_argument('disable-gpu')
-    options.add_argument("--start-minimized")  # Start minimized
-    
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     go_to_site(driver, site)
+    return driver
+
+def open_site_selenium_undetected(site, show_browser=False):
+    options = Options()
+    if not show_browser:
+        options.add_argument("--headless") # Run in headless mode
+    
+    driver = uc.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.get(site)
     return driver
 
 def maximize_the_window(driver):
@@ -266,4 +270,8 @@ def get_soup(url):
 
 
 if __name__ == "__main__":
+    open_site_selenium_tor(site='https://www.google.com', show_browser=True)
+    input("END")
+    # print(get_driver_soup(open_site_selenium_undetected(site='https://www.youtube.com/watch?v=0SARbwvhupQ&ab_channel=GoogleforDevelopers', show_browser=False)))
+    # open_site_selenium(site='google.com', show_browser=True)
     pass 

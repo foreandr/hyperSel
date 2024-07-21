@@ -15,7 +15,7 @@ import gc
 import requests
 import random
 import undetected_chromedriver as uc
-
+# https://github.com/TheSpeedX/PROXY-List for rotating proxies
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
@@ -270,8 +270,4 @@ def get_soup(url):
 
 
 if __name__ == "__main__":
-    open_site_selenium_tor(site='https://www.google.com', show_browser=True)
-    input("END")
-    # print(get_driver_soup(open_site_selenium_undetected(site='https://www.youtube.com/watch?v=0SARbwvhupQ&ab_channel=GoogleforDevelopers', show_browser=False)))
-    # open_site_selenium(site='google.com', show_browser=True)
     pass 
