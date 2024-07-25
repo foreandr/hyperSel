@@ -2,6 +2,7 @@ README.md
 setup.py
 hyperSel/__init__.py
 hyperSel/log.py
+hyperSel/nodriver_utilities.py
 hyperSel/request_utilities.py
 hyperSel/selenium_utilities.py
 hyperSel.egg-info/PKG-INFO
