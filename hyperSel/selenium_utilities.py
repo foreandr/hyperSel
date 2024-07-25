@@ -1,7 +1,9 @@
 import time
 from bs4 import BeautifulSoup
 import gc
-import undetected_chromedriver as uc
+import asyncio
+import nodriver as uc
+# import undetected_chromedriver as uc
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -202,6 +204,9 @@ def open_site_selenium(site, show_browser=False):
     go_to_site(driver, site)
     return driver
 
+
+
+'''
 def open_site_selenium_undetected(site, show_browser=False):
     options = Options()
     if not show_browser:
@@ -210,6 +215,7 @@ def open_site_selenium_undetected(site, show_browser=False):
     driver = uc.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(site)
     return driver
+'''
 
 def maximize_the_window(driver):
     try:
@@ -239,4 +245,7 @@ def left_click_center_of_screen(driver):
     action_chains.perform()
 
 def take_screenshot(driver, file_path="./pics"):
-    driver.save_screenshot(file_path) 
+    driver.save_screenshot(file_path)
+
+if __name__ == '__main__':
+    pass

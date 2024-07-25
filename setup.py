@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="hyperSel",
-    version=2.19,
+    version=2.20,
     packages=find_packages(),
     install_requires=[
         "selenium",
@@ -10,7 +10,8 @@ setup(
         "webdriver-manager",
         "lxml",
         "requests",
-        "undetected-chromedriver",
+        # "undetected-chromedriver",
+        "nodriver",
     ],
     include_package_data=True, 
 )
