@@ -6,5 +6,6 @@ hyperSel.egg-info/dependency_links.txt
 hyperSel.egg-info/requires.txt
 hyperSel.egg-info/top_level.txt
 util/__init__.py
+util/log.py
 util/request_utilities.py
 util/selenium_utilities.py
