@@ -6,6 +6,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo ============================
 echo Running upload_github.bat...
 call ./upload_github.bat
 if %errorlevel% neq 0 (
@@ -13,6 +14,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo ============================
 echo Running upload_pypi.bat...
 call ./upload_pypi.bat
 if %errorlevel% neq 0 (
@@ -20,4 +22,5 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo ============================
 echo All scripts completed successfully.
