@@ -9,7 +9,7 @@ def check_and_save_dir(path):
     if not isExist:
         os.makedirs(path)
         
-def log_function(msg_type, log_string, session_user="", function_name=""):
+def log_function(log_string, msg_type='test', session_user="", function_name=""):
     current_datetime = datetime.now()
     current_date = current_datetime.strftime('%Y-%m-%d')
     err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{log_string}\n" 

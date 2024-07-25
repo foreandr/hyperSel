@@ -1,11 +1,11 @@
 README.md
 setup.py
+hyperSel/__init__.py
+hyperSel/log.py
+hyperSel/request_utilities.py
+hyperSel/selenium_utilities.py
 hyperSel.egg-info/PKG-INFO
 hyperSel.egg-info/SOURCES.txt
 hyperSel.egg-info/dependency_links.txt
 hyperSel.egg-info/requires.txt
 hyperSel.egg-info/top_level.txt
-util/__init__.py
-util/log.py
-util/request_utilities.py
-util/selenium_utilities.py
