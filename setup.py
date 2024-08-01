@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="hyperSel",
-    version=2.28,
+    version=2.29,
     packages=find_packages(),
     install_requires=[
         "selenium",
