@@ -12,10 +12,8 @@ async def get_site_soup(browser, site, wait=0.5):
 async def open_nodriver(headless=False):
     browser = await nd.start(
         headless=headless,
-        # user_data_dir="/path/to/existing/profile",  # by specifying it, it won't be automatically cleaned up when finished
-        # browser_executable_path="/path/to/some/other/browser",
-        # browser_args=["--some-browser-arg=true", "--some-other-option"],
-        lang="en-US",  # this could set iso-language-code in navigator, not recommended to change
+        browser_args=["--start-maximized"],
+        lang="en-US",  
     )
     return browser
 
