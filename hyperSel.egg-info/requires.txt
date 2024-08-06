@@ -4,3 +4,4 @@ webdriver-manager
 lxml
 requests
 nodriver
+psutil

@@ -1,6 +1,7 @@
 README.md
 setup.py
 hyperSel/__init__.py
+hyperSel/general_util.py
 hyperSel/log.py
 hyperSel/nodriver_utilities.py
 hyperSel/request_utilities.py
