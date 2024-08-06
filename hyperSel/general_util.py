@@ -1,5 +1,5 @@
 import subprocess
-
+import psutil
 def get_ram_percentage():
     return int(str(psutil.virtual_memory().percent).split(".")[0])
 
