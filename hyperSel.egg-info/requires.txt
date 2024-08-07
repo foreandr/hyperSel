@@ -5,3 +5,5 @@ lxml
 requests
 nodriver
 psutil
+playwright
+aiohttp

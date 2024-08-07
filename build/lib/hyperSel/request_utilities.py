@@ -1,16 +1,13 @@
 import requests
 import random
 from bs4 import BeautifulSoup
+import general_util
 
 def get_soup(url):
-    # List of common user agents
-    user_agents = [
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
-    ]
 
     # Headers
     headers = {
-        'User-Agent': random.choice(user_agents),
+        'User-Agent': general_util.generate_random_user_agent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     }
 
@@ -24,3 +21,7 @@ def get_soup(url):
     except requests.exceptions.RequestException as e:
         print(f"Error fetching URL: {e}")
         return None
+    
+if __name__ == '__main__':
+    for i in range(100):
+        get_soup(url='https://snse.ca/')

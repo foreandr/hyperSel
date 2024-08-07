@@ -4,6 +4,8 @@ hyperSel/__init__.py
 hyperSel/general_util.py
 hyperSel/log.py
 hyperSel/nodriver_utilities.py
+hyperSel/playwright_utilites.py
+hyperSel/proxies_util.py
 hyperSel/request_utilities.py
 hyperSel/selenium_utilities.py
 hyperSel.egg-info/PKG-INFO
