@@ -14,8 +14,6 @@ class HyperSelProxies:
         self.proxy_thread.start()
     
         # self.stop_printing = threading.Event()
-
-        
     def extract_proxy_addrs(self, url):
         return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}:\d{1,5}\b', str(request_utilities.get_soup(url)))
 
@@ -200,6 +198,7 @@ class HyperSelProxies:
             self.proxies_to_test.extend(self.get_freeproxy_proxies())
             
             print('Fetching and testing new proxies...', len(self.proxies_to_test))
+            self.proxies_to_test = list(set(self.proxies_to_test))
             
             proxies_arr = self.split_array(array=self.proxies_to_test, N=self.num_workers)
             
@@ -209,7 +208,8 @@ class HyperSelProxies:
                 for proxy in proxies_subarr:
                     result = self.test_proxy(proxy)
                     if result[1]:  # If the proxy is valid (result is True)
-                        self.current_proxies.append(result[0])
+                        if result[0] not in self.current_proxies:
+                             self.current_proxies.append(result[0])
 
             for i in range(self.num_workers):
                 thread = threading.Thread(target=worker, args=(proxies_arr[i],))
