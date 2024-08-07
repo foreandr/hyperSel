@@ -6,3 +6,5 @@ requests
 undetected-chromedriver
 nodriver
 psutil
+playwright
+aiohttp

@@ -12,6 +12,8 @@ setup(
         "requests",
         "nodriver",
         "psutil",
+        "playwright",
+        "aiohttp",
     ],
     include_package_data=True, 
 )
