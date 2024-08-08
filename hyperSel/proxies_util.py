@@ -1,3 +1,8 @@
+'''
+MORE SITES
+# https://www.proxynova.com/proxy-server-list/country-us/
+
+'''
 import threading
 import time
 import requests
@@ -10,10 +15,16 @@ class HyperSelProxies:
         self.current_proxies = []
         self.proxies_to_test = []
         self.num_workers = num_workers
+        
+        # Start the proxy fetching thread
         self.proxy_thread = threading.Thread(target=self.get_new_proxies)
         self.proxy_thread.start()
-    
+
+        # Start the proxy validation thread
+        self.validation_thread = threading.Thread(target=self.validate_current_proxies)
+        self.validation_thread.start()
         # self.stop_printing = threading.Event()
+        
     def extract_proxy_addrs(self, url):
         return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}:\d{1,5}\b', str(request_utilities.get_soup(url)))
 
@@ -63,8 +74,6 @@ class HyperSelProxies:
         
         print(inspect.stack()[0][3],len(proxies))
         return proxies
-
-   
 
     def get_freeproxy_proxies(self):
         pages = 124
@@ -192,12 +201,14 @@ class HyperSelProxies:
         while True:
             print("PROXY LOOP")
             
+            # TODO: this would preferably be threaded, instead of sequential
             self.proxies_to_test.extend(self.get_speedx_proxies())
             self.proxies_to_test.extend(self.get_geonode_proxies())
             self.proxies_to_test.extend(self.get_spysone_proxies())
             self.proxies_to_test.extend(self.get_freeproxy_proxies())
             
             print('Fetching and testing new proxies...', len(self.proxies_to_test))
+            
             self.proxies_to_test = list(set(self.proxies_to_test))
             
             proxies_arr = self.split_array(array=self.proxies_to_test, N=self.num_workers)
@@ -225,33 +236,23 @@ class HyperSelProxies:
     def get_current_proxies(self):
         return self.current_proxies
 
-    '''
-    def print_proxies_periodically(self):
-        while not self.stop_printing.is_set():
-            print("Current proxies:", len(self.get_current_proxies()))
-            time.sleep(10)
+    def validate_current_proxies(self):
+        print("Validating current proxies...")
+        i = 0
+        while True:
+            while i < len(self.current_proxies):
+                proxy = self.current_proxies[i]
+                _, is_valid, _ = self.test_proxy(proxy)
+                
+                if not is_valid:
+                    print(f"Removing invalid proxy: {proxy}")
+                    self.current_proxies.pop(i)
+                else:
+                    i += 1
 
-    def start_printing_proxies(self):
-        self.stop_printing.clear()
-        self.print_thread = threading.Thread(target=self.print_proxies_periodically)
-        self.print_thread.start()
-
-    def stop_printing_proxies(self):
-        self.stop_printing.set()
-        self.print_thread.join()
-    '''
-
-    '''
-    TODO: i also need a function that checks the inner proxies that are working
-        -  if they fail, remove
-    '''
+            print(f"Remaining valid proxies: {len(self.current_proxies)}")
+            time.sleep(600)
+            
+        
 if __name__ == "__main__":
-    hyper_sel = HyperSelProxies()
-    hyper_sel.start_printing_proxies()
-
-    # Run for a certain duration for demonstration purposes
-    time.sleep(600)  # Adjust the time as needed
-    hyper_sel.stop_printing_proxies()
-    
-
-    exit()
+    pass
