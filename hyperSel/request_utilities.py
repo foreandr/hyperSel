@@ -40,7 +40,7 @@ def get_soup(url, extra_headers=None, proxy=None):
             return soup
 
         except requests.exceptions.RequestException as e:
-            colors_utilities.c_print(text=f"Error fetching URL: {e}", color="red")
+            # colors_utilities.c_print(text=f"Error fetching URL: {e}", color="red")
             attempt += 1
             if attempt >= max_attempts and proxies:
                 # Retry without proxy if max attempts are reached with proxy
@@ -56,8 +56,9 @@ def get_soup(url, extra_headers=None, proxy=None):
         return soup
 
     except requests.exceptions.RequestException as e:
-        colors_utilities.c_print(text=f"Final error fetching URL: {e}", color="red")
+        # colors_utilities.c_print(text=f"Final error fetching URL: {e}", color="red")
         return None
+    
 if __name__ == '__main__':
     for i in range(100):
         get_soup(url='https://snse.ca/')

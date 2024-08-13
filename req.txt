@@ -7,3 +7,4 @@ undetected-chromedriver
 nodriver
 psutil
 playwright
+undetected-playwright

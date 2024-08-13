@@ -44,33 +44,30 @@ async def open_nodriver(headless=False, proxy=None, max_attempts=3):
     return browser
 
 async def main_test():
-    list_of_urls = [
-        'https://snse.ca/',
-        'https://realestate.snse.ca/',
-        'https://jailpdftocsv.snse.ca/',
-        'https://snse.ca/',
-        'https://realestate.snse.ca/',
-        'https://jailpdftocsv.snse.ca/',
-        # 'https://www.zillow.com/homedetails/30154106_zpid',
-        #'https://www.zillow.com/homedetails/2055079760_zpid',
-        #'https://www.zillow.com/homedetails/2082409198_zpid',
-        #'https://www.zillow.com/homedetails/30258798_zpid',
-        #'https://www.zillow.com/homedetails/30398040_zpid',
-        #'https://www.zillow.com/homedetails/30400280_zpid',
-    ]
-    browser = await open_nodriver(headless=False, proxy=True)
-    browser2 = await open_nodriver(headless=False, proxy=True)
-    for url in list_of_urls:
-        print("url", url)
-        page = await browser.get(url=url)
-        page = await browser2.get(url=url)
-        # print("page", len(page))
-        # time.sleep(8)
-        print("done")
-    
-    input("STOP")
+    while True:
+        list_of_urls = [
+            'https://snse.ca/',
+            #'https://realestate.snse.ca/',
+            #'https://jailpdftocsv.snse.ca/',
+            #'http://localhost:5000',
+            #'http://realestate.localhost:5000',
+            #'http://jailpdftocsv.localhost:5000',
+            # 'https://www.zillow.com/homedetails/30154106_zpid',
+            #'https://www.zillow.com/homedetails/2055079760_zpid',
+            #'https://www.zillow.com/homedetails/2082409198_zpid',
+            #'https://www.zillow.com/homedetails/30258798_zpid',
+            #'https://www.zillow.com/homedetails/30398040_zpid',
+            #'https://www.zillow.com/homedetails/30400280_zpid',
+        ]
+        browser = await open_nodriver(headless=False, proxy=False)
+        page = await browser.get(url='https://snse.ca/')
+        time.sleep(5)
+        custom_kill_browser(browser)
+
+        
     custom_kill_browser(browser)
     custom_kill_browser(browser2)
+    exit()
     
 def custom_kill_browser(browser):
     general_utilities.kill_process_by_pid(browser._process_pid)

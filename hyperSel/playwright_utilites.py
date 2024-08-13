@@ -1,4 +1,5 @@
 from playwright.async_api import async_playwright
+from undetected_playwright import Tarnished, Malenia
 from bs4 import BeautifulSoup
 import asyncio
 import general_utilities
@@ -19,9 +20,13 @@ async def create_playwright(proxy=False):
         # Initialize proxies if using_proxies is True
         if proxy:
             hyperSelProxies = proxies_utilities.HyperSelProxies()
+            delay = 7
+            print(f"creating 7s {delay} to let proxies get going...")
+            time.sleep(delay)
         
         # Start Playwright session
         playwright = await async_playwright().start()
+
         return playwright
 
     except Exception as e:
@@ -29,7 +34,9 @@ async def create_playwright(proxy=False):
         return None
 
 async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, use_proxy=False):
+
     if not use_proxy:
+        print("PROXY 1")
         browser = await playwright.chromium.launch(
             headless=headless,
         )
@@ -39,6 +46,8 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
         }
 
         context = await browser.new_context(**context_options)
+        await Malenia.apply_stealth(context)
+        
         page = await context.new_page()
 
         try:
@@ -52,12 +61,20 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
             return None, None
             
     else:
+        print("PROXY 2")
         for attempt in range(max_attempts):
 
             proxy = {
                 "server": random.choice(hyperSelProxies.current_proxies)
             } if hyperSelProxies.current_proxies else None
-                
+            
+            print("proxy:", proxy) 
+            if proxy == None and attempt <= max_attempts:
+                print("NO PROXY TRYING AGAIN")
+                time.sleep(5)
+                attempt +=1
+                continue   
+            
             proxy_options = {
                  "server": proxy['server']
             } if proxy else None
@@ -72,6 +89,7 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
             }
 
             context = await browser.new_context(**context_options)
+            # await Malenia.apply_stealth(context)
             page = await context.new_page()
 
             try:

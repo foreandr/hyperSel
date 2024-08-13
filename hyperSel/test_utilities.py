@@ -83,7 +83,6 @@ def t2():
             "multiple": False,
             "needed": True
         },
-
     }
     
     recursion_url_regex = r'(\d+)_zpid'
@@ -93,16 +92,60 @@ def t2():
             list_of_urls=list_of_urls,
             wanted_data_format=wanted_data_format,
             recursion_url_regex=recursion_url_regex,
-            max_recursions=3,
-            site_time_delay=200,
+            max_recursions=2,
+            site_time_delay=1,
             headless=False,
+            proxy=True,
         )
     )
+    
+def t3():
+    list_of_urls = [
+        'https://snse.ca/',
+        'https://realestate.snse.ca/',
+        'https://jailpdftocsv.snse.ca/',
+        
+        #'https://snse.ca/',
+        #'https://realestate.snse.ca/',
+        #'https://jailpdftocsv.snse.ca/',
+        #'https://snse.ca/',
+        #'https://realestate.snse.ca/',
+        #'https://jailpdftocsv.snse.ca/',
+        #'https://snse.ca/',
+        #'https://realestate.snse.ca/',
+        # 'https://jailpdftocsv.snse.ca/',
+        
+        
+    ]
+    
+    wanted_data_format = {
+        'address': {
+            "scrapers": [
+                {"function": soup_utilities.get_text_by_tag_and_class, "args": {"soup": None, "tag": "h1", "class_name": "Text-c11n-8-99-3__sc-aiai24-0 dFxMdJ"}},
+            ],
+            "multiple": False,
+            "needed": True
+        },
+    }
+    
+    recursion_url_regex = r''
+
+    asyncio.run(
+        spider_universal.continuous_crawl(
+            list_of_urls=list_of_urls,
+            wanted_data_format=wanted_data_format,
+            recursion_url_regex=recursion_url_regex,
+            max_recursions=2,
+            site_time_delay=1,
+            headless=False,
+            proxy=True,
+        )
+    )
+    
 
 def run_tests():
-    t2()
-
-
+    # t2()
+    t3()
 
 if __name__ == "__main__":
     run_tests()
