@@ -46,7 +46,7 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
             await browser.close()
             await playwright_stop(playwright)
             print("e;", e)
-            print("MAJOR FAIL", url)
+            print("[1]- MAJOR FAIL", url)
             return None, None
             
     else:

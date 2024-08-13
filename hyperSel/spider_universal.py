@@ -24,13 +24,14 @@ def extract_recursion_urls(soup, regex_pattern):
     
     return list(set(valid_urls))
 
-async def crawl_single_url(playwright, url, wanted_data_format, recursion_url_regex, headless, proxy, site_time_delay):
+async def crawl_single_url(playwright, url, wanted_data_format, recursion_url_regex, headless, proxy, site_time_delay, stealthy):
     soup = await playwright_utilites.playwright_get_soup_from_url(
         playwright=playwright,
         url=url, 
         headless=headless, 
         proxy=proxy,
         site_time_delay=site_time_delay,
+        stealthy=stealthy,
     )
     recursion_urls = extract_recursion_urls(soup, recursion_url_regex)
     extracted_data = {}
@@ -60,24 +61,32 @@ async def crawl_urls(crawl_struct):
     headless = crawl_struct["headless"]
     proxy = crawl_struct["proxy"]
     playwright = await playwright_utilites.create_playwright(proxy=proxy)
-    
     list_of_urls = crawl_struct['list_of_urls']
     wanted_data_format = crawl_struct['wanted_data_format']
     site_time_delay = crawl_struct['site_time_delay']
-    # colors_utilities.c_print(wanted_data_format, "yellow")
-    # log_utilities.log_function(wanted_data_format)
-    
     recursion_url_regex = crawl_struct["recursion_url_regex"]
+    stealthy = crawl_struct["stealthy"]
     
-    if crawl_struct['random']:
-        random.shuffle(list_of_urls)
+    random.shuffle(list_of_urls) if crawl_struct.get('random') else None
     
     all_extracted_data = []
     all_recursion_urls = []
     for url in list_of_urls:
         try:
-            extracted_data, recursion_urls = await crawl_single_url(playwright, url, wanted_data_format, recursion_url_regex, headless, proxy, site_time_delay)
-            all_extracted_data.append(extracted_data)
+            extracted_data, recursion_urls = await crawl_single_url(
+                playwright, 
+                url, 
+                wanted_data_format, 
+                recursion_url_regex, 
+                headless, 
+                proxy, 
+                site_time_delay,
+                stealthy,
+                
+                )
+            if extracted_data != {}:
+                all_extracted_data.append(extracted_data)
+                
             all_recursion_urls.extend(recursion_urls)
         except Exception as e:
             #print(f"=========================================================================================")
@@ -100,7 +109,8 @@ async def continuous_crawl(
     proxy=False,
     headless=True,
     max_recursions=None,
-    site_time_delay=None
+    site_time_delay=None,
+    stealthy=None,
 ):
     crawl_struct = {
         "list_of_urls": list_of_urls,
@@ -113,6 +123,7 @@ async def continuous_crawl(
         "proxy": proxy,
         "headless": headless,
         "site_time_delay":site_time_delay,
+        "stealthy":stealthy
     }
 
     visited_urls = []  # To keep track of visited URLs
@@ -121,6 +132,7 @@ async def continuous_crawl(
     while max_recursions is None or recursion_count < max_recursions:
         new_urls = []
         all_extracted_data, all_recursion_urls = await start_crawler(crawl_struct)
+        
         for url in all_recursion_urls:
             print(f"all_recursion_urls: {url}")
             

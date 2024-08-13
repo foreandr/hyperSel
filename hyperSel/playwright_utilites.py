@@ -5,6 +5,7 @@ import asyncio
 import general_utilities
 import proxies_utilities
 import colors_utilities
+import log_utilities
 import random
 import time
 
@@ -21,8 +22,9 @@ async def create_playwright(proxy=False):
         if proxy:
             hyperSelProxies = proxies_utilities.HyperSelProxies()
             delay = 7
-            print(f"creating 7s {delay} to let proxies get going...")
+            print("STARTING 7 SECOND SLEEP...")
             time.sleep(delay)
+            print("DONE")
         
         # Start Playwright session
         playwright = await async_playwright().start()
@@ -33,10 +35,8 @@ async def create_playwright(proxy=False):
         colors_utilities.c_print(text=f"Error starting Playwright: {e}", color='red')
         return None
 
-async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, use_proxy=False):
-
+async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, use_proxy=False, stealthy=None, site_time_delay=10):
     if not use_proxy:
-        print("PROXY 1")
         browser = await playwright.chromium.launch(
             headless=headless,
         )
@@ -46,38 +46,37 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
         }
 
         context = await browser.new_context(**context_options)
-        await Malenia.apply_stealth(context)
-        
         page = await context.new_page()
 
         try:
-            await page.goto(url, timeout=10000) 
-            return browser, page
+            try:
+                await asyncio.wait_for(page.goto(url, timeout=site_time_delay*1000), timeout=site_time_delay)  # Wait for navigation with a 10-second max
+            except asyncio.TimeoutError:
+                # print(f"Navigation to {url} timed out, attempting to fetch content...")
+                pass
+
+            page_content = await page.content()
+            return browser, page_content
         except Exception as e:
             await browser.close()
             await playwright_stop(playwright)
-            # print(f"e; {e}")
-            print(f"MAJOR FAIL {url}")
+            print("============================")
+            print("e:", e)
+            print("MAJOR FAIL", url)
             return None, None
             
     else:
-        print("PROXY 2")
         for attempt in range(max_attempts):
 
             proxy = {
                 "server": random.choice(hyperSelProxies.current_proxies)
             } if hyperSelProxies.current_proxies else None
-            
-            print("proxy:", proxy) 
-            if proxy == None and attempt <= max_attempts:
-                print("NO PROXY TRYING AGAIN")
-                time.sleep(5)
-                attempt +=1
-                continue   
-            
+                
+                
             proxy_options = {
                  "server": proxy['server']
             } if proxy else None
+            print("proxy_options:", proxy_options)
 
             browser = await playwright.chromium.launch(
                 headless=headless,
@@ -89,12 +88,11 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
             }
 
             context = await browser.new_context(**context_options)
-            # await Malenia.apply_stealth(context)
             page = await context.new_page()
 
             try:
                 # Attempt to navigate to the URL with a timeout
-                await page.goto(url, timeout=10000)  # 5 seconds timeout
+                await page.goto(url, timeout=4000)  # 5 seconds timeout
                 return browser, page
             except Exception as e:
                 # print(f"Attempt {attempt + 1}: Navigation failed with proxy {proxy_label}: {e}")
@@ -106,49 +104,36 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
                 await asyncio.sleep(3)
     
     # FAILSAFE
-    # print("FAILSAFE")
+    print("FAILSAFE")
     return await playwright_go_to_page(playwright, url, headless=headless, max_attempts=1, use_proxy=False)
 
 async def playwright_get_soup_from_page(page):
-    html = await page.content()
-    soup = BeautifulSoup(html, 'html.parser')
-    return soup
+    try:
+        html = await page.content()
+        soup = BeautifulSoup(html, 'html.parser')
+        return soup
+    except:
+        soup = BeautifulSoup(page, 'html.parser')
+        return soup
+        
 
-async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=False, site_time_delay=0):
+async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=False, site_time_delay=0, stealthy=False):
     browser, page = await playwright_go_to_page(
         playwright, 
         url, 
         headless=headless, 
-        use_proxy=proxy
+        use_proxy=proxy,
+        site_time_delay=site_time_delay,
+        stealthy=stealthy,
+        
     )
-    time.sleep(site_time_delay)
+    
     soup = await playwright_get_soup_from_page(page)
     await browser.close()
     return soup
     
-
-async def main_test():
-    url = 'https://snse.ca/'
-    playwright = await create_playwright()
-
-    for i in range(100):
-        browser, page = await playwright_go_to_page(playwright, url, headless=True, use_proxy=True)
-        if page:
-            try:
-                soup = await playwright_get_soup_from_page(page)
-                print(f"Iteration {i+1}: {len(str(soup))}")
-            finally:
-                await browser.close()
-    
-    await playwright_stop(playwright)
-
 async def playwright_stop(playwright):
-    try:
-        hyperSelProxies.stop()
-    except Exception as e:
-        # NO PROXIES
-        pass
     await playwright.stop()
-
+    
 if __name__ == '__main__':
-    asyncio.run(main_test())
+    pass
