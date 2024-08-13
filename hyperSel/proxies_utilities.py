@@ -5,6 +5,7 @@ import re
 import request_utilities
 import colors_utilities
 import inspect
+import random
 
 class HyperSelProxies:
     def __init__(self, num_workers=100):
@@ -24,8 +25,25 @@ class HyperSelProxies:
         self.validation_thread = threading.Thread(target=self.validate_current_proxies)
         self.validation_thread.start()
         
-    def extract_proxy_addrs(self, url):
-        return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,5}\b', str(request_utilities.get_soup(url)))
+    def extract_proxy_addrs(self, url, extra_headers=None):
+        if len(self.current_proxies) == 0:
+            return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,5}\b', str(request_utilities.get_soup(
+                url=url,
+                extra_headers=extra_headers,
+            )))
+        else:
+            try:
+                return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,5}\b', str(request_utilities.get_soup(
+                    url=url,
+                    extra_headers=extra_headers,
+                    proxy=random.choice(self.current_proxies)
+                )))
+            except Exception as e:
+                return re.findall(r'\b(?:\d{1,3}\.){3}\d{1,5}\b', str(request_utilities.get_soup(
+                    url=url,
+                    extra_headers=extra_headers,
+                )))
+                
 
     def fetch_proxies_from_url(self, url, results, index):
         proxies = self.extract_proxy_addrs(url)
@@ -63,6 +81,33 @@ class HyperSelProxies:
 
         colors_utilities.c_print(text=f"{inspect.stack()[0][3]} {len(proxies)}", color="blue")
         return proxies
+    
+    def get_iproyal_proxies(self):
+        pages = 650
+        link_template = 'https://iproyal.com/free-proxy-list/?page=PAGE_NO'
+        urls = [link_template.replace('@PAGE_NO', str(page)) for page in range(1, pages + 1)]
+        
+        results = [[] for _ in urls]
+        threads = []
+
+        def fetch_url(url, index):
+            try:
+                proxies = self.extract_proxy_addrs(url)
+                results[index] = proxies
+            except Exception as e:
+                pass
+
+        for i, url in enumerate(urls):
+            thread = threading.Thread(target=fetch_url, args=(url, i))
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+        proxies = [proxy for sublist in results for proxy in sublist]
+        colors_utilities.c_print(text=f"{inspect.stack()[0][3]} {len(proxies)}", color="blue")
+        return proxies    
 
     def get_speedx_proxies(self):
         urls = [
@@ -72,6 +117,47 @@ class HyperSelProxies:
         proxies = list(set([addr for url in urls for addr in self.extract_proxy_addrs(url)]))
         
         colors_utilities.c_print(text=f"{inspect.stack()[0][3]} {len(proxies)}", color="blue")
+        return proxies
+    
+    def get_proxyrack_proxies(self):
+        pages = 650  # Number of pages to scrape
+        link_template = 'https://proxyfinder.proxyrack.com/proxies.json?perPage=20&offset=@OFFSET'
+        urls = [link_template.replace('@OFFSET', str(page * 20)) for page in range(pages)]
+        
+        results = [[] for _ in urls]
+        threads = []
+
+        def fetch_url(url, index):
+            try:
+                extra_headers = {
+                    "accept": "*/*",
+                    "accept-encoding": "gzip, deflate, br, zstd",
+                    "accept-language": "en-US,en;q=0.9",
+                    "origin": "https://www.proxyrack.com",
+                    "referer": "https://www.proxyrack.com/",
+                    "sec-ch-ua": '"Not)A;Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"',
+                    "sec-ch-ua-mobile": "?1",
+                    "sec-ch-ua-platform": '"Android"',
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-site",
+                    "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+                }
+                proxies = self.extract_proxy_addrs(url, extra_headers=extra_headers)
+                results[index] = proxies
+            except Exception as e:
+                print(f"Error fetching {url}: {e}")
+
+        for i, url in enumerate(urls):
+            thread = threading.Thread(target=fetch_url, args=(url, i))
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+        proxies = [proxy for sublist in results for proxy in sublist]
+        print(f"Number of proxies fetched: {len(proxies)}")
         return proxies
 
     def get_freeproxy_proxies(self):
@@ -201,7 +287,10 @@ class HyperSelProxies:
             self.proxies_to_test.extend(self.get_speedx_proxies())
             self.proxies_to_test.extend(self.get_geonode_proxies())
             self.proxies_to_test.extend(self.get_spysone_proxies())
+            self.proxies_to_test.extend(self.get_iproyal_proxies())
             self.proxies_to_test.extend(self.get_freeproxy_proxies())
+            self.proxies_to_test.extend(self.get_proxyrack_proxies())
+            
         
             colors_utilities.c_print(text=f'Fetching and testing new proxies...{len(self.proxies_to_test)}', color="blue")
             

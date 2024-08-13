@@ -1,7 +1,7 @@
 import asyncio
 import soup_utilities
 import spider_universal
-
+print("TODO: ALLOW MULTIPLE REGEX PATTERNS FOR RECURSION")
 
 def t1():
     list_of_urls = [
