@@ -101,7 +101,22 @@ def t2():
     
 def t3():
     list_of_urls = [
-        "https://www.zillow.com/homedetails/175-Brockmoore-Dr-East-Amherst-NY-14051/30238291_zpid/",
+        # "https://www.zillow.com/homedetails/175-Brockmoore-Dr-East-Amherst-NY-14051/30238291_zpid/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
+        "https://snse.ca/",
         "https://snse.ca/",
         
         #'https://snse.ca/',
@@ -135,8 +150,8 @@ def t3():
             wanted_data_format=wanted_data_format,
             recursion_url_regex=recursion_url_regex,
             max_recursions=1,
-            site_time_delay=5,
-            headless=True,
+            site_time_delay=20,
+            headless=False,
             proxy=True,
             stealthy=False,
             

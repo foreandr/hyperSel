@@ -166,14 +166,16 @@ async def continuous_crawl(
                 if "args" in scraper and "soup" in scraper["args"]:
                     scraper["args"]["soup"] = None
             
-        for key, item in crawl_struct.items():
-            log_utilities.log_function(f"[{key}]:{item}")
+        #for key, item in crawl_struct.items():
+        #    log_utilities.log_function(f"[{key}]:{item}")
         
         # input("ANOTHER LOOP")
 
         recursion_count += 1  # Increment recursion count
 
     colors_utilities.c_print(f"Reached maximum recursions ({max_recursions}) or no more new URLs.", color='green')
+    exit()
+    system.exit()
 
 if __name__ == "__main__":
     pass

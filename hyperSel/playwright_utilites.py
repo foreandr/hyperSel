@@ -35,7 +35,7 @@ async def create_playwright(proxy=False):
         colors_utilities.c_print(text=f"Error starting Playwright: {e}", color='red')
         return None
 
-async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, use_proxy=False, stealthy=None, site_time_delay=10):
+async def playwright_go_to_page(playwright, url, headless=True, max_attempts=10, use_proxy=False, stealthy=None, site_time_delay=10):
     if not use_proxy:
         browser = await playwright.chromium.launch(
             headless=headless,
@@ -67,42 +67,46 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
             
     else:
         for attempt in range(max_attempts):
-
-            proxy = {
-                "server": random.choice(hyperSelProxies.current_proxies)
-            } if hyperSelProxies.current_proxies else None
-                
-                
-            proxy_options = {
-                 "server": proxy['server']
-            } if proxy else None
-            print("proxy_options:", proxy_options)
-
-            browser = await playwright.chromium.launch(
-                headless=headless,
-                proxy=proxy_options
-            )
-
-            context_options = {
-                "user_agent": general_utilities.generate_random_user_agent()
-            }
-
-            context = await browser.new_context(**context_options)
-            page = await context.new_page()
-
+            print("attempt", attempt, max_attempts)
             try:
-                # Attempt to navigate to the URL with a timeout
-                await page.goto(url, timeout=4000)  # 5 seconds timeout
+                proxy_choice = random.choice(hyperSelProxies.current_proxies)
+                proxy = {
+                    "server": proxy_choice
+                } if hyperSelProxies.current_proxies else None
+                    
+                proxy_options = {
+                    "server": proxy['server']
+                } if proxy else None
+                print("proxy_options:", proxy_options)
+
+                browser = await playwright.chromium.launch(
+                    headless=headless,
+                    proxy=proxy_options
+                )
+
+                context_options = {
+                    "user_agent": general_utilities.generate_random_user_agent()
+                }
+
+                context = await browser.new_context(**context_options)
+                page = await context.new_page()
+                await page.goto(url, timeout=site_time_delay*1000)  # 5 seconds timeout
+                time.sleep(site_time_delay*1000)
+                soup = await playwright_get_soup_from_page(page)
+                
+                if len(str(soup)) < 75:
+                    print("BLOCKED CONTINUE.. len(soup):", len(str(soup)))
+                    await browser.close()
+                    continue
+                
                 return browser, page
+
             except Exception as e:
-                # print(f"Attempt {attempt + 1}: Navigation failed with proxy {proxy_label}: {e}")
+                print(f"Attempt {attempt + 1}: Navigation failed with proxy {proxy_choice}: {e}")
+                hyperSelProxies.current_proxies.remove(proxy_choice)
                 await browser.close()
+                continue
             
-            # If not the last attempt, wait a bit before trying again
-            if attempt < max_attempts - 1:
-                # print("Retrying with a new proxy...")
-                await asyncio.sleep(3)
-    
     # FAILSAFE
     print("FAILSAFE")
     return await playwright_go_to_page(playwright, url, headless=headless, max_attempts=1, use_proxy=False)
