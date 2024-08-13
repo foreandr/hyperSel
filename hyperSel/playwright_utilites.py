@@ -67,7 +67,6 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=10,
             
     else:
         for attempt in range(max_attempts):
-            print("attempt", attempt, max_attempts)
             try:
                 proxy_choice = random.choice(hyperSelProxies.current_proxies)
                 proxy = {
@@ -77,7 +76,6 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=10,
                 proxy_options = {
                     "server": proxy['server']
                 } if proxy else None
-                print("proxy_options:", proxy_options)
 
                 browser = await playwright.chromium.launch(
                     headless=headless,
@@ -91,13 +89,14 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=10,
                 context = await browser.new_context(**context_options)
                 page = await context.new_page()
                 await page.goto(url, timeout=site_time_delay*1000)  # 5 seconds timeout
-                time.sleep(site_time_delay*1000)
+                time.sleep(site_time_delay/2)
                 soup = await playwright_get_soup_from_page(page)
                 
                 if len(str(soup)) < 75:
                     print("BLOCKED CONTINUE.. len(soup):", len(str(soup)))
                     await browser.close()
                     continue
+                print(7)
                 
                 return browser, page
 

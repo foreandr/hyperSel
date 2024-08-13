@@ -150,7 +150,7 @@ def t3():
             wanted_data_format=wanted_data_format,
             recursion_url_regex=recursion_url_regex,
             max_recursions=1,
-            site_time_delay=20,
+            site_time_delay=8,
             headless=False,
             proxy=True,
             stealthy=False,
