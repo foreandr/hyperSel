@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
+import colors_utilities
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
@@ -53,7 +54,7 @@ def click_button_by_class(driver, class_name):
     button.click()
 
 def begnign_click(driver):
-    print("begnign_click")
+    colors_utilities.c_print("begnign_click")
     # SOMETIMES FACEBOOK NEEDS ITS SCREEN CLICKED TO BE USED
     action_chains = ActionChains(driver)
     action_chains.move_by_offset(1, 1).context_click().perform()
@@ -68,7 +69,7 @@ def click_screen(driver):
             time.sleep(1)  
         except:
             continue
-    #colors.print_error(f"[RIGHT-CLICKED SCREEN][viewport_height:{viewport_height}][viewport_width:{viewport_width}]")
+    #colors.colors_utilities.c_print_error(f"[RIGHT-CLICKED SCREEN][viewport_height:{viewport_height}][viewport_width:{viewport_width}]")
     
 def click_button_by_id(driver, button_id):
     button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, button_id)))
@@ -93,7 +94,7 @@ def scroll_n_times_or_to_bottom(driver, num_scrolls, time_between_scrolls=0, log
 
         scroll_count += 1
     if log:
-        print("TIMES SCROLLED", scroll_count)
+        colors_utilities.c_print(f"TIMES SCROLLED {scroll_count}")
 
 def scroll_to_bottom_of_element(driver, element, time_between_scrolls=0):
     scroll_iters = 0
@@ -138,7 +139,7 @@ def close_driver(driver):
         gc.collect()
         return None
     except:
-        print("ERROR CLOSING DRIVER")
+        colors_utilities.c_print("ERROR CLOSING DRIVER")
 
 def select_element_by_id(driver, id, time=20):
     select_element = WebDriverWait(driver, time).until(EC.element_to_be_clickable((By.ID, id)))
@@ -159,7 +160,7 @@ def select_multiple_elements_by_xpath(driver, xpath, timeout=10):
         )
         return elements
     except Exception as e:
-        print(f"Elements not found or couldn't be interacted with: {e}")
+        colors_utilities.c_print(f"Elements not found or couldn't be interacted with: {e}")
         return []
     
 def select_multiple_elements_by_css_selector(driver, css_selector, timeout=10):
@@ -170,7 +171,7 @@ def select_multiple_elements_by_css_selector(driver, css_selector, timeout=10):
         )
         return elements
     except Exception as e:
-        print(f"Elements not found or couldn't be interacted with: {e}")
+        colors_utilities.c_print(f"Elements not found or couldn't be interacted with: {e}")
         return []
 
 def create_select_object_from_element(element):
@@ -183,10 +184,10 @@ def go_to_site(driver, site, tries=10):
             driver.get(site)
             return True
         except Exception as e:
-            print(e)
+            colors_utilities.c_print(e)
             continue
         
-    print("FAILED TO GO TO SITE AFTER N TRIES")
+    colors_utilities.c_print("FAILED TO GO TO SITE AFTER N TRIES")
     return False
             
 def open_site_selenium(site, show_browser=True):
@@ -215,13 +216,13 @@ def maximize_the_window(driver):
     try:
         driver.maximize_window()
     except Exception as e:
-        print(e)
+        colors_utilities.c_print(e, "red")
         
 def minimize_window(driver):
     try:
         driver.minimize_window()
     except Exception as e:
-        print(e)
+        colors_utilities.c_print(e)
 
 def left_click_center_of_screen(driver):
     # Get the size of the browser window to calculate the center point

@@ -24,6 +24,7 @@ def extract_url_properties(link):
         
         return json.dumps(result)
     except Exception as e:
+        print(f"Error: {e}")
         return None
 
 def construct_foundation_url(url):
@@ -40,6 +41,7 @@ def construct_foundation_url(url):
 
         return foundation_url
     except Exception as e:
+        print(f"Error: {e}")
         return None
 
 def get_all_hrefs(soup):
@@ -61,4 +63,6 @@ def get_all_new_wanted_urls(soup, root_url):
 
 
 if __name__ == "__main__":
+    print(extract_url_properties("https://sub.example.com/page"))
+    print(extract_url_properties("https://example.com/page"))
     pass

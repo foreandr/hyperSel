@@ -1,7 +1,7 @@
 import nodriver as nd
 from bs4 import BeautifulSoup
 import time
-import general_util
+import general_utilities
 
 async def get_site_soup(browser, site, wait=0.5):
     page = await browser.get(site)
@@ -32,7 +32,7 @@ async def main_test():
     custom_kill_browser(browser)
 
 def custom_kill_browser(browser):
-    general_util.kill_process_by_pid(browser._process_pid)
+    general_utilities.kill_process_by_pid(browser._process_pid)
     
 if __name__ == '__main__':
 

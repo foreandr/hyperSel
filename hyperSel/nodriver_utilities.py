@@ -1,7 +1,13 @@
 import nodriver as nd
 from bs4 import BeautifulSoup
 import time
-import general_util
+import general_utilities
+import colors_utilities
+import proxies_utilities
+import random
+
+global hyperSelProxies
+hyperSelProxies = proxies_utilities.HyperSelProxies()
 
 async def get_site_soup(browser, site, wait=0.5):
     page = await browser.get(site)
@@ -10,10 +16,26 @@ async def get_site_soup(browser, site, wait=0.5):
     soup = BeautifulSoup(content, 'html.parser')
     return soup
 
-async def open_nodriver(headless=False, user_agent=None):
+async def open_nodriver(headless=False, proxy=None, max_attempts=3):
     browser_args = ["--start-maximized"]
-    if user_agent:
-        browser_args.append(f"--user-agent={user_agent}")
+    browser_args.append(f"--user-agent={general_utilities.generate_random_user_agent()}")
+
+    
+    if proxy:
+        attempts = 0
+        while True:
+            if attempts == max_attempts:
+                print(F"COMPLETE proxy fail to get proxy [ATTEMPT:{attempts}]...")
+            try:
+                proxy_ip = random.choice(hyperSelProxies.current_proxies)
+                browser_args.append(f"--proxy-server={proxy_ip}")
+            except Exception as e:
+                print(F"Failed to get proxy [ATTEMPT:{attempts}]...")
+                time.sleep(5)
+                attempts+=1
+                
+                
+
 
     browser = await nd.start(
         headless=headless,
@@ -23,16 +45,15 @@ async def open_nodriver(headless=False, user_agent=None):
     return browser
 
 async def main_test():
-    browser = await open_nodriver(headless=False)
-    
-    
-    page = await browser.get(url='https://snse.ca/')
-    input("1111")
-    print("browser:", browser)
-    custom_kill_browser(browser)
+    for i in range(4):
+        time.sleep(3)
+        browser = await open_nodriver(headless=False, proxy=True)
+        page = await browser.get(url='https://www.zillow.com/homedetails/30154106_zpid')
+        input(f"i {i}")
+        custom_kill_browser(browser)
 
 def custom_kill_browser(browser):
-    general_util.kill_process_by_pid(browser._process_pid)
+    general_utilities.kill_process_by_pid(browser._process_pid)
     
 if __name__ == '__main__':
 

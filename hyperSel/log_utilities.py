@@ -1,5 +1,7 @@
 from datetime import datetime
 import os
+import colors_utilities
+
 
 def check_file_exists(file_path):
     return os.path.exists(file_path)
@@ -9,7 +11,8 @@ def check_and_save_dir(path):
     if not isExist:
         os.makedirs(path)
         
-def log_function(msg_type, log_string, session_user="", function_name=""):
+def log_function(log_string, msg_type='test', session_user="", function_name=""):
+    log_string = str(log_string)
     current_datetime = datetime.now()
     current_date = current_datetime.strftime('%Y-%m-%d')
     err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{log_string}\n" 
@@ -22,8 +25,8 @@ def log_function(msg_type, log_string, session_user="", function_name=""):
     
     if msg_type == "error":
         if "CREATE_TABLE" not in err_string or "relation" not in err_string:        
-            print(f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!========= ")
-        
+            colors_utilities.c_print(text=f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!========= ", color='red')
+            
     try:
         file = f"./logs/"
         check_and_save_dir(f'{file}{location_logger_dateless}')

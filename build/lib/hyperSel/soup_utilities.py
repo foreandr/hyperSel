@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 import re
 
 def get_text_by_tag_and_class(soup, tag, class_name, single=True, index=None, regex_pattern=None):
@@ -40,6 +41,7 @@ def get_text_by_tag_and_class(soup, tag, class_name, single=True, index=None, re
             else:
                 return None
     except Exception as e:
+        # print(f"An error occurred: {e}")
         return None
     
 def get_text_by_id(soup, tag=None, id_name=None, single=True, index=None, regex_pattern=None):
@@ -82,6 +84,7 @@ def get_text_by_id(soup, tag=None, id_name=None, single=True, index=None, regex_
             else:
                 return None
     except Exception as e:
+        # print(f"An error occurred: {e}")
         return None
     
 def get_regex_items_from_soup(soup, single=True, index=None, regex_pattern=None):
@@ -101,4 +104,5 @@ def get_regex_items_from_soup(soup, single=True, index=None, regex_pattern=None)
                 return matches if matches else None
         return None
     except Exception as e:
+        # print(f"An error occurred: {e}")
         return None

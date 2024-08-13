@@ -1,6 +1,7 @@
 import subprocess
 import psutil
 import random
+import colors_utilities
 
 def get_ram_percentage():
     return int(str(psutil.virtual_memory().percent).split(".")[0])
@@ -21,25 +22,25 @@ def kill_chrome_instances():
     try:
         # Run the command to kill Chrome instances
         result = subprocess.run(['taskkill', '/F', '/IM', 'chrome.exe'], capture_output=True, text=True, check=True)
-        # print("Command output:", result.stdout)
-        # print("Command error (if any):", result.stderr)
-        print("KILLED ALL CHROME INSTANCES")
+        colors_utilities.c_print(text="KILLED ALL CHROME INSTANCES", color='green')
+
     except subprocess.CalledProcessError as e:
-        print(f"Command failed with return code {e.returncode}")
-        print("Error output:", e.stderr)
+        colors_utilities.c_print(text=f"Command failed with return code {e.returncode}", color='red')
+        colors_utilities.c_print(text=f"Error output: {e.stderr}", color='red')
     except FileNotFoundError:
-        print("The 'taskkill' command was not found. Is it available on your system?")
+        colors_utilities.c_print(text="The 'taskkill' command was not found. Is it available on your system?", color='red')
         
 def kill_process_by_pid(pid):
     try:
         result = subprocess.run(['taskkill', '/F', '/PID', str(pid)], capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Command failed with return code {e.returncode}")
-        print("Error output:", e.stderr)
+        colors_utilities.c_print(text=f"Command failed with return code {e.returncode}", color='red')
+        colors_utilities.c_print(text=f"Error output: {e.stderr}", color='red')
     except FileNotFoundError:
-        print("The 'taskkill' command was not found. Is it available on your system?")
-    except Exception as e:
-        print(f"An error occurred while trying to kill process with PID: {pid} - {e}")    
+         colors_utilities.c_print(text="The 'taskkill' command was not found. Is it available on your system?", color='red')
+    except Exception as e:   
+        colors_utilities.c_print(text=f"An error occurred while trying to kill process with PID: {pid} - {e}", color='red')
+        
         
 def generate_random_user_agent():
     # Define possible components for user agents
@@ -77,5 +78,4 @@ def generate_random_user_agent():
     return user_agent
 
 if __name__ == '__main__':
-    for i in range(1000):
-        print(generate_random_user_agent())
+    pass

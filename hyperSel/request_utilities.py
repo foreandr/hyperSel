@@ -1,13 +1,12 @@
 import requests
-import random
 from bs4 import BeautifulSoup
-import general_util
-
+import general_utilities
+import colors_utilities
 def get_soup(url):
 
     # Headers
     headers = {
-        'User-Agent': general_util.generate_random_user_agent(),
+        'User-Agent': general_utilities.generate_random_user_agent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     }
 
@@ -19,7 +18,7 @@ def get_soup(url):
         return soup
 
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL: {e}")
+        colors_utilities.c_print(text=f"Error fetching URL: {e}", color="red")
         return None
     
 if __name__ == '__main__':

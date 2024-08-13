@@ -1,13 +1,13 @@
 import requests
 import random
 from bs4 import BeautifulSoup
-import general_util
+import general_utilities
 
 def get_soup(url):
 
     # Headers
     headers = {
-        'User-Agent': general_util.generate_random_user_agent(),
+        'User-Agent': general_utilities.generate_random_user_agent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     }
 
