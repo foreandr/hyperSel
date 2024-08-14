@@ -11,7 +11,7 @@ import sys
 
 
 class HyperSelProxies:
-    def __init__(self, num_workers=300, num_sub_workers=300):
+    def __init__(self, num_workers=5012, num_sub_workers=2048):
         self.current_proxies = []
         self.num_workers = num_workers
         self.num_sub_workers = num_sub_workers

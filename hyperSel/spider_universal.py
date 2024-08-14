@@ -1,15 +1,9 @@
 import random
 import re
 import playwright_utilites
-import log_utilities
 import colors_utilities
-import asyncio
 
 from urllib.parse import urlparse
-
-async def start_crawler(crawl_struct):
-    all_extracted_data, all_recursion_urls = await crawl_urls(crawl_struct)
-    return all_extracted_data, all_recursion_urls
 
 def extract_recursion_urls(soup, regex_pattern):
     html_content = str(soup)
@@ -66,6 +60,8 @@ async def crawl_urls(crawl_struct):
     site_time_delay = crawl_struct['site_time_delay']
     recursion_url_regex = crawl_struct["recursion_url_regex"]
     stealthy = crawl_struct["stealthy"]
+    num_threads = crawl_struct["num_threads"]
+   
     
     random.shuffle(list_of_urls) if crawl_struct.get('random') else None
     
@@ -130,29 +126,25 @@ async def continuous_crawl(
     recursion_count = 0  # Initialize recursion count
 
     while max_recursions is None or recursion_count < max_recursions:
+        if max_recursions != None:
+            print("recursion_count:", recursion_count)
+        
         new_urls = []
-        all_extracted_data, all_recursion_urls = await start_crawler(crawl_struct)
+        all_extracted_data, all_recursion_urls = await crawl_urls(crawl_struct)
         
         for url in all_recursion_urls:
             if url not in visited_urls and url not in list_of_urls:
                 visited_urls.append(url)
                 new_urls.append(url)
 
-        for url in new_urls:
-            print("new_urls:", url)
-
-        if not new_urls or len(new_urls) == 0:
-            colors_utilities.c_print(text="No new URLs found, crawler will continue to wait for new ones", color="magenta")
-        
+        # REPAR CRAWL STRUCT
         crawl_struct["list_of_urls"] = new_urls
-        
-        # RESET THE SOUP
-        for key, value in crawl_struct["wanted_data_format"].items():
-            for scraper in value["scrapers"]:
-                if "args" in scraper and "soup" in scraper["args"]:
-                    scraper["args"]["soup"] = None
+        [scraper["args"].update({"soup": None}) for value in crawl_struct["wanted_data_format"].values() for scraper in value["scrapers"] if "args" in scraper and "soup" in scraper["args"]]
         recursion_count += 1  # Increment recursion count
 
+        if new_urls == 0:
+            break
+        
     colors_utilities.c_print(f"Reached maximum recursions ({max_recursions}) or no more new URLs.", color='green')
     playwright_utilites.hyperSelProxies.stop_threads_and_exit()
 

@@ -9,8 +9,6 @@ import log_utilities
 import random
 import time
 
-
-# hyperSelProxies.start_printing_proxies()
 global hyperSelProxies
 hyperSelProxies = None
 
@@ -33,7 +31,7 @@ async def create_playwright(proxy=False):
         colors_utilities.c_print(text=f"Error starting Playwright: {e}", color='red')
         return None
 
-async def playwright_go_to_page(playwright, url, headless=True, max_attempts=10, use_proxy=False, stealthy=None, site_time_delay=10):
+async def playwright_go_to_page(playwright, url, headless=True, max_attempts=5, use_proxy=False, stealthy=None, site_time_delay=10):
     if not use_proxy:
         browser = await playwright.chromium.launch(
             headless=headless,
@@ -133,6 +131,7 @@ async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=Fals
     
 async def playwright_stop(playwright):
     await playwright.stop()
+    hyperSelProxies.stop_threads_and_exit()
     
 if __name__ == '__main__':
     pass
