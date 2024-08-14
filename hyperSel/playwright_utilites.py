@@ -22,9 +22,7 @@ async def create_playwright(proxy=False):
         if proxy:
             hyperSelProxies = proxies_utilities.HyperSelProxies()
             delay = 7
-            print("STARTING 7 SECOND SLEEP...")
             time.sleep(delay)
-            print("DONE")
         
         # Start Playwright session
         playwright = await async_playwright().start()
@@ -93,21 +91,19 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=10,
                 soup = await playwright_get_soup_from_page(page)
                 
                 if len(str(soup)) < 75:
-                    print("BLOCKED CONTINUE.. len(soup):", len(str(soup)))
+                    # print("BLOCKED CONTINUE.. len(soup):", len(str(soup)))
                     await browser.close()
                     continue
-                print(7)
                 
                 return browser, page
 
             except Exception as e:
-                print(f"Attempt {attempt + 1}: Navigation failed with proxy {proxy_choice}: {e}")
+                # print(f"Attempt {attempt + 1}: Navigation failed with proxy {proxy_choice}: {e}")
                 hyperSelProxies.current_proxies.remove(proxy_choice)
                 await browser.close()
                 continue
             
     # FAILSAFE
-    print("FAILSAFE")
     return await playwright_go_to_page(playwright, url, headless=headless, max_attempts=1, use_proxy=False)
 
 async def playwright_get_soup_from_page(page):

@@ -7,6 +7,7 @@ import request_utilities
 import requests
 import math
 import time
+import sys
 
 
 class HyperSelProxies:
@@ -20,12 +21,20 @@ class HyperSelProxies:
         self.lock = threading.Lock()
 
         # Start the proxy fetching thread
-        self.proxy_thread = threading.Thread(target=self.get_new_proxies)
-        self.proxy_thread.start()
+        self.proxy_fetching_thread = threading.Thread(target=self.get_new_proxies)
+        self.proxy_fetching_thread.start()
 
-        self.proxy_thread = threading.Thread(target=self.validate_current_proxies)
-        self.proxy_thread.start()
+        self.proxy_validation_thread = threading.Thread(target=self.validate_current_proxies)
+        self.proxy_validation_thread.start()
     
+    def stop_threads_and_exit(self):
+        # Signal the threads to stop
+        self.stop_event.set()
+
+        # Wait for the threads to finish
+        self.proxy_fetching_thread.join()
+        self.proxy_validation_thread.join()
+
     def process_single_proxy(self, proxy):
         """Process each proxy to determine if it should be added to current_proxies."""
         if self.test_proxy(proxy):  # Check if the proxy is even
@@ -162,7 +171,7 @@ class HyperSelProxies:
                 
                 if not is_valid:
                     with self.lock:
-                        self.current_proxies.pop(i)
+                        self.current_proxies.remove(proxy)
                 else:
                     i += 1
             if self.stop_event.is_set():

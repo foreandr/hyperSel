@@ -86,7 +86,6 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=2, 
                 # print("Retrying with a new proxy...")
                 await asyncio.sleep(3)
     
-    # FAILSAFE
     # print("FAILSAFE")
     return await playwright_go_to_page(playwright, url, headless=headless, max_attempts=1, use_proxy=False)
 

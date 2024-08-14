@@ -134,30 +134,16 @@ async def continuous_crawl(
         all_extracted_data, all_recursion_urls = await start_crawler(crawl_struct)
         
         for url in all_recursion_urls:
-            print(f"all_recursion_urls: {url}")
-            
-            if url in visited_urls:
-                print("1")
-                continue
-            elif url in list_of_urls:
-                print("2")
-                continue
-            else:
-                print("3")
+            if url not in visited_urls and url not in list_of_urls:
                 visited_urls.append(url)
                 new_urls.append(url)
-            print("*"*10)
 
         for url in new_urls:
             print("new_urls:", url)
 
         if not new_urls or len(new_urls) == 0:
             colors_utilities.c_print(text="No new URLs found, crawler will continue to wait for new ones", color="magenta")
-            break
-            await asyncio.sleep(10)  # Sleep to avoid tight loops when no new URLs are found
-            continue
         
-        # Update the crawl_struct with the new URLs
         crawl_struct["list_of_urls"] = new_urls
         
         # RESET THE SOUP
@@ -165,17 +151,10 @@ async def continuous_crawl(
             for scraper in value["scrapers"]:
                 if "args" in scraper and "soup" in scraper["args"]:
                     scraper["args"]["soup"] = None
-            
-        #for key, item in crawl_struct.items():
-        #    log_utilities.log_function(f"[{key}]:{item}")
-        
-        # input("ANOTHER LOOP")
-
         recursion_count += 1  # Increment recursion count
 
     colors_utilities.c_print(f"Reached maximum recursions ({max_recursions}) or no more new URLs.", color='green')
-    exit()
-    system.exit()
+    playwright_utilites.hyperSelProxies.stop_threads_and_exit()
 
 if __name__ == "__main__":
     pass

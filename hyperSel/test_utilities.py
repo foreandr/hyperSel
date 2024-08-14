@@ -103,31 +103,8 @@ def t3():
     list_of_urls = [
         # "https://www.zillow.com/homedetails/175-Brockmoore-Dr-East-Amherst-NY-14051/30238291_zpid/",
         "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
-        "https://snse.ca/",
         
-        #'https://snse.ca/',
-        #'https://realestate.snse.ca/',
-        #'https://jailpdftocsv.snse.ca/',
-        #'https://snse.ca/',
-        #'https://realestate.snse.ca/',
-        #'https://jailpdftocsv.snse.ca/',
-        #'https://snse.ca/',
-        #'https://realestate.snse.ca/',
-        # 'https://jailpdftocsv.snse.ca/',
+
         
         
     ]
@@ -142,14 +119,14 @@ def t3():
         },
     }
     
-    recursion_url_regex = r''
+    recursion_url_regex = r'https?://(?:www\.)?[\w\.-]+\.ca(?:[/?#]\S*)?'
 
     asyncio.run(
         spider_universal.continuous_crawl(
             list_of_urls=list_of_urls,
             wanted_data_format=wanted_data_format,
             recursion_url_regex=recursion_url_regex,
-            max_recursions=1,
+            max_recursions=2,
             site_time_delay=8,
             headless=False,
             proxy=True,
