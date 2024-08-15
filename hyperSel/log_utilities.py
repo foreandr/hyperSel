@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-import colors_utilities
+from . import colors_utilities
 
 
 def check_file_exists(file_path):
