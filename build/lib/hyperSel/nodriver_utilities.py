@@ -61,14 +61,14 @@ async def main_test():
         browser = await open_nodriver(headless=False, proxy=False)
         page = await browser.get(url='https://snse.ca/')
         time.sleep(5)
-        custom_kill_browser(browser)
+        await custom_kill_browser(browser)
 
         
-    custom_kill_browser(browser)
+    await custom_kill_browser(browser)
     custom_kill_browser(browser2)
     exit()
     
-def custom_kill_browser(browser):
+async def custom_kill_browser(browser):
     general_utilities.kill_process_by_pid(browser._process_pid)
     
 if __name__ == '__main__':
