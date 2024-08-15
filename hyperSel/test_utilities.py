@@ -137,7 +137,12 @@ def t3():
     
 def t4():
     list_of_urls = [
-        "https://betway.ca/en-ca/sports/evt/14247537",
+        "https://betway.ca/en-ca/sports/grp/ufc---martial-arts/upcoming-fights/ufc-305",
+        "https://on.neobet.ca/en-ca/Sportbets/Combat-Sport?affiliateId=googleads-generic",
+        "https://sports.sportsbetting.ag/sportsbook/martial-arts/mma/ufc-305",
+        "https://sportsbook.draftkings.com/leagues/mma/ufc",
+        "https://sports.on.betmgm.ca/en/sports/mma-45",
+        
     ]
     
     wanted_data_format = {
@@ -173,3 +178,4 @@ def run_tests():
     
 if __name__ == "__main__":
     run_tests()
+    # https://jobitt.com/job-openings/external/web-scraping-bot-defense-researcher-6098653404827632948?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic

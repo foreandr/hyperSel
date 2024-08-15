@@ -59,6 +59,5 @@ def get_all_new_wanted_urls(soup, root_url):
         urls.append(f"https://{construct_foundation_url(root_url)}.com{href}")
     return urls
 
-
 if __name__ == "__main__":
     pass

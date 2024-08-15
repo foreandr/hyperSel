@@ -2,7 +2,6 @@ import random
 import re
 import playwright_utilites
 import colors_utilities
-
 from urllib.parse import urlparse
 
 def extract_recursion_urls(soup, regex_pattern):
