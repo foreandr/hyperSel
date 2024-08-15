@@ -6,4 +6,4 @@ requests
 nodriver
 psutil
 playwright
-aiohttp
+undetected-playwright

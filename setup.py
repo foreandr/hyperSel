@@ -20,7 +20,7 @@ class PostInstallCommand(Command):
 # Setup configuration
 setup(
     name="hyperSel",
-    version=2.38,
+    version=2.39,
     packages=find_packages(),
     install_requires=[
         "selenium",
@@ -34,7 +34,7 @@ setup(
         "undetected-playwright",
     ],
     include_package_data=True,
-    cmdclass={
-        'install': PostInstallCommand,
-    },
+    #cmdclass={
+    #    'install': PostInstallCommand,
+    #},
 )

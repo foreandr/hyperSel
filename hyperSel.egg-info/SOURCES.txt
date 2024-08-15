@@ -1,11 +1,13 @@
 README.md
 setup.py
 hyperSel/__init__.py
+hyperSel/colors_utilities.py
 hyperSel/general_utilities.py
-hyperSel/log.py
+hyperSel/log_utilities.py
 hyperSel/nodriver_utilities.py
 hyperSel/playwright_utilites.py
 hyperSel/proxies_utilities.py
+hyperSel/regex_utilites.py
 hyperSel/request_utilities.py
 hyperSel/selenium_utilities.py
 hyperSel/soup_utilities.py
