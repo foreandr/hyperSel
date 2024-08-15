@@ -3,11 +3,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import islice
 import random
 import re
-import request_utilities
 import requests
-import math
 import time
-import sys
+
+from . import request_utilities
 
 
 class HyperSelProxies:

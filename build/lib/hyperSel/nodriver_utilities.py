@@ -1,9 +1,8 @@
 import nodriver as nd
 from bs4 import BeautifulSoup
 import time
-import general_utilities
-import colors_utilities
-import proxies_utilities
+from . import general_utilities
+from . import proxies_utilities
 import random
 
 global hyperSelProxies

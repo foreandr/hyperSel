@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-import general_utilities
-import colors_utilities
+from . import general_utilities
 
 def get_soup(url, extra_headers=None, proxy=None):
     # Headers
