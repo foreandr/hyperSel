@@ -5,8 +5,6 @@ from . import general_utilities
 from . import proxies_utilities
 import random
 
-global hyperSelProxies
-hyperSelProxies = proxies_utilities.HyperSelProxies()
 
 async def get_site_soup(browser, site, wait=0.5):
     page = await browser.get(site)
@@ -16,6 +14,10 @@ async def get_site_soup(browser, site, wait=0.5):
     return soup
 
 async def open_nodriver(headless=False, proxy=None, max_attempts=3):
+    if proxy:
+        hyperSelProxies = proxies_utilities.HyperSelProxies()
+        print("SLEEPING FOR PROXY...")
+        time.sleep(10)
     browser_args = ["--start-maximized"]
     browser_args.append(f"--user-agent={general_utilities.generate_random_user_agent()}")
     

@@ -8,7 +8,6 @@ import time
 
 from . import request_utilities
 
-
 class HyperSelProxies:
     def __init__(self, num_workers=5012, num_sub_workers=2048):
         self.current_proxies = []
