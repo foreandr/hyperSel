@@ -60,5 +60,4 @@ def get_soup(url, extra_headers=None, proxy=None):
         return None
     
 if __name__ == '__main__':
-    for i in range(100):
-        get_soup(url='https://snse.ca/')
+    get_soup(url='https://snse.ca/')
