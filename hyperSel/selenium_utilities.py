@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
 from . import colors_utilities
+from . import general_utilities
 
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
@@ -196,8 +197,8 @@ def open_site_selenium(site, show_browser=True):
     if not show_browser:
         options.add_argument("--headless") # Run in headless mode
 
-    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
-    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options.add_argument(f"{general_utilities.generate_random_user_agent()}")
+
     driver = webdriver.Chrome(options=options)
     go_to_site(driver, site)
     return driver
