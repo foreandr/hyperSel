@@ -1,27 +1,21 @@
 import os
 import subprocess
-from setuptools import setup, find_packages, Command
+from setuptools import setup, find_packages
 
-class PostInstallCommand(Command):
-    """Post-installation for installation mode."""
-    description = 'Run post-installation tasks'
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        # Run the playwright install command
-        subprocess.check_call(["playwright", "install", "--with-deps"]) # https://pypi.org/project/undetected-playwright/
+# Read the README.md file for the long description
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
 
 # Setup configuration
 setup(
     name="hyperSel",
-    version=2.56,
-    packages=find_packages(),
+    version="2.56",  # Version number should be a string
+    author="foreandr",  # Your name or username
+    author_email="foreandr@gmail.com",  # Your email
+    description="A Python-based web automation and data scraping framework",  # Short description
+    long_description=long_description,  # Long description from README.md
+    long_description_content_type="text/markdown",  # Specifies the format of the long description (Markdown)
+    packages=find_packages(),  # Automatically finds all packages in your project
     install_requires=[
         "selenium",
         "beautifulsoup4",
@@ -33,8 +27,12 @@ setup(
         "playwright",
         "undetected-playwright",
     ],
-    include_package_data=True,
-    #cmdclass={
-    #    'install': PostInstallCommand,
-    #},
+    include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
+    url="https://github.com/foreandr/hyperSel",  # URL to the project (optional, but useful for PyPI)
+    classifiers=[  # Optional: Classifiers to categorize your project
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires=">=3.6",  # Minimum Python version required
 )

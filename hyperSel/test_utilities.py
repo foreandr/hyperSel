@@ -3,8 +3,8 @@ try:
     from . import soup_utilities
     from . import spider_universal
 except:
-    from . import soup_utilities
-    from . import spider_universal
+    import soup_utilities
+    import spider_universal
 
 
 print("TODO: ALLOW MULTIPLE REGEX PATTERNS FOR RECURSION")
@@ -178,8 +178,9 @@ def t4():
     )
 
 def run_tests():
+    t1()
     # t2()
-    t3()
+    # t3()
     # t4()
     
 if __name__ == "__main__":
