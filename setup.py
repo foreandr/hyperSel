@@ -1,4 +1,3 @@
-import os
 import subprocess
 from setuptools import setup, find_packages, Command
 
@@ -20,7 +19,7 @@ class PostInstallCommand(Command):
 # Setup configuration
 setup(
     name="hyperSel",
-    version=2.53,
+    version=2.54,
     packages=find_packages(),
     install_requires=[
         "selenium",

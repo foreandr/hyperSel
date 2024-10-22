@@ -1,6 +1,10 @@
 import asyncio
-from . import soup_utilities
-from . import spider_universal
+try:
+    from . import soup_utilities
+    from . import spider_universal
+except:
+    from . import soup_utilities
+    from . import spider_universal
 
 
 print("TODO: ALLOW MULTIPLE REGEX PATTERNS FOR RECURSION")

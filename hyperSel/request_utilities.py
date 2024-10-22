@@ -1,6 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
-from . import general_utilities
+
+try:
+    from . import general_utilities
+except:
+    import general_utilities
+
 
 def get_soup(url, extra_headers=None, proxy=None):
     # Headers
