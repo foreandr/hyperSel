@@ -192,12 +192,13 @@ def go_to_site(driver, site, tries=10):
     colors_utilities.c_print("FAILED TO GO TO SITE AFTER N TRIES")
     return False
             
-def open_site_selenium(site, show_browser=True):
+def open_site_selenium(site, show_browser=True, random_agent=False):
     options = Options()
     if not show_browser:
         options.add_argument("--headless") # Run in headless mode
 
-    options.add_argument(f"{general_utilities.generate_random_user_agent()}")
+    if random_agent:
+        options.add_argument(f"--user-agent={general_utilities.generate_random_user_agent()}")
 
     driver = webdriver.Chrome(options=options)
     go_to_site(driver, site)

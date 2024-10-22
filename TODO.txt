@@ -1,0 +1,17 @@
+1. change the headers to look like a google bot?
+2. bing bot etc try that
+
+3. i might be able to write something that turns int html into tag based objects
+    <input name="value" value="28">
+    final_obj = 
+    {
+        value:28
+    }
+
+4. api scraper auto download browser mob
+
+5. SHOULD BE ABLE TO HAVE AN LLM PARSE html
+    WRITE SOMETHING beforehand to parse SOME of the html to remove the junk, might be able to get it to tags that I need
+
+6. maybe have some system that does an appraisal of a site?
+    -  does it have apis? does it need browser, proxy, etc

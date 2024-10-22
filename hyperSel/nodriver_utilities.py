@@ -5,6 +5,8 @@ from . import general_utilities
 from . import proxies_utilities
 import random
 
+global hyperSelProxies
+hyperSelProxies = None
 
 async def get_site_soup(browser, site, wait=0.5):
     page = await browser.get(site)
@@ -14,6 +16,7 @@ async def get_site_soup(browser, site, wait=0.5):
     return soup
 
 async def open_nodriver(headless=False, proxy=None, max_attempts=3):
+    global hyperSelProxies
     if proxy:
         hyperSelProxies = proxies_utilities.HyperSelProxies()
         print("SLEEPING FOR PROXY...")
@@ -72,6 +75,10 @@ async def main_test():
     
 async def custom_kill_browser(browser):
     general_utilities.kill_process_by_pid(browser._process_pid)
+    try:
+        hyperSelProxies.stop_threads_and_exit()
+    except Exception as e:
+        pass
     
 if __name__ == '__main__':
     # since asyncio.run never worked (for me)
