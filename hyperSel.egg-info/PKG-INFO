@@ -1,6 +1,15 @@
 Metadata-Version: 2.1
 Name: hyperSel
 Version: 2.56
+Summary: A Python-based web automation and data scraping framework
+Home-page: https://github.com/foreandr/hyperSel
+Author: foreandr
+Author-email: foreandr@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
 Requires-Dist: selenium
 Requires-Dist: beautifulsoup4
 Requires-Dist: webdriver-manager
@@ -10,3 +19,5 @@ Requires-Dist: nodriver
 Requires-Dist: psutil
 Requires-Dist: playwright
 Requires-Dist: undetected-playwright
+
+Wrapper around some crawling tools

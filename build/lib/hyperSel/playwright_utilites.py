@@ -15,7 +15,7 @@ except:
 
 
 global hyperSelProxies
-hyperSelProxies = None
+# hyperSelProxies = None
 
 async def create_playwright(proxy=False):
     global hyperSelProxies
