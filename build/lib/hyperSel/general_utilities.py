@@ -1,7 +1,13 @@
+#AGAIN
 import subprocess
 import psutil
 import random
-from . import colors_utilities
+try:
+    from . import colors_utilities
+
+except:
+    import colors_utilities
+
 
 def get_ram_percentage():
     return int(str(psutil.virtual_memory().percent).split(".")[0])

@@ -1,8 +1,14 @@
 import random
 import re
-from . import playwright_utilites
-from . import colors_utilities
 from urllib.parse import urlparse
+
+try:
+    from . import playwright_utilites
+    from . import colors_utilities
+except:
+    import playwright_utilites
+    import colors_utilities
+
 
 def extract_recursion_urls(soup, regex_pattern):
     html_content = str(soup)

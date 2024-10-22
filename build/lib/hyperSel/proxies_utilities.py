@@ -5,8 +5,10 @@ import random
 import re
 import requests
 import time
-
-from . import request_utilities
+try:
+    from . import request_utilities
+except:
+    import request_utilities
 
 class HyperSelProxies:
     def __init__(self, num_workers=5012, num_sub_workers=2048):

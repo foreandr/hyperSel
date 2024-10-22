@@ -10,6 +10,7 @@ hyperSel/proxies_utilities.py
 hyperSel/regex_utilites.py
 hyperSel/request_utilities.py
 hyperSel/selenium_utilities.py
+hyperSel/sniffer_utilities.py
 hyperSel/soup_utilities.py
 hyperSel/spider_universal.py
 hyperSel/spider_utilities.py

@@ -20,7 +20,7 @@ class PostInstallCommand(Command):
 # Setup configuration
 setup(
     name="hyperSel",
-    version=2.55,
+    version=2.56,
     packages=find_packages(),
     install_requires=[
         "selenium",

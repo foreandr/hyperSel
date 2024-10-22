@@ -1,14 +1,18 @@
 from playwright.async_api import async_playwright
-from undetected_playwright import Tarnished, Malenia
 from bs4 import BeautifulSoup
 import asyncio
-
-from . import general_utilities
-from . import proxies_utilities
-from . import colors_utilities
-
 import random
 import time
+
+try:
+    from . import general_utilities
+    from . import proxies_utilities
+    from . import colors_utilities
+except:
+    import general_utilities
+    import proxies_utilities
+    import colors_utilities
+
 
 global hyperSelProxies
 hyperSelProxies = None
