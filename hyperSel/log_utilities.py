@@ -1,6 +1,7 @@
 import os
 import inspect
 import datetime
+import json
 
 try:
     from . import colors_utilities
@@ -47,6 +48,53 @@ def log_function(log_string, msg_type='test', session_user="", function_name="")
         check_and_save_dir(f'{file}{location_logger_dateless}')
         with open(f'{file}{location_logger}.txt', 'a+', encoding='utf-8') as f:
             f.write(err_string)
+
+def log_data(data_object, file_name='crawl_data.json'):
+
+    """
+    Logs data objects to a JSON file in a single 'logs' directory, avoiding duplicates.
+    
+    :param data_object: A dictionary or list of dictionaries to be logged.
+    :param file_name: The name of the JSON file for logging (default: 'data.json').
+    """
+    # Define the base directory and log path
+    base_dir = "./logs/"
+    log_path = os.path.join(base_dir, file_name)
+
+    # Ensure the logs directory exists
+    try:
+        check_and_save_dir(base_dir)
+    except:
+        # Fallback if the logs directory creation fails
+        base_dir = "../logs/"
+        log_path = os.path.join(base_dir, file_name)
+        check_and_save_dir(base_dir)
+
+    # Ensure data_object is a list for consistent handling
+    if isinstance(data_object, dict):
+        data_object = [data_object]  # Wrap single dict in list
+
+    # Load existing data from the JSON file if it exists
+    if os.path.exists(log_path):
+        with open(log_path, 'r', encoding='utf-8') as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []  # Start fresh if file is empty or corrupt
+    else:
+        existing_data = []
+
+    # Remove duplicates between new data and existing data
+    new_data = [item for item in data_object if item not in existing_data]
+
+    # Only append if there's new data
+    if new_data:
+        existing_data.extend(new_data)  # Add new unique data to existing data
+        with open(log_path, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=4)
+        print(f"Logged {len(new_data)} new entries to {log_path}.")
+    else:
+        print("No new data to log. Duplicates found.")
 
 def checkpoint(pause=False, str_to_print=None):
     global GLOBAL_CHECKPOINT
