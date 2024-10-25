@@ -34,9 +34,8 @@ def log_function(log_string, msg_type='test', session_user="", function_name="")
     location_logger_dateless = f"{yea}/{mon}/{day}"
     location_logger = f"{yea}/{mon}/{day}/{current_date}"
     
-    if msg_type == "error":
-        if "CREATE_TABLE" not in err_string or "relation" not in err_string:        
-            colors_utilities.c_print(text=f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!========= ", color='red')
+    if msg_type == "error":      
+        colors_utilities.c_print(text=f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!========= ", color='red')
             
     try:
         file = f"./logs/"
@@ -49,7 +48,7 @@ def log_function(log_string, msg_type='test', session_user="", function_name="")
         with open(f'{file}{location_logger}.txt', 'a+', encoding='utf-8') as f:
             f.write(err_string)
 
-def checkpoint():
+def checkpoint(pause=False, str_to_print=None):
     global GLOBAL_CHECKPOINT
     # Get the current frame and then the caller's frame
     frame = inspect.currentframe().f_back
@@ -66,6 +65,12 @@ def checkpoint():
     # Print the file, line number, function name, GLOBAL_CHECKPOINT, and current timestamp
     log_str = f"[CHECKPOINT:{GLOBAL_CHECKPOINT}][FILE:{current_file}][FUNC:{caller_function_name}][TIME:{current_time}][LINE:{frame.f_lineno}]"
     colors_utilities.c_print(text=log_str, color="cyan")
+
+    if str_to_print != None:
+        colors_utilities.c_print(text=str_to_print, color="cyan")
+
+    if pause:
+        input("STOPPING UNTIL YOU TYPE SOMETHIN")
 
     # Increment the global checkpoint
     GLOBAL_CHECKPOINT += 1

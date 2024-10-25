@@ -60,15 +60,15 @@ def playwright_network_capture(url):
 
     return requests  # Return the list of URLs instead of logging
 
-def main():
-    url = 'https://toronto.craigslist.org/search/cta'
+def main(url):
     captured_urls = playwright_network_capture(url)
     
     # Print each URL one by one
     for request_url in captured_urls:
         print(request_url)
 
+    return captured_urls
 
 if __name__ == "__main__":
-    main()
+    main("https://podcasts.apple.com/us/podcast/lex-fridman-podcast/id1434243584")
     pass

@@ -343,6 +343,44 @@ def create_scraping_config(fields):
     
     return scraping_config
 
+def create_field_config(name, function, soup=None, tag=None, selector_name=None, single=True, 
+                        index=None, regex_pattern=None, multiple=False, needed=False, **extra_args):
+    """
+    Generates a configuration dictionary for a specific field.
+    
+    Parameters:
+    - name (str): The name of the field (e.g., "title", "description", "url").
+    - function (function): The scraping function to use for this field.
+    - soup: The soup object or None, to be passed to the scraping function.
+    - tag (str): The HTML tag to search for (e.g., "span", "a").
+    - selector_name (str): The class name of the HTML tag to match.
+    - single (bool): Whether to scrape a single element or multiple (default: True).
+    - index (int): Index of the element to select if multiple elements are found (default: None).
+    - regex_pattern (str): Regex pattern for filtering text (default: None).
+    - multiple (bool): Whether the field is expected to have multiple values (default: False).
+    - needed (bool): Whether the field is required (default: False).
+    - **extra_args: Any additional arguments for the function.
+
+    Returns:
+    - A dictionary for the field configuration.
+    """
+    return {
+        f"{name}":{
+            "function": function,
+            "args": {
+                "soup": soup,
+                "tag": tag,
+                "selector_name": selector_name,
+                "single": single,
+                "index": index,
+                "regex_pattern": regex_pattern,
+                **extra_args  # Include any other extra arguments
+            },
+            "multiple": multiple,
+            "needed": needed
+        }
+    }
+
 if __name__ == "__main__":
 
     print("TODO: need to sepeate into sections,s o that the title, desc and so on nly work in the region they are relevnt, rn it looks the whole page")
@@ -357,39 +395,41 @@ if __name__ == "__main__":
     print("FOR ABOVE I HAVE IN MIND, CLICK TO SCROLL, PORNHBU PAGINATION, WAIT 20S")
     print("OUTPUT IN CSV OR JSON OR WHATEVER")
     print("ADD A WAY TO SAY, THE LAST TIME I CRAWLED X URL WAS AT X TIME")
+    print("-- if no soop is given from the root section, crawl the whole apge")
+    root_config = create_field_config(
+        name="root_section",
+        function=soup_utilities.get_full_soup_by_tag_and_class,
+        tag="li",
+        selector_name="svelte-8rlk6b",
+        single=False
+    )
 
-    fields = {
-        "root_section": {
-            "function": soup_utilities.get_full_soup_by_tag_and_class,
-            "args": {"soup": None, "tag": "li", "class_name": "svelte-8rlk6b", "single": False}
-        },
-        "title": {
-            "function": soup_utilities.get_text_by_tag_and_class,
-            "args": {"soup": None, "tag": "span", "class_name": "episode-details__title-text"},
-            "multiple": False,
-            "needed": True
-        },
-        "description": {
-            "function": soup_utilities.get_text_by_tag_and_class,
-            "args": {"soup": None, "tag": "span", "class_name": "multiline-clamp__text svelte-73d2pa", "single": False, "index": 1},
-            "multiple": False,
-            "needed": True
-        },
-        "url": {
-            "function": soup_utilities.get_href_by_tag_and_class,
-            "args": {"soup": None, "tag": "a", "class_name": "link-action svelte-1wtdvjb"},
-            "multiple": False,
-            "needed": True
-        }
-    }
+    title_config = create_field_config(
+        name="title",
+        function=soup_utilities.get_text_by_tag_and_class,
+        tag="span",
+        selector_name="episode-details__title-text"
+    )
 
+    description_config = create_field_config(
+        name="description",
+        function=soup_utilities.get_text_by_tag_and_class,
+        tag="span",
+        selector_name="multiline-clamp__text svelte-73d2pa",
+        single=False,
+        index=1
+    )
+    url_config = create_field_config(
+        name="url",
+        function=soup_utilities.get_href_by_tag_and_class,
+        tag="a",
+        selector_name="link-action svelte-1wtdvjb",
+        needed=True
+    )
+
+    # Combine configurations without needing to specify names again
+    fields = {**root_config, **title_config, **description_config, **url_config}
     config = create_scraping_config(fields)
-    print(config)
-    '''
-    now for the fields as well, instead of this dict, we are going to have a function for each field including root that will PRODUCT the dicts
-    '''
-    
-    # exit()
     recursion_url_regex = r'https:\/\/podcasts\.apple\.com\/[a-z]{2}\/podcast\/[a-zA-Z0-9\-]+\/id\d+'
 
     asyncio.run(

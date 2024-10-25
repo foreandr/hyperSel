@@ -2,6 +2,7 @@ README.md
 setup.py
 hyperSel/__init__.py
 hyperSel/colors_utilities.py
+hyperSel/data_utiliites.py
 hyperSel/general_utilities.py
 hyperSel/log_utilities.py
 hyperSel/nodriver_utilities.py

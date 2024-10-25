@@ -1,13 +1,29 @@
 #AGAIN
 import subprocess
 import psutil
+import string
 import random
+from screeninfo import get_monitors
+import time
+
 try:
     from . import colors_utilities
 
 except:
     import colors_utilities
 
+
+
+def get_display_dimensions():
+    # Get the primary monitor or the first monitor in the list
+    monitor = get_monitors()[0]
+    
+    # Return width and height of the monitor
+    return {"width": monitor.width, "height": monitor.height}
+
+def get_all_alphabet_chars():
+    alphabet = list(string.ascii_lowercase)
+    return alphabet
 
 def get_ram_percentage():
     return int(str(psutil.virtual_memory().percent).split(".")[0])
@@ -17,6 +33,17 @@ def ram_under_threshold(threshold):
         return True
     return False
 
+def random_pause(n):
+    # Generate a random float between 0 and n
+    pause_time = random.uniform(0, n)
+    
+    # Pause the program for the generated random time
+    time.sleep(pause_time)
+    
+    # Optional: Return the pause time if you want to track it
+    return pause_time
+
+
 def list_chrome_instances():
     chrome_processes = []
     for process in psutil.process_iter(['pid', 'name']):
@@ -25,6 +52,7 @@ def list_chrome_instances():
     return chrome_processes
 
 def kill_chrome_instances():
+    '''NOTE: ASSUMES WINDOWS'''
     try:
         # Run the command to kill Chrome instances
         result = subprocess.run(['taskkill', '/F', '/IM', 'chrome.exe'], capture_output=True, text=True, check=True)
@@ -82,6 +110,9 @@ def generate_random_user_agent():
     user_agent = f"Mozilla/5.0 ({os}) {browser_template.format(version=version)}"
     
     return user_agent
+
+def data_string_cleaner():
+    '''THIS WILL BASICALLY GO THROUGH AND FIX SHIT THAT U WANT'''
 
 if __name__ == '__main__':
     pass

@@ -17,6 +17,18 @@ except:
     import colors_utilities
     import general_utilities
 
+def clear_input_field_by_xpath(driver, xpath, timeout=10):
+    try:
+        # Wait for the input field to be present and visible
+        input_field = WebDriverWait(driver, timeout).until(
+            EC.visibility_of_element_located((By.XPATH, xpath))
+        )
+        # Clear the input field
+        input_field.clear()
+        print(f"Input field cleared successfully at XPath: {xpath}")
+    except Exception as e:
+        print(f"Failed to clear the input field at XPath: {xpath}, Error: {e}")
+
 def enter_keys(driver, xpath, content_to_enter, time=10):
     input_field =  WebDriverWait(driver, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
     input_field.clear()

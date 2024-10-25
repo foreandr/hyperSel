@@ -72,12 +72,12 @@ def c_print(text, color="white"):
             for t, c in zip(text, color):
                 color_code = colors.get(c, colors["white"])
                 builtins.print(f"{color_code}{caller_function_name}: {t}{colors['white']}", end="")
-            builtins.print()  # Print a newline after all items
+            # builtins.print()  # Print a newline after all items
         else:
             color_code = colors.get(color, colors["white"])
             for t in text:
                 builtins.print(f"{color_code}{caller_function_name}: {t}{colors['white']}", end="")
-            builtins.print()  # Print a newline after all items
+            # builtins.print()  # Print a newline after all items
     else:
         color_code = colors.get(color, colors["white"])
         builtins.print(f"{color_code}{caller_function_name}: {text}{colors['white']}")
