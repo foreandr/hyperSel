@@ -1,3 +1,6 @@
+
+print("ADD A WAY TO SAY, THE LAST TIME I CRAWLED X URL WAS AT X TIME")
+print("THREADING DOESNT EXIST")
 1. change the headers to look like a google bot?
 2. bing bot etc try that
 
@@ -15,3 +18,8 @@
 
 6. maybe have some system that does an appraisal of a site?
     -  does it have apis? does it need browser, proxy, etc
+
+print("HSOULD be some wa to chekc the relevant apis we get from sniffing to see if compatible, so go through each one, see if it can be compared to stuff we know frmo title")
+print("OUTPUT IN CSV OR JSON OR WHATEVER")
+
+print("NOTE: this can be a wonderful function that takes in booleans, and the tag, and class/id name, the function can be abstracted out, and the soup")

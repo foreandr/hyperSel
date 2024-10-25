@@ -3,16 +3,13 @@ import re
 from urllib.parse import urlparse
 import asyncio
 import sys
+import time
 
-print("TODO: need to sepeate into sections,s o that the title, desc and so on nly work in the region they are relevnt, rn it looks the whole page")
-print("NOTE: this can be a wonderful function that takes in booleans, and the tag, and class/id name, the function can be abstracted out, and the soup")
 print("need to be able  to say, DO THIS X THING  BEFORE RUNNING THE SCRAPER AND GETTING THE DATA GAIN, LIKE, CLICK THIS BUTTON, OR TRY TO EXIT THIS THING ")
 print("FOR ABOVE I HAVE IN MIND, CLICK TO SCROLL, PORNHBU PAGINATION, WAIT 20S")
-print("OUTPUT IN CSV OR JSON OR WHATEVER")
-print("ADD A WAY TO SAY, THE LAST TIME I CRAWLED X URL WAS AT X TIME")
-print("-- if no soop is given from the root section, crawl the whole apge")
-print("HSOULD be some wa to chekc the relevant apis we get from sniffing to see if compatible, so go through each one, see if it can be compared to stuff we know frmo title")
-print("FIX RECURSION URLS NOT CHANIGN")
+print("LAST PIECE OF intermediate functionality")
+print("1: TURN ITSELF bakc on iff it erros")
+print("2: intermediate scroll actions, ^^")
 try:
     from . import playwright_utilites
     from . import colors_utilities
@@ -24,7 +21,6 @@ except:
     import colors_utilities
     import soup_utilities
     import log_utilities
-
 
 def extract_recursion_urls(soup, recursion_url_regex):
     html_content = str(soup)
@@ -105,7 +101,12 @@ def get_root_soups(wanted_data_format, soup):
 
 def run_scrapers(wanted_data_format, soup):
     extracted_data = []
-    root_soups = get_root_soups(wanted_data_format, soup)
+
+    try:
+        root_soups = get_root_soups(wanted_data_format, soup)
+    except Exception:
+        # print("NULL ROOT SECTION")
+        root_soups = [soup]
 
     for root_soup in root_soups:
         root_soup_data = process_sub_sections(root_soup, wanted_data_format)
@@ -148,35 +149,6 @@ def process_sub_sections(root_soup, wanted_data_format):
 
     return root_soup_data
 
-
-def run_scraper_for_data_type(data_type, root_soup, config):
-    log_utilities.checkpoint()
-    """
-    Function to run the scraper for a specific data type and return the result.
-    """
-    data_type_data = []
-
-    for scraper in config["scrapers"]:
-        func = scraper["function"]
-        args = scraper["args"]
-        args["soup"] = root_soup  # Add the soup (HTML content) to the scraper arguments
-
-        try:
-            result = func(**args)
-            if result:
-                data_type_data.extend(result) if config["multiple"] else data_type_data.append(result)
-        except Exception as e:
-            handle_scraping_error(e)
-
-    return data_type_data if config["multiple"] else (data_type_data[0] if data_type_data else None)
-
-
-def handle_scraping_error(error):
-    """
-    Function to handle scraping errors.
-    """
-    print(f"Error occurred during scraping: {error}")
-
 async def crawl_urls(crawl_struct):
     headless = crawl_struct["headless"]
     proxy = crawl_struct["proxy"]
@@ -187,7 +159,7 @@ async def crawl_urls(crawl_struct):
     recursion_url_regex = crawl_struct["recursion_url_regex"]
     stealthy = crawl_struct["stealthy"]
     num_threads = crawl_struct["num_threads"]
-    log_utilities.checkpoint(str_to_print="THREADING DOESNT EXIST")
+    
     full_screen = crawl_struct["full_screen"]
    
     random.shuffle(list_of_urls) if crawl_struct.get('random') else None
@@ -217,7 +189,7 @@ async def crawl_urls(crawl_struct):
             
     all_recursion_urls = list(set(filter(bool, all_recursion_urls)))
     await playwright_utilites.playwright_stop(playwright)
-    return all_extracted_data, all_recursion_urls
+    return all_extracted_data, list(set(all_recursion_urls))
 
 async def continuous_crawl(
     list_of_urls,
@@ -230,6 +202,7 @@ async def continuous_crawl(
     proxy=False,
     headless=True,
     max_recursions=None,
+    max_time=None,
     site_time_delay=None,
     stealthy=None,
     full_screen=True,
@@ -250,10 +223,21 @@ async def continuous_crawl(
     }
 
     visited_urls = []  # To keep track of visited URLs
+    visited_urls.extend(list_of_urls) # add the root urls
+
     all_crawled_data = []
     recursion_count = 0  # Initialize recursion count
+    start = time.time()
+    iters = 0 
+    while (max_recursions is None) or (recursion_count < max_recursions):
+        print("ITER", iters)
+        iters +=1
 
-    while max_recursions is None or recursion_count < max_recursions:
+
+        if (time.time()-start > max_time):
+            print("MAX TIME HIT BREAK")
+            break
+
         if max_recursions != None:
             print("recursion_count:", recursion_count)
         
@@ -262,40 +246,20 @@ async def continuous_crawl(
         all_crawled_data.extend(all_extracted_data)
         
         for url in all_recursion_urls:
-            if url not in visited_urls and url not in list_of_urls:
-                visited_urls.append(url)
+            if url not in visited_urls:
                 new_urls.append(url)
+            visited_urls.append(url)
 
-        # REPAR CRAWL STRUCT
-        log_utilities.checkpoint(str_to_print="CLEAN THE SOUPS OUT OF THE SCRAPERS")
-        '''
+        # REPLACE OLD URLS WITH NEW URLS
         crawl_struct["list_of_urls"] = new_urls
-        # Iterate over the values in 'crawl_struct["wanted_data_format"]'
-        for value in crawl_struct["wanted_data_format"].values():
 
-            # Iterate over each scraper in the 'scrapers' list within the current 'value'
-            for scraper in value["scrapers"]:
-
-                # Check if 'args' is a key in the current scraper and if 'soup' is a key in 'scraper["args"]'
-                if "args" in scraper and "soup" in scraper["args"]:
-
-                    # Update the 'soup' key in the 'args' dictionary, setting its value to None
-                    scraper["args"]["soup"] = None        
-        '''
         recursion_count += 1  # Increment recursion count
-
-        if new_urls == 0:
+        if len(new_urls) == 0:
             break
         
-    # print("visited_urls:", visited_urls)
-
     cleaned_data = clean_crawled_data(all_crawled_data)
     log_utilities.log_data(cleaned_data, file_name='data.json')
-
-    for i in visited_urls:
-        print(i)
-
-    colors_utilities.c_print(f"Reached maximum recursions (MAX={max_recursions}) or no more new URLs.", color='green')
+    colors_utilities.c_print(f"Reached maximum recursions (MAX={max_recursions}) or no more new URLs. Or time threshold ({time.time()-start})", color='green')
 
 def clean_single_item(data):
     """
@@ -378,7 +342,9 @@ def create_scraping_config(fields):
                 }
             ]
         }
-    
+    else:
+        scraping_config['root_section'] = None
+
     # Populate sub_sections with other fields (excluding "root")
     for field_name, field_data in fields.items():
         if field_name == "root_section":
@@ -436,7 +402,7 @@ def create_field_config(name, function, soup=None, tag=None, selector_name=None,
 
 # Assuming `continuous_crawl`, `create_scraping_config`, and `soup_utilities` are imported
 
-def crawl(list_of_urls, field_configs, recursion_url_regex, max_recursions=1, site_time_delay=8, headless=False):
+def crawl(list_of_urls, field_configs, recursion_url_regex, max_recursions=1, max_time=None, site_time_delay=8, headless=False):
     """
     Main crawl function that abstracts crawling logic.
     
@@ -462,6 +428,7 @@ def crawl(list_of_urls, field_configs, recursion_url_regex, max_recursions=1, si
                     wanted_data_format=config,
                     recursion_url_regex=recursion_url_regex,
                     max_recursions=max_recursions,
+                    max_time=max_time,
                     site_time_delay=site_time_delay,
                     headless=headless,
                 )
@@ -484,12 +451,13 @@ def main():
     # Example URLs (can be more dynamic in a real-world scenario)
     list_of_urls = [
         "https://podcasts.apple.com/us/podcast/lex-fridman-podcast/id1434243584",
-        #"https://podcasts.apple.com/us/podcast/modern-wisdom/id1347973549",
-        #"https://podcasts.apple.com/us/podcast/the-tim-ferriss-show/id863897795",
+        "https://podcasts.apple.com/us/podcast/modern-wisdom/id1347973549",
+        "https://podcasts.apple.com/us/podcast/the-tim-ferriss-show/id863897795",
 
     ]
     
     # USER-DEFINED FIELD CONFIGURATIONS
+    
     root_config = create_field_config(
         name="root_section",
         function=soup_utilities.get_full_soup_by_tag_and_class,
@@ -497,6 +465,7 @@ def main():
         selector_name="svelte-8rlk6b",
         single=False
     )
+    
 
     title_config = create_field_config(
         name="title",
@@ -523,6 +492,7 @@ def main():
     )
 
     # Combine all user-defined field configs
+    # 
     field_configs = {**root_config, **title_config, **description_config, **url_config}
     
     # Recursion regex pattern
@@ -533,7 +503,8 @@ def main():
         list_of_urls=list_of_urls,
         field_configs=field_configs,
         recursion_url_regex=recursion_url_regex,
-        max_recursions=1,
+        max_recursions=3,
+        max_time=30,
         site_time_delay=8,
         headless=False,
     )

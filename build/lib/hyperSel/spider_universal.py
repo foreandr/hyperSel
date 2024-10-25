@@ -2,7 +2,17 @@ import random
 import re
 from urllib.parse import urlparse
 import asyncio
+import sys
 
+print("TODO: need to sepeate into sections,s o that the title, desc and so on nly work in the region they are relevnt, rn it looks the whole page")
+print("NOTE: this can be a wonderful function that takes in booleans, and the tag, and class/id name, the function can be abstracted out, and the soup")
+print("need to be able  to say, DO THIS X THING  BEFORE RUNNING THE SCRAPER AND GETTING THE DATA GAIN, LIKE, CLICK THIS BUTTON, OR TRY TO EXIT THIS THING ")
+print("FOR ABOVE I HAVE IN MIND, CLICK TO SCROLL, PORNHBU PAGINATION, WAIT 20S")
+print("OUTPUT IN CSV OR JSON OR WHATEVER")
+print("ADD A WAY TO SAY, THE LAST TIME I CRAWLED X URL WAS AT X TIME")
+print("-- if no soop is given from the root section, crawl the whole apge")
+print("HSOULD be some wa to chekc the relevant apis we get from sniffing to see if compatible, so go through each one, see if it can be compared to stuff we know frmo title")
+print("FIX RECURSION URLS NOT CHANIGN")
 try:
     from . import playwright_utilites
     from . import colors_utilities
@@ -59,8 +69,12 @@ async def crawl_single_url(
 
     # Step 3: Extract the required data using the scrapers
     extracted_data = run_scrapers(wanted_data_format, soup)
-    
-    # Step 4: Return the extracted data and recursion URLs
+
+    # Step 4: add root url to data for clarity
+    for i in extracted_data:
+        i['root_url'] = url
+
+    # Step 5: Return the extracted data and recursion URLs
     return extracted_data, recursion_urls
 
 def get_root_soups(wanted_data_format, soup):
@@ -91,12 +105,17 @@ def get_root_soups(wanted_data_format, soup):
 
 def run_scrapers(wanted_data_format, soup):
     extracted_data = []
-    root_soups = get_root_soups(wanted_data_format, soup)
+
+    try:
+        root_soups = get_root_soups(wanted_data_format, soup)
+    except Exception as e:
+        print("NO ROOT PASSED, DOING WHOLE SOUP")
+        root_soups = [soup]
 
     for root_soup in root_soups:
         root_soup_data = process_sub_sections(root_soup, wanted_data_format)
         extracted_data.append(root_soup_data)   
-    
+
     return extracted_data
 
 def single_crawl_sub_section(root_soup, var_scraper):
@@ -114,12 +133,23 @@ def single_crawl_sub_section(root_soup, var_scraper):
     
 def process_sub_sections(root_soup, wanted_data_format):
     """
-    Function to process a single root_soup and return the extracted data.
+    Function to process a single root_soup and return the extracted data in a flat dictionary format.
+    
+    Example Output:
+    {
+        "title": "Title of the Episode",
+        "root_url": "https://podcasts.apple.com/us/podcast/lex-fridman-podcast/id1434243584"
+    }
     """
-    root_soup_data = []
+    # Define the result as a flat dictionary
+    root_soup_data = {}
+
+    # Loop through each entry in the wanted data format
     for var_name, var_scraper in wanted_data_format['sub_sections'].items():
         result_data = single_crawl_sub_section(root_soup, var_scraper)
-        root_soup_data.append({var_name:result_data})
+        
+        # Add to the dictionary directly with var_name as key
+        root_soup_data[var_name] = result_data
 
     return root_soup_data
 
@@ -183,6 +213,7 @@ async def crawl_urls(crawl_struct):
                 full_screen,
                 
                 )
+   
 
             all_extracted_data.extend(extracted_data)
             all_recursion_urls.extend(recursion_urls)
@@ -262,36 +293,63 @@ async def continuous_crawl(
             break
         
     # print("visited_urls:", visited_urls)
+
     cleaned_data = clean_crawled_data(all_crawled_data)
-    for i in cleaned_data:
-        print(i)
-        print("="*100)
+    log_utilities.log_data(cleaned_data, file_name='data.json')
 
     for i in visited_urls:
         print(i)
-        print("--")
 
-    colors_utilities.c_print(f"Reached maximum recursions ({max_recursions}) or no more new URLs.", color='green')
+    colors_utilities.c_print(f"Reached maximum recursions (MAX={max_recursions}) or no more new URLs.", color='green')
 
 def clean_single_item(data):
-    cleaned_data = []
+    """
+    Cleans each string in the input data dictionary by replacing or removing 
+    non-ASCII characters.
     
-    # Loop through each dictionary in the data list (there should only be one)-> [{}]
-    for item in data:
-        cleaned_item = {}
-        for key, value in item.items():
-            if isinstance(value, str):
-                value = value.replace("\xa0", " ").replace("\n", " ").strip()
-            cleaned_item[key] = value
-        cleaned_data.append(cleaned_item)
+    :param data: Dictionary containing the data to clean.
+    :return: A cleaned dictionary with normalized ASCII text.
+    """
+    def normalize_text(value):
+        """Normalize non-ASCII characters to ASCII equivalents or remove them."""
+        replacements = {
+            "\u2013": "-",  # En dash to ASCII hyphen
+            "\u2014": "-",  # Em dash to ASCII hyphen
+            "\u2018": "'",  # Left single quote to ASCII single quote
+            "\u2019": "'",  # Right single quote to ASCII single quote
+            "\u201c": '"',  # Left double quote to ASCII double quote
+            "\u201d": '"',  # Right double quote to ASCII double quote
+            "\xa0": " ",    # Non-breaking space to regular space
+            "\n": " ",      # Newline to space
+            "\t": " "       # Tab to space
+        }
+        
+        # Replace known non-ASCII characters
+        for char, replacement in replacements.items():
+            value = value.replace(char, replacement)
+        
+        # Remove any remaining non-ASCII characters
+        value = ''.join([ch if ord(ch) < 128 else '' for ch in value])
+        
+        return value.strip()
+
+    # Initialize a single cleaned dictionary
+    cleaned_data = {}
+    
+    # Loop through each key-value pair in the data dictionary
+    for key, value in data.items():
+        if isinstance(value, str):
+            value = normalize_text(value)
+        cleaned_data[key] = value
 
     return cleaned_data
 
 def clean_crawled_data(all_data_raw):
+    # print("all_data_raw:", all_data_raw)
     cleaned_data = []
     for data in all_data_raw:
-        cleaned_data.append(clean_single_item(data))
 
+        cleaned_data.append(clean_single_item(data))
     return cleaned_data
 
 def create_scraping_config(fields):
@@ -381,21 +439,62 @@ def create_field_config(name, function, soup=None, tag=None, selector_name=None,
         }
     }
 
-if __name__ == "__main__":
+# Assuming `continuous_crawl`, `create_scraping_config`, and `soup_utilities` are imported
 
-    print("TODO: need to sepeate into sections,s o that the title, desc and so on nly work in the region they are relevnt, rn it looks the whole page")
+def crawl(list_of_urls, field_configs, recursion_url_regex, max_recursions=1, site_time_delay=8, headless=False):
+    """
+    Main crawl function that abstracts crawling logic.
+    
+    Arguments:
+    - list_of_urls: List of URLs to start the crawling from.
+    - field_configs: A dictionary of field configurations (how to extract data).
+    - recursion_url_regex: Regex pattern for finding URLs to recurse into.
+    - max_recursions: Maximum recursion depth for crawling.
+    - site_time_delay: Delay between requests to avoid overwhelming the server.
+    - headless: Boolean to run in headless browser mode (if using a browser for crawling).
+    
+    This function handles everything else.
+    """
+    # Convert field configs to the format needed by the scraper
+    config = create_scraping_config(field_configs)
+
+    # Internal function to run the crawl and handle Ctrl+C
+    def run_crawler():
+        try:
+            asyncio.run(
+                continuous_crawl(
+                    list_of_urls=list_of_urls,
+                    wanted_data_format=config,
+                    recursion_url_regex=recursion_url_regex,
+                    max_recursions=max_recursions,
+                    site_time_delay=site_time_delay,
+                    headless=headless,
+                )
+            )
+        except KeyboardInterrupt:
+            print("\nCtrl+C detected.")
+            user_input = input("Do you want to stop the program? (y/n): ").lower()
+            if user_input == 'y':
+                print("Exiting the program.")
+                sys.exit(0)  # Exit the program
+            else:
+                print("Resuming crawling...")
+                run_crawler()
+
+    # Start the crawl
+    run_crawler()
+
+# Example user-provided field configurations
+def main():
+    # Example URLs (can be more dynamic in a real-world scenario)
     list_of_urls = [
         "https://podcasts.apple.com/us/podcast/lex-fridman-podcast/id1434243584",
         #"https://podcasts.apple.com/us/podcast/modern-wisdom/id1347973549",
         #"https://podcasts.apple.com/us/podcast/the-tim-ferriss-show/id863897795",
+
     ]
     
-    print("NOTE: this can be a wonderful function that takes in booleans, and the tag, and class/id name, the function can be abstracted out, and the soup")
-    print("need to be able  to say, DO THIS X THING  BEFORE RUNNING THE SCRAPER AND GETTING THE DATA GAIN, LIKE, CLICK THIS BUTTON, OR TRY TO EXIT THIS THING ")
-    print("FOR ABOVE I HAVE IN MIND, CLICK TO SCROLL, PORNHBU PAGINATION, WAIT 20S")
-    print("OUTPUT IN CSV OR JSON OR WHATEVER")
-    print("ADD A WAY TO SAY, THE LAST TIME I CRAWLED X URL WAS AT X TIME")
-    print("-- if no soop is given from the root section, crawl the whole apge")
+    # USER-DEFINED FIELD CONFIGURATIONS
     root_config = create_field_config(
         name="root_section",
         function=soup_utilities.get_full_soup_by_tag_and_class,
@@ -419,6 +518,7 @@ if __name__ == "__main__":
         single=False,
         index=1
     )
+
     url_config = create_field_config(
         name="url",
         function=soup_utilities.get_href_by_tag_and_class,
@@ -427,22 +527,21 @@ if __name__ == "__main__":
         needed=True
     )
 
-    # Combine configurations without needing to specify names again
-    fields = {**root_config, **title_config, **description_config, **url_config}
-    config = create_scraping_config(fields)
-    recursion_url_regex = r'https:\/\/podcasts\.apple\.com\/[a-z]{2}\/podcast\/[a-zA-Z0-9\-]+\/id\d+'
+    # Combine all user-defined field configs
+    field_configs = {**root_config, **title_config, **description_config, **url_config}
+    
+    # Recursion regex pattern
+    recursion_url_regex = r'https:\/\/podcasts\.apple\.com\/[a-z]{2}\/podcast\/[a-zA-Z\-]+\/id\d+'
 
-    asyncio.run(
-        continuous_crawl(
-            list_of_urls=list_of_urls,
-            wanted_data_format=config,
-            recursion_url_regex=recursion_url_regex,
-            max_recursions=1,
-            site_time_delay=8,
-            headless=False,
-            
-        )
+    # Call the crawl function, passing the user-defined fields and options
+    crawl(
+        list_of_urls=list_of_urls,
+        field_configs=field_configs,
+        recursion_url_regex=recursion_url_regex,
+        max_recursions=1,
+        site_time_delay=8,
+        headless=False,
     )
 
-    # HSOULD be some wa to chekc the relevant apis we get from sniffing to see if compatible, so go through each one, see if it can be compared to stuff we know frmo title
-    pass
+if __name__ == "__main__":
+    main()

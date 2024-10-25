@@ -5,6 +5,7 @@ import string
 import random
 from screeninfo import get_monitors
 import time
+from difflib import SequenceMatcher
 
 try:
     from . import colors_utilities
@@ -13,6 +14,16 @@ except:
     import colors_utilities
 
 
+
+def get_similarity_ratio(str1, str2):
+    """
+    Returns the similarity ratio between two strings using difflib's SequenceMatcher.
+    
+    :param str1: First string to compare
+    :param str2: Second string to compare
+    :return: Similarity ratio as a float between 0.0 and 1.0
+    """
+    return SequenceMatcher(None, str1, str2).ratio()
 
 def get_display_dimensions():
     # Get the primary monitor or the first monitor in the list

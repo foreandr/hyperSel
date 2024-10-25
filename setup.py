@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Setup configuration
 setup(
     name="hyperSel",
-    version=3.6,  # Version number should be a string
+    version=3.8,  # Version number should be a string
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description
