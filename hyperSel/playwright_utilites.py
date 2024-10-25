@@ -14,8 +14,7 @@ except:
     import colors_utilities
 
 
-global hyperSelProxies
-# hyperSelProxies = None
+hyperSelProxies = None
 
 async def create_playwright(proxy=False):
     global hyperSelProxies
@@ -36,24 +35,37 @@ async def create_playwright(proxy=False):
         colors_utilities.c_print(text=f"Error starting Playwright: {e}", color='red')
         return None
 
-async def playwright_go_to_page(playwright, url, headless=True, max_attempts=5, use_proxy=False, stealthy=None, site_time_delay=10):
+async def playwright_go_to_page(playwright, url, headless=True, max_attempts=5, use_proxy=False, stealthy=None, site_time_delay=10, full_screen=False):
+    global hyperSelProxies
     if not use_proxy:
-        browser = await playwright.chromium.launch(
-            headless=headless,
-        )
+        launch_options = {
+            "headless": headless
+        }
 
+        # Add the --start-maximized argument if full_screen is True
+
+        
+
+        browser = await playwright.chromium.launch(**launch_options)
+        
         context_options = {
             "user_agent": general_utilities.generate_random_user_agent()
         }
+       
 
         context = await browser.new_context(**context_options)
+        
         page = await context.new_page()
+        if full_screen:
+            width = general_utilities.get_display_dimensions()['width']
+            height = general_utilities.get_display_dimensions()['height']
+            await page.set_viewport_size({"width": width, "height": height})
 
+        
         try:
             try:
                 await asyncio.wait_for(page.goto(url, timeout=site_time_delay*1000), timeout=site_time_delay)  # Wait for navigation with a 10-second max
             except asyncio.TimeoutError:
-                # print(f"Navigation to {url} timed out, attempting to fetch content...")
                 pass
 
             page_content = await page.content()
@@ -78,10 +90,16 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=5, 
                     "server": proxy['server']
                 } if proxy else None
 
-                browser = await playwright.chromium.launch(
-                    headless=headless,
-                    proxy=proxy_options
-                )
+                launch_options = {
+                    "headless": headless,
+                    "proxy": proxy_options
+                }
+
+                # Add the --start-maximized argument if full_screen is True
+                if full_screen:
+                    launch_options["args"] = ['--start-maximized']
+
+                browser = await playwright.chromium.launch(**launch_options)
 
                 context_options = {
                     "user_agent": general_utilities.generate_random_user_agent()
@@ -90,18 +108,16 @@ async def playwright_go_to_page(playwright, url, headless=True, max_attempts=5, 
                 context = await browser.new_context(**context_options)
                 page = await context.new_page()
                 await page.goto(url, timeout=site_time_delay*1000)  # 5 seconds timeout
-                time.sleep(site_time_delay/2)
+                time.sleep(site_time_delay / 2)
                 soup = await playwright_get_soup_from_page(page)
                 
                 if len(str(soup)) < 75:
-                    # print("BLOCKED CONTINUE.. len(soup):", len(str(soup)))
                     await browser.close()
                     continue
                 
                 return browser, page
 
             except Exception as e:
-                # print(f"Attempt {attempt + 1}: Navigation failed with proxy {proxy_choice}: {e}")
                 hyperSelProxies.current_proxies.remove(proxy_choice)
                 await browser.close()
                 continue
@@ -119,7 +135,7 @@ async def playwright_get_soup_from_page(page):
         return soup
         
 
-async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=False, site_time_delay=0, stealthy=False):
+async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=False, site_time_delay=0, stealthy=False, full_screen=False):
     browser, page = await playwright_go_to_page(
         playwright, 
         url, 
@@ -127,6 +143,7 @@ async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=Fals
         use_proxy=proxy,
         site_time_delay=site_time_delay,
         stealthy=stealthy,
+        full_screen=full_screen,
         
     )
     
@@ -135,8 +152,12 @@ async def playwright_get_soup_from_url(playwright, url, headless=True,proxy=Fals
     return soup
     
 async def playwright_stop(playwright):
-    await playwright.stop()
-    hyperSelProxies.stop_threads_and_exit()
+    try:
+        global hyperSelProxies
+        await playwright.stop()
+        hyperSelProxies.stop_threads_and_exit()
+    except Exception as e:
+        pass
     
 if __name__ == '__main__':
     pass

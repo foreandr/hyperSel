@@ -6,7 +6,6 @@ try:
 except:
     import general_utilities
 
-
 def get_soup(url, extra_headers=None, proxy=None):
     # Headers
     headers = {

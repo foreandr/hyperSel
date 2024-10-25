@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Setup configuration
 setup(
     name="hyperSel",
-    version=2.59,  # Version number should be a string
+    version=3.2,  # Version number should be a string
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description
@@ -26,6 +26,7 @@ setup(
         "psutil",
         "playwright",
         "undetected-playwright",
+        "screeninfo"
     ],
     include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
     url="https://github.com/foreandr/hyperSel",  # URL to the project (optional, but useful for PyPI)

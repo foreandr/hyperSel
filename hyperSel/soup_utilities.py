@@ -1,5 +1,48 @@
 import re
 
+def get_href_by_tag_and_class(soup, tag, class_name, single=True, index=None):
+    """
+    Function to extract the href attribute from an <a> tag (or any tag) with a specified class.
+    """
+    try:
+        if single:
+            # Find the first element with the given tag and class
+            element = soup.find(tag, class_=class_name)
+            if element and element.has_attr('href'):
+                return element['href']  # Return the href attribute
+            return None
+        else:
+            # Find all elements with the given tag and class
+            elements = soup.find_all(tag, class_=class_name)
+            hrefs = [element['href'] for element in elements if element.has_attr('href')]
+            
+            if index is not None and 0 <= index < len(hrefs):
+                return hrefs[index]
+            elif index is None:
+                return hrefs
+            else:
+                return None
+    except Exception as e:
+        return None
+
+def get_full_soup_by_tag_and_class(soup, tag, class_name, single=True):
+    try:
+        if single:
+            # Find the first element with the given tag and class
+            element = soup.find(tag, class_=class_name)
+            if element:
+                return element  # Return the full soup element without extracting the text
+            return None
+        else:
+            # Find all elements with the given tag and class
+            elements = soup.find_all(tag, class_=class_name)
+            if elements:
+                return elements  # Return the list of soup elements without extracting text
+            return None
+    except Exception as e:
+        return None
+
+
 def get_text_by_tag_and_class(soup, tag, class_name, single=True, index=None, regex_pattern=None):
     try:
         if single:

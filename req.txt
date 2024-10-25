@@ -9,3 +9,4 @@ psutil
 playwright
 undetected-playwright
 setuptools
+screeninfo
