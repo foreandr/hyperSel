@@ -3,8 +3,11 @@ from bs4 import BeautifulSoup
 
 try:
     from . import general_utilities
+    from . import colors_utilities
+    
 except:
     import general_utilities
+    import colors_utilities
 
 def get_soup(url, extra_headers=None, proxy=None):
     # Headers

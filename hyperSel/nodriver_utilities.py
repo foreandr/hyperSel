@@ -2,6 +2,7 @@ import nodriver as nd
 from bs4 import BeautifulSoup
 import time
 import random
+import asyncio
 
 try:
     from . import general_utilities
@@ -16,12 +17,20 @@ except:
 global hyperSelProxies
 hyperSelProxies = None
 
-async def get_site_soup(browser, site, wait=0.5):
-    page = await browser.get(site)
-    time.sleep(wait)
-    content = await page.get_content()
-    soup = BeautifulSoup(content, 'html.parser')
-    return soup
+# Async functions
+async def asyc_open_browser():
+    browser = await open_nodriver(headless=False, proxy=None, max_attempts=3)
+    return browser
+
+def open_browser():
+    return asyncio.run(asyc_open_browser())
+
+async def async_go_to_site(browser, url):
+    page = await browser.get(url=url)
+    return page
+
+def go_to_site(browser, url):
+    return asyncio.run(async_go_to_site(browser, url))
 
 async def open_nodriver(headless=False, proxy=None, max_attempts=3):
     global hyperSelProxies

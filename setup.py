@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Setup configuration
 setup(
     name="hyperSel",
-    version=3.9,  # Version number should be a string
+    version="3.9",  # Version number should be a string
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description
@@ -29,6 +29,9 @@ setup(
         "screeninfo"
     ],
     include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
+    package_data={
+        "hypersel": ["data/*.csv"]  # Include all CSV files in the hypersel/data directory
+    },
     url="https://github.com/foreandr/hyperSel",  # URL to the project (optional, but useful for PyPI)
     classifiers=[  # Optional: Classifiers to categorize your project
         "Programming Language :: Python :: 3",

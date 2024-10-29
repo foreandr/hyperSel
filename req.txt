@@ -10,3 +10,4 @@ playwright
 undetected-playwright
 setuptools
 screeninfo
+customtkinter

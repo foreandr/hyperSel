@@ -23,3 +23,9 @@ print("HSOULD be some wa to chekc the relevant apis we get from sniffing to see 
 print("OUTPUT IN CSV OR JSON OR WHATEVER")
 
 print("NOTE: this can be a wonderful function that takes in booleans, and the tag, and class/id name, the function can be abstracted out, and the soup")
+
+CREATE A SINGLE ISNTANCE RUN OF PLAYWRIGHT SO IT'S OBVIOUS, EVEN WRAP THE FUNC IN THE ASYNC CALL SO USER DOESNT HAVE TO SEE IT?\
+
+need some tooling for crawling maps
+
+ROBOTICS SOLUTION FOR CAPTCHA MOUSE CLICKS? SELL robotics bots, plug in  by USb
