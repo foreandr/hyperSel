@@ -1,3 +1,4 @@
+MANIFEST.in
 README.md
 setup.py
 hyperSel/__init__.py
@@ -6,6 +7,7 @@ hyperSel/data_utiliites.py
 hyperSel/general_utilities.py
 hyperSel/log_utilities.py
 hyperSel/nodriver_utilities.py
+hyperSel/notification_utilities.py
 hyperSel/playwright_utilites.py
 hyperSel/proxies_utilities.py
 hyperSel/regex_utilites.py
@@ -16,8 +18,11 @@ hyperSel/soup_utilities.py
 hyperSel/spider_universal.py
 hyperSel/spider_utilities.py
 hyperSel/test_utilities.py
+hyperSel/ui_utilities.py
 hyperSel.egg-info/PKG-INFO
 hyperSel.egg-info/SOURCES.txt
 hyperSel.egg-info/dependency_links.txt
 hyperSel.egg-info/requires.txt
 hyperSel.egg-info/top_level.txt
+hypersel/data/cities_can.csv
+hypersel/data/cities_us.csv

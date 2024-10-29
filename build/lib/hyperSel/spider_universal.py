@@ -4,12 +4,18 @@ from urllib.parse import urlparse
 import asyncio
 import sys
 import time
+import os
 
-print("need to be able  to say, DO THIS X THING  BEFORE RUNNING THE SCRAPER AND GETTING THE DATA GAIN, LIKE, CLICK THIS BUTTON, OR TRY TO EXIT THIS THING ")
-print("FOR ABOVE I HAVE IN MIND, CLICK TO SCROLL, PORNHBU PAGINATION, WAIT 20S")
-print("LAST PIECE OF intermediate functionality")
-print("1: TURN ITSELF bakc on iff it erros")
-print("2: intermediate scroll actions, ^^")
+current_directory = os.getcwd()
+print("HOME MACHINE DEBUGGING")
+if current_directory == r"C:\Users\forea\Documents\!CrawlingWork\hypersel\hypersel":
+    # if current_directory == "C:\Users\forea\Documents\!CrawlingWork\hyperSel\hyperSel\spider_universal.py"
+    print("need to be able  to say, DO THIS X THING  BEFORE RUNNING THE SCRAPER AND GETTING THE DATA GAIN, LIKE, CLICK THIS BUTTON, OR TRY TO EXIT THIS THING ")
+    print("FOR ABOVE I HAVE IN MIND, CLICK TO SCROLL, PORNHBU PAGINATION, WAIT 20S")
+    print("LAST PIECE OF intermediate functionality")
+    print("1: TURN ITSELF bakc on iff it erros")
+    print("2: intermediate scroll actions, ^^")
+
 try:
     from . import playwright_utilites
     from . import colors_utilities
@@ -447,4 +453,5 @@ def crawl(list_of_urls, field_configs, recursion_url_regex, max_recursions=1, ma
     run_crawler()
 
 if __name__ == "__main__":
+    print(11)
     pass

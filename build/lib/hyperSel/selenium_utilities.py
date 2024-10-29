@@ -207,14 +207,25 @@ def go_to_site(driver, site, tries=10):
         
     colors_utilities.c_print("FAILED TO GO TO SITE AFTER N TRIES")
     return False
-            
-def open_site_selenium(site, show_browser=True, random_agent=False):
+
+def select_multiple_elements_by_class(driver, class_name, timeout=10):
+    try:
+        # Wait for the elements to be present and visible
+        elements = WebDriverWait(driver, timeout).until(
+            EC.presence_of_all_elements_located((By.CLASS_NAME, class_name))
+        )
+        return elements
+    except Exception as e:
+        colors_utilities.c_print(f"Elements not found or couldn't be interacted with: {e}")
+        return []
+
+def open_site_selenium(site, show_browser=True):
     options = Options()
     if not show_browser:
         options.add_argument("--headless") # Run in headless mode
 
-    if random_agent:
-        options.add_argument(f"--user-agent={general_utilities.generate_random_user_agent()}")
+ 
+    options.add_argument(f"--user-agent={general_utilities.generate_random_user_agent()}")
 
     driver = webdriver.Chrome(options=options)
     go_to_site(driver, site)
