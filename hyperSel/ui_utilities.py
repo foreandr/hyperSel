@@ -12,7 +12,7 @@ ctk.set_default_color_theme("blue")
 
 CONFIG = {
     'string_max': 40,
-    'entries_per_page': 89  # Number of entries to display per page
+    'entries_per_page': 8  # Number of entries to display per page
 }
 
 class GUI(ctk.CTk):
@@ -68,9 +68,34 @@ class GUI(ctk.CTk):
         filter_label.pack(anchor="w", padx=10, pady=5)
 
         # Placeholder filter labels (Add actual functionality as needed)
-        for key in ["Title", "Description", "Date", "Author"]:  # Example filters
-            placeholder_filter = ctk.CTkLabel(filter_frame, text=f"{key} Filter", anchor="w")
-            placeholder_filter.pack(anchor="w", padx=10, pady=2)
+
+
+
+        # Store references to buttons and states
+        self.filter_buttons = {}  # To store the button references
+        self.active_filters = {}  # To store the active/inactive states
+
+        # Ensure data is available
+        if self.data_entries:
+            json_keys = self.data_entries[0].keys()  # Get keys from the first entry
+            for key in json_keys:
+                # Initialize each filter as inactive
+                self.active_filters[key] = False  # Track active/inactive state
+                
+                # Create a toggle button for each key
+                toggle_button = ctk.CTkButton(
+                    filter_frame,
+                    text=f"{key.capitalize()} Filter",
+                    width=150,
+                    fg_color="gray",  # Start with inactive color
+                    command=lambda k=key: self.toggle_filter(k)
+                )
+                toggle_button.pack(anchor="w", padx=10, pady=2)
+                
+                # Store the button reference
+                self.filter_buttons[key] = toggle_button
+
+
 
         # --------------- Pagination Controls ---------------
 
@@ -116,6 +141,22 @@ class GUI(ctk.CTk):
         """Returns the current page label text in the format 'Page X of Y'."""
         total_pages = (len(self.data_entries) - 1) // CONFIG['entries_per_page'] + 1
         return f"Page {self.current_page + 1} of {total_pages}"
+
+
+    def toggle_filter(self, key):
+        """Toggles the filter's active state and updates button appearance."""
+        button = self.filter_buttons[key]
+        
+        # Toggle the color based on the current state
+        if self.active_filters[key]:  # If currently active
+            button.configure(fg_color="gray")  # Set to inactive color (gray)
+            self.active_filters[key] = False
+        else:
+            button.configure(fg_color="#1f6aa5")  # Set to active color to match the default button blue color
+            self.active_filters[key] = True
+
+        # Refresh the display with the active filters
+        self.display_page()
 
     def display_page(self):
         """Displays entries for the current page."""
