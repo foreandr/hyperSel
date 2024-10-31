@@ -2,6 +2,7 @@ import os
 import inspect
 import datetime
 import json
+from bs4 import BeautifulSoup
 
 try:
     from . import colors_utilities
@@ -49,13 +50,35 @@ def log_function(log_string, msg_type='test', session_user="", function_name="")
         with open(f'{file}{location_logger}.txt', 'a+', encoding='utf-8') as f:
             f.write(err_string)
 
-def log_data(data_object, file_name='crawl_data.json'):
-
+def load_file_as_soup(file_path):
     """
-    Logs data objects to a JSON file in a single 'logs' directory, avoiding duplicates.
+    Load a text file from the given path and parse it as a BeautifulSoup object.
+    
+    Parameters:
+        file_path (str): The path to the text file.
+        
+    Returns:
+        BeautifulSoup: Parsed content of the file.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        soup = BeautifulSoup(content, 'html.parser')  # Adjust parser as needed
+        return soup
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        return None
+
+
+def log_data(data_object, file_name='crawl_data.json', unique_criterion=None, verbose=True):
+    """
+    Logs data objects to a JSON file in a 'logs' directory, avoiding duplicates based on a unique criterion.
+    Updates 'recent_scrape_time' for existing entries with the same unique criterion.
     
     :param data_object: A dictionary or list of dictionaries to be logged.
-    :param file_name: The name of the JSON file for logging (default: 'data.json').
+    :param file_name: The name of the JSON file for logging (default: 'crawl_data.json').
+    :param unique_criterion: The field used to check for duplicates (e.g., 'url').
+    :param verbose: If True, prints information on logging operations.
     """
     # Define the base directory and log path
     base_dir = "./logs/"
@@ -65,7 +88,6 @@ def log_data(data_object, file_name='crawl_data.json'):
     try:
         check_and_save_dir(base_dir)
     except:
-        # Fallback if the logs directory creation fails
         base_dir = "../logs/"
         log_path = os.path.join(base_dir, file_name)
         check_and_save_dir(base_dir)
@@ -73,6 +95,11 @@ def log_data(data_object, file_name='crawl_data.json'):
     # Ensure data_object is a list for consistent handling
     if isinstance(data_object, dict):
         data_object = [data_object]  # Wrap single dict in list
+
+    # Add 'recent_scrape_time' to each data object
+    recent_scrape_time = datetime.datetime.now().isoformat()
+    for item in data_object:
+        item["recent_scrape_time"] = recent_scrape_time
 
     # Load existing data from the JSON file if it exists
     if os.path.exists(log_path):
@@ -84,17 +111,45 @@ def log_data(data_object, file_name='crawl_data.json'):
     else:
         existing_data = []
 
-    # Remove duplicates between new data and existing data
-    new_data = [item for item in data_object if item not in existing_data]
+    # Backup existing log file
+    if os.path.exists(log_path):
+        backup_path = log_path + '.bak'
+        with open(log_path, 'r', encoding='utf-8') as original, open(backup_path, 'w', encoding='utf-8') as backup:
+            backup.write(original.read())
+        if verbose:
+            print(f"Backup of {file_name} created at {backup_path}")
 
-    # Only append if there's new data
-    if new_data:
-        existing_data.extend(new_data)  # Add new unique data to existing data
-        with open(log_path, 'w', encoding='utf-8') as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=4)
-        print(f"Logged {len(new_data)} new entries to {log_path}.")
-    else:
-        print("No new data to log. Duplicates found.")
+    # Process new data with deduplication based on unique_criterion
+    new_entries = []
+    for item in data_object:
+        is_duplicate = False
+
+        if unique_criterion:
+            # Check if item with same unique criterion value exists
+            for existing_item in existing_data:
+                if existing_item.get(unique_criterion) == item.get(unique_criterion):
+                    # Update 'recent_scrape_time' for existing entry
+                    existing_item["recent_scrape_time"] = item["recent_scrape_time"]
+                    is_duplicate = True
+                    break
+
+        # Append item if it's not a duplicate
+        if not is_duplicate:
+            new_entries.append(item)
+
+    # Append new entries to existing data
+    updated_data = existing_data + new_entries
+
+    # Write the updated data back to the log file
+    with open(log_path, 'w', encoding='utf-8') as f:
+        json.dump(updated_data, f, ensure_ascii=False, indent=4)
+
+    if verbose:
+        if new_entries:
+            print(f"Logged {len(new_entries)} new entries to {file_name}.")
+        else:
+            print("No new entries added; only updated existing entries.")
+
 
 def checkpoint(pause=False, str_to_print=None):
     global GLOBAL_CHECKPOINT

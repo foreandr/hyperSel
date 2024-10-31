@@ -29,3 +29,7 @@ CREATE A SINGLE ISNTANCE RUN OF PLAYWRIGHT SO IT'S OBVIOUS, EVEN WRAP THE FUNC I
 need some tooling for crawling maps
 
 ROBOTICS SOLUTION FOR CAPTCHA MOUSE CLICKS? SELL robotics bots, plug in  by USb
+
+all data needs to be in a .py file and the crawl file, and onload do both, because the data here wont be in thier EXE, BUT WE CAN give them the py
+
+log data needs to be RPLEACING dtaa
