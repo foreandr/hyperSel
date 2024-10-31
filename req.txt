@@ -11,3 +11,4 @@ undetected-playwright
 setuptools
 screeninfo
 customtkinter
+pillow

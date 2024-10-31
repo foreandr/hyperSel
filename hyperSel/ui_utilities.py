@@ -2,6 +2,9 @@ import customtkinter as ctk
 import json
 import webbrowser
 import re
+from PIL import Image
+import requests
+from io import BytesIO
 
 # Initialize the main application window
 ctk.set_appearance_mode("dark")
@@ -16,7 +19,10 @@ class App(ctk.CTk):
     def __init__(self, path="./logs/crawl_data.json"):
         super().__init__()
         self.title("Dynamic Column Viewer")
-        self.geometry("1450x700")  # Default window size, resizable
+        #self.geometry("1450x700")  # Default window size, resizable
+        # self.state("zoomed")  # Maximizes the window on load
+        self.after(100, lambda: self.state("zoomed"))
+
         self.current_page = 0  # Track the current page index
 
         # Load data from the specified path
@@ -84,25 +90,69 @@ class App(ctk.CTk):
 
         for idx in range(start_idx, end_idx):
             entry = self.data_entries[idx]
-            background_color = "#333333" if idx % 2 == 0 else "#444444"  # Alternate colors
+            background_color = "#333333"  # Alternate colors
 
-            # Frame for each entry with background color
-            entry_frame = ctk.CTkFrame(self.data_frame, corner_radius=10, fg_color=background_color)
-            entry_frame.pack(fill="x", padx=5, pady=5)  # Full width within Data column
+            # Frame for each entry with background color and added border
+            entry_frame = ctk.CTkFrame(self.data_frame, corner_radius=10, fg_color=background_color, border_width=2, border_color="#555555")
+            entry_frame.pack(fill="x", padx=10, pady=10)  # Increased padding for stronger delineation
 
             # Display each field in the entry
             for field, data in entry.items():
+                if field == "root_url":
+                    continue  # Skip displaying root_url link
+                
                 if isinstance(data, str) and url_pattern.match(data):  # Check if the field is a URL
                     link_button = ctk.CTkButton(
                         entry_frame, text=f"{field.capitalize()} Link", width=100,
                         command=lambda url=data: webbrowser.open(url)
                     )
                     link_button.pack(anchor="w", padx=10, pady=5)
+                elif field == "images" and isinstance(data, list) and data:  # Handle image list
+                    self.create_image_viewer(entry_frame, data)
                 else:
                     self.create_toggle_label(entry_frame, field, data)
 
         # Update page label to reflect the current page and total pages
         self.page_label.configure(text=self.get_page_label_text())
+
+    def create_image_viewer(self, parent, images):
+        """Creates an image viewer with scroll arrows if multiple images are present."""
+        image_index = 0
+
+        def load_image(index):
+            """Helper to load and display an image from URL at a specific index."""
+            img_url = images[index]
+            response = requests.get(img_url)
+            img_data = Image.open(BytesIO(response.content))
+            img_data.thumbnail((200, 200))  # Resize image to fit the frame
+            photo = ctk.CTkImage(light_image=img_data, dark_image=img_data, size=(200, 200))  # Use CTkImage for scaling
+            image_label.configure(image=photo)
+            image_label.image = photo  # Keep a reference to avoid garbage collection
+
+        # Frame to hold image and navigation buttons
+        img_frame = ctk.CTkFrame(parent)
+        img_frame.pack(fill="x", padx=10, pady=5)
+
+        # Left arrow button for scrolling images
+        if len(images) > 1:
+            left_arrow = ctk.CTkButton(img_frame, text="<", width=30, command=lambda: scroll_image(-1))
+            left_arrow.pack(side="left")
+
+        # Label to display the image
+        image_label = ctk.CTkLabel(img_frame, text="")
+        image_label.pack(side="left", padx=10, pady=5)
+        load_image(image_index)  # Load the initial image
+
+        # Right arrow button for scrolling images
+        if len(images) > 1:
+            right_arrow = ctk.CTkButton(img_frame, text=">", width=30, command=lambda: scroll_image(1))
+            right_arrow.pack(side="right")
+
+        def scroll_image(direction):
+            """Scroll through images in the list."""
+            nonlocal image_index
+            image_index = (image_index + direction) % len(images)
+            load_image(image_index)
 
     def create_toggle_label(self, parent, field, data):
         """Creates a label with a toggle button on the same row, ensuring it wraps within the column."""

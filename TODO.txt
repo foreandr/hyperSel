@@ -37,3 +37,23 @@ log data needs to be RPLEACING dtaa
 chrme plugins? check tiktok for scraping, they got google map sdata with ti
     https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda
     https://chatgpt.com/c/67237b1b-ca60-8008-8def-9384a55cc65e
+
+
+think about this as a general personalized search tool
+    1. - if a person wants videos, it will spin up and get videos
+    - iframe local to be able to show videos?
+
+    2. if a person wants cars, it will basically act as youtube for cars, u toggle which sites u want grawled, it gets the data 
+
+    3. on the right hand side, have a big crawled catalogue that people can search through and download and run
+
+be able to save listings, make playlists
+    - everything I do on youtube, I should in principle be able to do here
+
+in the code clearly dilineate where the columns are
+
+allow "download data (sizegb)" in the third column next to enabling cralwers or not, csv, json, xml, etc
+
+i need some way that, someone else could write a cralwwer, like an extension, and then I download it locally, and then u can run it, and have it showing
+    - use case:
+    - i want cars, so I run hypersel, i run with auto and edmunds, turns out I can turn on other cralwers too, great, download and riunh

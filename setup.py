@@ -26,11 +26,13 @@ setup(
         "psutil",
         "playwright",
         "undetected-playwright",
-        "screeninfo"
+        "screeninfo",
+        "customtkinter",
+        "pillow",
     ],
     include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
     package_data={
-        "hypersel": ["data/*.csv"]  # Include all CSV files in the hypersel/data directory
+        # "hypersel": ["data/*.csv"]  # Include all CSV files in the hypersel/data directory
     },
     url="https://github.com/foreandr/hyperSel",  # URL to the project (optional, but useful for PyPI)
     classifiers=[  # Optional: Classifiers to categorize your project
