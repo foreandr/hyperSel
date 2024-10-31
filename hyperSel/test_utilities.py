@@ -1,10 +1,14 @@
 try:
     from . import soup_utilities
     from . import spider_universal
+    from . import ui_utilities
     
 except:
     import soup_utilities
     import spider_universal
+    import ui_utilities
+
+import json
 
 # Example user-provided field configurations
 def test():
@@ -65,3 +69,17 @@ def test():
         site_time_delay=8,
         headless=False,
     )
+
+def test2():
+    # Load data from demo_data.json
+    with open('./demo_data.json', 'r') as file:
+        data_entries = json.load(file)
+
+        app = ui_utilities.App()
+        app.mainloop()
+    pass
+
+# Run the app
+if __name__ == "__main__":
+    test2()
+    

@@ -33,3 +33,7 @@ ROBOTICS SOLUTION FOR CAPTCHA MOUSE CLICKS? SELL robotics bots, plug in  by USb
 all data needs to be in a .py file and the crawl file, and onload do both, because the data here wont be in thier EXE, BUT WE CAN give them the py
 
 log data needs to be RPLEACING dtaa
+
+chrme plugins? check tiktok for scraping, they got google map sdata with ti
+    https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda
+    https://chatgpt.com/c/67237b1b-ca60-8008-8def-9384a55cc65e
