@@ -15,12 +15,10 @@ CONFIG = {
     'entries_per_page': 5  # Number of entries to display per page
 }
 
-class App(ctk.CTk):
+class GUI(ctk.CTk):
     def __init__(self, path="./logs/crawl_data.json"):
         super().__init__()
-        self.title("Dynamic Column Viewer")
-        #self.geometry("1450x700")  # Default window size, resizable
-        # self.state("zoomed")  # Maximizes the window on load
+        self.title("Hypersel")
         self.after(100, lambda: self.state("zoomed"))
 
         self.current_page = 0  # Track the current page index
@@ -29,47 +27,78 @@ class App(ctk.CTk):
         with open(path, 'r') as file:
             self.data_entries = json.load(file)
 
-        # Configure grid to dynamically resize with window adjustments
-        for i in range(3):
-            self.grid_columnconfigure(i, weight=1)  # Columns adjust to fill width
-        self.grid_rowconfigure(0, weight=1)         # Row adjusts to fill height
+        # Tab view for "Data" and "Crawlers"
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.pack(fill="both", expand=True)
 
-        # Data column with scrollable content
-        self.data_frame = ctk.CTkScrollableFrame(self)
-        self.data_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        data_label = ctk.CTkLabel(self.data_frame, text="Data", font=("Arial", 16))
-        data_label.pack(anchor="w", padx=10, pady=5)
+        # First Tab: Data and Filters
+        data_tab = self.tabview.add("Data")
+        
+        # Configure grid layout for the Data tab
+        data_tab.grid_columnconfigure(0, weight=3)  # Data column
+        data_tab.grid_columnconfigure(1, weight=1)  # Filter column
+        data_tab.grid_rowconfigure(1, weight=1)     # Main content row
 
-        # Filters and Crawlers columns without scrollable content
-        for i, column_name in enumerate(["Filters", "Crawlers"], start=1):
-            frame = ctk.CTkFrame(self)
-            frame.grid(row=0, column=i, padx=10, pady=10, sticky="nsew")
-            label = ctk.CTkLabel(frame, text=column_name, font=("Arial", 16))
-            label.pack(anchor="w", padx=10, pady=5)
+        # Create a frame for the "Data" label and "Download" button
+        label_button_frame = ctk.CTkFrame(data_tab)
+        label_button_frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
+
+        data_label = ctk.CTkLabel(label_button_frame, text="Data", font=("Arial", 16))
+        data_label.pack(side="left")
+
+        download_button = ctk.CTkButton(label_button_frame, text="Download Data", width=120)
+        download_button.pack(side="left", padx=10)
+
+        # Data column with scrollable content, placed directly below the label and button
+        self.data_frame = ctk.CTkScrollableFrame(data_tab)
+        self.data_frame.grid(row=1, column=0, padx=10, pady=(5, 10), sticky="nsew")
+
+        # Placeholder for filter sidebar
+        filter_frame = ctk.CTkFrame(data_tab)
+        filter_frame.grid(row=0, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
+        filter_label = ctk.CTkLabel(filter_frame, text="Filters", font=("Arial", 16))
+        filter_label.pack(anchor="w", padx=10, pady=5)
+
+        # Adding placeholder filters (no logic yet)
+        for key in ["Title", "Description", "Date", "Author"]:  # Example keys
+            placeholder_filter = ctk.CTkLabel(filter_frame, text=f"{key} Filter", anchor="w")
+            placeholder_filter.pack(anchor="w", padx=10, pady=2)
 
         # Pagination controls directly under the Data column
-        self.pagination_frame = ctk.CTkFrame(self)
-        self.pagination_frame.grid(row=1, column=0, pady=10)
-        
+        self.pagination_frame = ctk.CTkFrame(data_tab)
+        self.pagination_frame.grid(row=2, column=0, columnspan=2, pady=10)
+
         # Small pagination buttons
         self.btn_beginning = ctk.CTkButton(self.pagination_frame, text="<<", width=30, command=self.go_to_beginning)
         self.btn_beginning.pack(side="left", padx=5)
-        
+
         self.btn_back = ctk.CTkButton(self.pagination_frame, text="<", width=30, command=self.go_back)
         self.btn_back.pack(side="left", padx=5)
-        
+
         # Page label with "Page X of Y" format
         self.page_label = ctk.CTkLabel(self.pagination_frame, text=self.get_page_label_text())
         self.page_label.pack(side="left", padx=5)
-        
+
         self.btn_forward = ctk.CTkButton(self.pagination_frame, text=">", width=30, command=self.go_forward)
         self.btn_forward.pack(side="left", padx=5)
-        
+
         self.btn_end = ctk.CTkButton(self.pagination_frame, text=">>", width=30, command=self.go_to_end)
         self.btn_end.pack(side="left", padx=5)
 
         # Populate initial data
         self.display_page()
+
+        # Second Tab: Crawler Placeholders
+        crawlers_tab = self.tabview.add("Crawlers")
+        crawlers_label = ctk.CTkLabel(crawlers_tab, text="Crawlers", font=("Arial", 16))
+        crawlers_label.pack(anchor="w", padx=10, pady=10)
+
+        # Placeholder Crawler Buttons
+        for i in range(1, 4):
+            crawler_button = ctk.CTkButton(crawlers_tab, text=f"Crawler {i}")
+            crawler_button.pack(anchor="w", padx=10, pady=5)
+
+
 
     def get_page_label_text(self):
         """Returns the current page label text in the format 'Page X of Y'."""
@@ -90,7 +119,7 @@ class App(ctk.CTk):
 
         for idx in range(start_idx, end_idx):
             entry = self.data_entries[idx]
-            background_color = "#333333"  # Alternate colors
+            background_color = "#333333"  # Consistent background color
 
             # Frame for each entry with background color and added border
             entry_frame = ctk.CTkFrame(self.data_frame, corner_radius=10, fg_color=background_color, border_width=2, border_color="#555555")
@@ -212,5 +241,5 @@ class App(ctk.CTk):
 # Run the app with a specific path
 if __name__ == "__main__":
     # Default path or pass a different path like "./demo_data.json" when initializing App
-    app = App(path="./demo_data.json")
+    app = GUI(path="./demo_data.json")
     app.mainloop()
