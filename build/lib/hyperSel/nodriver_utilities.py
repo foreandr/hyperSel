@@ -1,8 +1,8 @@
 import nodriver as nd
-from bs4 import BeautifulSoup
 import time
 import random
 import asyncio
+from bs4 import BeautifulSoup
 
 try:
     from . import general_utilities
@@ -11,8 +11,6 @@ try:
 except:
     import general_utilities
     import proxies_utilities
-
-
 
 global hyperSelProxies
 hyperSelProxies = None
@@ -29,8 +27,61 @@ async def async_go_to_site(browser, url):
     page = await browser.get(url=url)
     return page
 
+async def async_get_current_url(page):
+    return await page.evaluate("window.location.href")
+
+def get_current_url(page):
+    return asyncio.run(async_get_current_url(page))
+
 def go_to_site(browser, url):
+    # REUTNRS PAGE
     return asyncio.run(async_go_to_site(browser, url))
+
+async def async_find_best_match(page, tag):
+    return await page.find(tag, best_match=True)
+
+def find_best_match(page, tag):
+    return asyncio.run(async_find_best_match(page, tag))
+
+async def async_find_nearest_text(page, text):
+    return await page.find(text=text, best_match=True)
+
+def find_nearest_text(page, text):
+    return asyncio.run(async_find_nearest_text(page, text))
+
+async def async_find_nearest_guess(page, guess):
+    return await page.find(guess, best_match=True)
+
+def find_nearest_guess(page, guess):
+    return asyncio.run(async_find_nearest_guess(page, guess))
+
+async def async_find_all_by_css_selector(page, css_selector):
+    return await page.select_all(css_selector)
+
+def find_all_by_css_selector(page, css_selector):
+    return asyncio.run(async_find_nearest_guess(page, css_selector))
+
+async def async_send_keys_to_element(element, string):
+    return await element.send_keys(str(string))
+
+def send_keys_to_element(element, string):
+    return asyncio.run(async_send_keys_to_element(element, string))
+
+async def async_click_item(item):
+    return await item.mouse_click()
+
+def click_item(item):
+    return asyncio.run(async_click_item(item))
+
+async def async_get_site_soup(browser, site, wait=0.5):
+    page = await browser.get(site)
+    time.sleep(wait)
+    content = await page.get_content()
+    soup = BeautifulSoup(content, 'html.parser')
+    return soup
+    
+def get_site_soup(browser, site, wait=0.5):
+    return asyncio.run(async_get_site_soup(browser, site, wait))
 
 async def open_nodriver(headless=False, proxy=None, max_attempts=3):
     global hyperSelProxies
@@ -89,7 +140,9 @@ async def main_test():
     await custom_kill_browser(browser)
     custom_kill_browser(browser2)
     exit()
-    
+
+
+
 async def custom_kill_browser(browser):
     general_utilities.kill_process_by_pid(browser._process_pid)
     try:
