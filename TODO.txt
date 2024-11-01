@@ -66,3 +66,13 @@ if its a url that we can convert into an iframe
     eg 
     https://www.youtube.com/watch?v=vBCNlxFTkJk&ab_channel=ChrisLuno
     do it, probably threaded, and make a space for that next to the thumnnail images, or instead of them
+
+for the filter side, if its a number or a date,ID like to also have greater than elss than
+
+need a good UI way in the scrapers thing to say I want to get data from these sites
+    1. go tocralwers tab
+    2. get new cralwers
+    download cralwers form somewhere
+
+    3. create scraper
+        1. clcik 1n scrapers, name it, and then can activate it

@@ -70,7 +70,7 @@ def load_file_as_soup(file_path):
         return None
 
 
-def log_data(data_object, file_name='crawl_data.json', unique_criterion=None, verbose=True):
+def log_data(data_object, file_name='crawl_data.json', unique_criterion=None, verbose=False):
     """
     Logs data objects to a JSON file in a 'logs' directory, avoiding duplicates based on a unique criterion.
     Updates 'recent_scrape_time' for existing entries with the same unique criterion.
