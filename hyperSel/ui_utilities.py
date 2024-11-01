@@ -3,8 +3,10 @@ import json
 import webbrowser
 import re
 from PIL import Image
+from PIL import UnidentifiedImageError
 import requests
 from io import BytesIO
+import datetime
 
 # Initialize the main application window
 ctk.set_appearance_mode("dark")
@@ -96,7 +98,7 @@ class GUI(ctk.CTk):
                     filter_button_frame,
                     text="Asc",
                     width=40,
-                    command=lambda: print("Asc")
+                    command=lambda k=key: self.sort_data(ordering='Asc', key=k)  # Pass self.sort_data with ordering and key
                 )
                 hello_button_left.pack(side="left", padx=5)
 
@@ -115,7 +117,7 @@ class GUI(ctk.CTk):
                     filter_button_frame,
                     text="Desc",
                     width=40,
-                    command=lambda: print("Hello World")
+                    command=lambda k=key: self.sort_data(ordering='Desc', key=k)  # Pass self.sort_data with ordering and key
                 )
                 hello_button_right.pack(side="left", padx=5)
 
@@ -148,7 +150,6 @@ class GUI(ctk.CTk):
         # print("\nInitial page displayed.")
 
         # --------------- Crawlers Tab ---------------
-
         crawlers_tab = self.tabview.add("Crawlers")
         crawlers_label = ctk.CTkLabel(crawlers_tab, text="Crawlers", font=("Arial", 16))
         crawlers_label.pack(anchor="w", padx=10, pady=10)
@@ -158,7 +159,7 @@ class GUI(ctk.CTk):
             crawler_button.pack(anchor="w", padx=10, pady=5)
             # print(f"Crawler button {i} initialized.")
 
-        # --------------- Rrawlers Tab ---------------
+        # --------------- Reports Tab ---------------
 
         reports_tab = self.tabview.add("Reports")
         reports_label = ctk.CTkLabel(reports_tab, text="Reports", font=("Arial", 16))
@@ -168,6 +169,51 @@ class GUI(ctk.CTk):
             reports_button = ctk.CTkButton(reports_tab, text=f"Reports {i}")
             reports_button.pack(anchor="w", padx=10, pady=5)
             # print(f"Crawler button {i} initialized.")
+
+    # --------------- SORT RELATED ---------------
+
+    def sort_data(self, ordering, key):
+        print("ORDERING:", ordering)
+        print("key:", key)
+        reverse = ordering == "Desc"
+        print("reverse:", reverse)
+        print("----")
+
+        # Define a helper function for type-specific sorting, handling None values
+        def get_sort_key(entry):
+            value = entry.get(key, None)
+
+            if value is None:
+                return float('inf') if reverse else float('-inf')  # Places None values at the end or beginning based on sorting order
+
+            # Handle different data types
+            if isinstance(value, str):
+                # Try to parse as date if it's a date string
+                try:
+                    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    return value.lower()  # Sort case-insensitively for strings
+
+            elif isinstance(value, bool):
+                return value  # Boolean sorts False before True by default
+
+            elif isinstance(value, (int, float)):
+                return value  # Numbers are sortable directly
+
+            elif isinstance(value, list):
+                # Sort lists by length (customizable depending on requirements)
+                return len(value)
+
+            elif isinstance(value, dict):
+                # Sort dictionaries by the number of keys (customizable)
+                return len(value.keys())
+
+            else:
+                return value  # Fallback for any other type
+
+        # Sort data entries by the determined key
+        self.data_entries.sort(key=get_sort_key, reverse=reverse)
+        self.display_page()  # Refresh the display to show sorted data
 
     # --------------- Helper Methods for Pagination ---------------
 
@@ -256,42 +302,80 @@ class GUI(ctk.CTk):
         self.page_label.configure(text=self.get_page_label_text())
 
     def create_image_viewer(self, parent, images):
-        # print(f"Creating image viewer for {len(images)} images")
+        # Track the current image index
         image_index = 0
 
         def load_image(index):
-            img_url = images[index]
-            # print(f"Loading image from URL: {img_url}")
-            response = requests.get(img_url)
-            img_data = Image.open(BytesIO(response.content))
-            img_data.thumbnail((200, 200))
-            photo = ctk.CTkImage(light_image=img_data, dark_image=img_data, size=(200, 200))
-            image_label.configure(image=photo)
-            image_label.image = photo
+            try:
+                img_url = images[index]
+                response = requests.get(img_url, timeout=10)  # Set a timeout for the request
 
+                # Verify that the response contains image data
+                if response.status_code == 200 and 'image' in response.headers['Content-Type']:
+                    img_data = Image.open(BytesIO(response.content))
+                    img_data.thumbnail((200, 200))  # Resize image to fit thumbnail
+                    photo = ctk.CTkImage(light_image=img_data, dark_image=img_data, size=(200, 200))
+                    image_label.configure(image=photo)
+                    image_label.image = photo
+                else:
+                    raise ValueError("URL did not return a valid image file.")
+            
+            except requests.RequestException as e:
+                print(f"Network error: Unable to load image from URL {img_url} - {e}")
+                display_placeholder("Network error")  # Show placeholder for network errors
+
+            except UnidentifiedImageError:
+                print(f"Error: Unable to identify image file from URL {img_url}")
+                display_placeholder("Invalid image")  # Show placeholder for invalid image data
+
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+
+                display_placeholder("Error")  # Show a generic error placeholder
+
+        def display_placeholder(message):
+            # Use grid instead of pack for consistent layout management
+            placeholder = ctk.CTkLabel(image_label, text=message, font=("Arial", 12))
+            placeholder.grid(row=0, column=0, padx=10, pady=10)  # Adjust placement as needed
+
+        # Set up image frame with navigation buttons
         img_frame = ctk.CTkFrame(parent)
         img_frame.pack(fill="x", padx=10, pady=5)
+
         if len(images) > 1:
             ctk.CTkButton(img_frame, text="<", width=30, command=lambda: scroll_image(-1)).pack(side="left")
+
+        # Initialize the main image label
         image_label = ctk.CTkLabel(img_frame, text="")
         image_label.pack(side="left", padx=10, pady=5)
-        load_image(image_index)
+        load_image(image_index)  # Load the initial image
+
         if len(images) > 1:
             ctk.CTkButton(img_frame, text=">", width=30, command=lambda: scroll_image(1)).pack(side="right")
 
         def scroll_image(direction):
             nonlocal image_index
             image_index = (image_index + direction) % len(images)
-            load_image(image_index)
+            load_image(image_index)  # Update to the new image
 
     def create_toggle_label(self, parent, field, data):
-        # print(f"Creating label for field '{field}'")
-        is_truncated = len(data) > CONFIG['string_max']
-        display_text = data[:CONFIG['string_max']] + '...' if is_truncated else data
+        # Determine if the data can be truncated
+        if isinstance(data, (str, list, tuple)):  # Only types that have a length
+            is_truncated = len(data) > CONFIG['string_max']
+            display_text = data[:CONFIG['string_max']] + '...' if is_truncated else data
+        else:
+            is_truncated = False
+            display_text = str(data)  # Convert non-truncatable data to string for display
+
+        # Create the row frame
         row_frame = ctk.CTkFrame(parent)
         row_frame.pack(fill="x", padx=10, pady=2)
+        
+        # Display the truncated or full text in the label
         label = ctk.CTkLabel(row_frame, text=f"{field.capitalize()}: {display_text}", anchor="w", wraplength=450)
         label.pack(side="left", fill="x", expand=True)
+        
+        # Expanded text label, initially hidden
         expanded_text_label = ctk.CTkLabel(parent, text=f"{field.capitalize()}: {data}", anchor="w", wraplength=450)
         expanded_text_label.pack(anchor="w", padx=10, pady=2)
         expanded_text_label.pack_forget()
@@ -305,6 +389,8 @@ class GUI(ctk.CTk):
                 else:
                     expanded_text_label.pack(anchor="w", padx=10, pady=2)
                     toggle_button.configure(text="Hide")
+            
+            # Add the toggle button if truncation is enabled
             toggle_button = ctk.CTkButton(row_frame, text="Show More", width=70, command=toggle_text)
             toggle_button.pack(side="right")
 
@@ -386,5 +472,5 @@ def load_add_dates_and_save(path):
 
 # Run the app with a specific path
 if __name__ == "__main__":
-    app = GUI(path="./demo_data.json")
+    app = GUI(path="./demo_data1.json")
     app.mainloop()

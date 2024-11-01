@@ -71,8 +71,8 @@ def test():
     )
 
 def test2():
-    # Load data from demo_data.json
-    with open('./demo_data.json', 'r') as file:
+    # Load data from demo_data1.json
+    with open('./demo_data1.json', 'r') as file:
         data_entries = json.load(file)
 
         app = ui_utilities.App()

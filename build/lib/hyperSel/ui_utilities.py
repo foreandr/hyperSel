@@ -161,6 +161,6 @@ class App(ctk.CTk):
 
 # Run the app with a specific path
 if __name__ == "__main__":
-    # Default path or pass a different path like "./demo_data.json" when initializing App
-    app = App(path="./demo_data.json")
+    # Default path or pass a different path like "./demo_data1.json" when initializing App
+    app = App(path="./demo_data1.json")
     app.mainloop()
