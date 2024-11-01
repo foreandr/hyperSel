@@ -103,7 +103,7 @@ class GUI(ctk.CTk):
                 # Create a toggle button for each key (Filter button)
                 toggle_button = ctk.CTkButton(
                     filter_button_frame,
-                    text=f"{key.capitalize()} Filter",
+                    text=f"Must Have {key.capitalize()}",  # Filter
                     width=150,
                     fg_color="gray",
                     command=lambda k=key: self.toggle_filter(k)
@@ -237,7 +237,7 @@ class GUI(ctk.CTk):
                 if isinstance(data, str) and re.match(r'^(http|https)://', data):
                     ctk.CTkButton(
                         entry_frame,
-                        text=f"{field.capitalize()} Link",
+                        text=f"Link", # {field.capitalize()} Link
                         width=100,
                         command=lambda url=data: webbrowser.open(url)
                     ).pack(anchor="w", padx=10, pady=5)
