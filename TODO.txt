@@ -58,4 +58,11 @@ i need some way that, someone else could write a cralwwer, like an extension, an
     - use case:
     - i want cars, so I run hypersel, i run with auto and edmunds, turns out I can turn on other cralwers too, great, download and riunh
 
+https://chatgpt.com/c/6724fa6f-06d4-8008-aa99-4f216677bfc2
 slite in memory db, can just use SQL? dont needall the json possibly, then can havbe indexes and stuff
+
+
+if its a url that we can convert into an iframe
+    eg 
+    https://www.youtube.com/watch?v=vBCNlxFTkJk&ab_channel=ChrisLuno
+    do it, probably threaded, and make a space for that next to the thumnnail images, or instead of them

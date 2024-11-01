@@ -41,7 +41,6 @@ class GUI(ctk.CTk):
         # print("\nMain tab view created.")
 
         # --------------- Data Tab and Content ---------------
-        
         data_tab = self.tabview.add("Data")
         # print("\nData tab initialized.")
         
@@ -50,19 +49,21 @@ class GUI(ctk.CTk):
         data_tab.grid_columnconfigure(1, weight=0)  # Remove expansion for the filter column
         data_tab.grid_rowconfigure(1, weight=1)
 
-
         # Header for the Data tab
         label_button_frame = ctk.CTkFrame(data_tab)
-        label_button_frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
+        label_button_frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="we")
 
-        data_label = ctk.CTkLabel(label_button_frame, text="Data", font=("Arial", 16))
-        data_label.pack(side="left")
-        print("\nData label created.")
+        # Add a search entry field on the left
+        search_entry = ctk.CTkEntry(label_button_frame, placeholder_text="Search...", width=200)
+        search_entry.pack(side="left", padx=10)
 
-        # Download button
-        download_button = ctk.CTkButton(label_button_frame, text="Download Data", width=120)
-        download_button.pack(side="left", padx=10)
-        print("\nDownload button created.")
+        # Add the search button next to the search entry
+        search_button = ctk.CTkButton(label_button_frame, text="Search", width=70, command=lambda: self.search_data(search_entry.get()))
+        search_button.pack(side="left", padx=5)
+
+        # Place the "Download" button on the far right side
+        download_button = ctk.CTkButton(label_button_frame, text="Download", width=120)
+        download_button.pack(side="right", padx=10)
 
         # Scrollable frame to display the data entries
         self.data_frame = ctk.CTkScrollableFrame(data_tab)
@@ -136,7 +137,7 @@ class GUI(ctk.CTk):
         self.btn_back = ctk.CTkButton(self.pagination_frame, text="Prev", width=50, command=self.go_back)
         self.btn_back.pack(side="left", padx=5)  # Align to left
 
-        self.page_label = ctk.CTkLabel(self.pagination_frame, text=self.get_page_label_text())
+        self.page_label = ctk.CTkLabel(self.pagination_frame, text=self.get_page_label_text(len(self.data_entries)))
         self.page_label.pack(side="left", padx=5)  # Align to left
 
         self.btn_forward = ctk.CTkButton(self.pagination_frame, text="Next", width=50, command=self.go_forward)
@@ -217,8 +218,8 @@ class GUI(ctk.CTk):
 
     # --------------- Helper Methods for Pagination ---------------
 
-    def get_page_label_text(self):
-        total_pages = (len(self.data_entries) - 1) // CONFIG['entries_per_page'] + 1
+    def get_page_label_text(self, total_entries):
+        total_pages = (total_entries - 1) // CONFIG['entries_per_page'] + 1
         print(f"Page label updated: {self.current_page + 1} / {total_pages}")
         return f"Page {self.current_page + 1} of {total_pages}"
 
@@ -237,69 +238,74 @@ class GUI(ctk.CTk):
         print(f"Filter '{key}' new state: {self.active_filters[key]}")
         self.display_page()
 
-    def display_page(self):
-        # print(f"Displaying page {self.current_page + 1}")
+    def display_page(self, query=None):
+        # Clear existing widgets in the data frame
         for widget in self.data_frame.winfo_children():
             if isinstance(widget, ctk.CTkFrame):
                 widget.destroy()
 
-        start_idx = self.current_page * CONFIG['entries_per_page']
-        end_idx = min(start_idx + CONFIG['entries_per_page'], len(self.data_entries))
-        # print(f"Displaying entries {start_idx} to {end_idx}")
+        # Filter data based on the query if provided
+        
+        if query:
+            query_lower = query.lower()  # Convert query to lowercase for case-insensitive comparison
+            self.query = query.lower()
+            filtered_data = []
+            for entry in self.data_entries:
+                found = False
+                for value in entry.values():
+                    if query_lower in str(value).lower():
+                        found = True
+                        break
+                if found:
+                    filtered_data.append(entry)
+        else:
+            # If no query, use all data entries
+            self.query = None
+            filtered_data = self.data_entries
 
-        for idx in range(start_idx, end_idx):
-            # Get the current entry from the data
-            entry = self.data_entries[idx]
-            
-            # Check if all active filters have a non-None value in the entry
-            filter_passed = True  # Assume the entry passes the filter by default
+        # Apply active filters to the filtered data
+        self.filtered_data = []  # Store filtered data in an instance variable
+        for entry in filtered_data:
+            filter_passed = True
             for key, active in self.active_filters.items():
-                # Only check filters that are active
                 if active:
-                    # If any required field is None, mark as failed and skip this entry
-                    skippables = [None, "", "N/A", "n/a", "NULL", "null", "-", "--", "unknown", "Unknown","None"]
+                    skippables = [None, "", "N/A", "n/a", "NULL", "null", "-", "--", "unknown", "Unknown", "None"]
                     if entry.get(key) in skippables:
-                        print()
-                        print(f"Skipping entry {idx} [ENTRY: {entry.get(key)}] due to missing '{key}' for active filters")
                         filter_passed = False
                         break
+            if filter_passed:
+                self.filtered_data.append(entry)
 
-            # If the entry doesn't pass the filter, skip to the next entry
-            if not filter_passed:
-                continue
+        # Calculate pagination based on the filtered data with active filters applied
+        total_entries = len(self.filtered_data)
+        start_idx = self.current_page * CONFIG['entries_per_page']
+        end_idx = min(start_idx + CONFIG['entries_per_page'], total_entries)
+
+        for idx in range(start_idx, end_idx):
+            entry = self.filtered_data[idx]
 
             # Create a frame to display the entry details
             entry_frame = ctk.CTkFrame(self.data_frame, corner_radius=10, fg_color="#333333", border_width=2)
             entry_frame.pack(fill="x", padx=10, pady=10)
-            # print(f"Entry {idx} displayed.")  # Log that this entry is being displayed
 
-            # Loop through each field and its data in the entry
+            # Display each field in the entry
             for field, data in entry.items():
-                # Skip the 'root_url' field as we don't want to display it
                 if field == "root_url":
                     continue
-                
-                # If the data is a URL, create a button to open the link
-                if isinstance(data, str) and re.match(r'^(http|https)://', data):
+                elif isinstance(data, str) and re.match(r'^(http|https)://', data):
                     ctk.CTkButton(
                         entry_frame,
-                        text=f"Link", # {field.capitalize()} Link
+                        text="Link",
                         width=100,
                         command=lambda url=data: webbrowser.open(url)
                     ).pack(anchor="w", padx=10, pady=5)
-                    # print(f"URL link created for '{field}'")  # Log URL link creation
-
-                # If the field is "images" and data is a list, create an image viewer
                 elif field == "images" and isinstance(data, list):
                     self.create_image_viewer(entry_frame, data)
-                    # print(f"Image viewer created for '{field}'")  # Log image viewer creation
-
-                # For all other fields, create a toggle label to show or hide text
                 else:
                     self.create_toggle_label(entry_frame, field, data)
-                    # print(f"Toggle label created for '{field}'")  # Log toggle label creation
 
-        self.page_label.configure(text=self.get_page_label_text())
+        # Update the page label to reflect the current page and total entries
+        self.page_label.configure(text=self.get_page_label_text(total_entries))
 
     def create_image_viewer(self, parent, images):
         # Track the current image index
@@ -394,82 +400,40 @@ class GUI(ctk.CTk):
             toggle_button = ctk.CTkButton(row_frame, text="Show More", width=70, command=toggle_text)
             toggle_button.pack(side="right")
 
+    def search_data(self, query):
+        print("SEARCH QUERY", query)
+        self.display_page(query)
+
     # Pagination Methods
     def go_to_beginning(self):
         self.current_page = 0
         print("\nNavigating to the beginning")
-        self.display_page()
+        
+        self.display_page(self.query)
 
     def go_back(self):
         if self.current_page > 0:
             self.current_page -= 1
             print("\nNavigating to the previous page")
-            self.display_page()
+            self.display_page(self.query)
 
     def go_forward(self):
-        if self.current_page < (len(self.data_entries) - 1) // CONFIG['entries_per_page']:
+        # Use the length of filtered data if it exists, otherwise fall back to data_entries
+        total_entries = len(self.filtered_data) if hasattr(self, 'filtered_data') else len(self.data_entries)
+        max_page = (total_entries - 1) // CONFIG['entries_per_page']
+        
+        if self.current_page < max_page:
             self.current_page += 1
             print("\nNavigating to the next page")
-            self.display_page()
+            self.display_page(self.query)
 
     def go_to_end(self):
-        self.current_page = (len(self.data_entries) - 1) // CONFIG['entries_per_page']
+        # Use the length of filtered data if it exists, otherwise fall back to data_entries
+        total_entries = len(self.filtered_data) if hasattr(self, 'filtered_data') else len(self.data_entries)
+        self.current_page = (total_entries - 1) // CONFIG['entries_per_page']
         print("\nNavigating to the end")
-        self.display_page()
-
-def load_add_dates_and_save(path):
-
-    import json
-    import random
-    from datetime import datetime, timedelta
-    from faker import Faker
-
-    fake = Faker()
-
-    # Open and load the JSON data from the file
-    with open(path, 'r') as file:
-        data_entries = json.load(file)
+        self.display_page(self.query)
     
-    # Calculate the earliest date (10 years ago from today)
-    ten_years_ago = datetime.now() - timedelta(days=365 * 10)
-    
-    # Define the number of new entries to add
-    num_new_entries = 10000
-    
-    # Create new entries
-    for _ in range(num_new_entries):
-        # Populate each new entry with randomized fields
-        entry = {
-            "title": fake.sentence(nb_words=6),  # Random title with 6 words
-            "description": fake.paragraph(nb_sentences=5),  # Random description with 5 sentences
-            "url": fake.url(),  # Random URL
-            "root_url": fake.url(),  # Random root URL
-            "images": [fake.image_url() for _ in range(random.randint(1, 3))],  # Random list of image URLs
-            
-            # Dates
-            "upload_date": (ten_years_ago + timedelta(days=random.randint(0, 365 * 10))).strftime("%Y-%m-%d %H:%M:%S"),
-            "first_crawl": (ten_years_ago + timedelta(days=random.randint(365 * 5, 365 * 10))).strftime("%Y-%m-%d %H:%M:%S"),
-            "recent_crawl": (datetime.now() - timedelta(days=random.randint(30 * 6, 365 * 2))).strftime("%Y-%m-%d %H:%M:%S"),
-            
-            # Other data types
-            "is_active": random.choice([True, False]),
-            "view_count": random.randint(0, 10000),
-            "rating": round(random.uniform(0, 5), 2),
-            "author": fake.name(),
-            "tags": [fake.word() for _ in range(random.randint(1, 5))],
-            "metadata": {
-                "created_by": fake.name(),
-                "category": fake.word()
-            }
-        }
-        
-        # Append the new entry to the data entries list
-        data_entries.append(entry)
-    
-    # Write the updated entries (original + new) back to the file
-    with open(path, 'w') as file:
-        json.dump(data_entries, file, indent=4)
-
 # Run the app with a specific path
 if __name__ == "__main__":
     app = GUI(path="./demo_data1.json")
