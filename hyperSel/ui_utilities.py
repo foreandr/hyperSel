@@ -26,23 +26,27 @@ class GUI(ctk.CTk):
 
         # Track the current page index
         self.current_page = 0
+        # print("\nApplication initialized.")
 
         # Load data from the specified path
         with open(path, 'r') as file:
             self.data_entries = json.load(file)
+        # print(f"Loaded {len(self.data_entries)} entries from {path}")
 
         # Set up the main tab view containing "Data" and "Crawlers" tabs
         self.tabview = ctk.CTkTabview(self)
-        self.tabview.pack(fill="both", expand=True, padx=20, pady=10)  # Padding added for prominence
+        self.tabview.pack(fill="both", expand=True, padx=20, pady=10)
+        # print("\nMain tab view created.")
 
         # --------------- Data Tab and Content ---------------
         
-        data_tab = self.tabview.add("Data")  # Add "Data" tab to the main tab view
+        data_tab = self.tabview.add("Data")
+        # print("\nData tab initialized.")
         
         # Grid configuration for Data tab layout
-        data_tab.grid_columnconfigure(0, weight=3)  # Main content column
-        data_tab.grid_columnconfigure(1, weight=1)  # Filter column
-        data_tab.grid_rowconfigure(1, weight=1)     # Content row
+        data_tab.grid_columnconfigure(0, weight=3)
+        data_tab.grid_columnconfigure(1, weight=1)
+        data_tab.grid_rowconfigure(1, weight=1)
 
         # Header for the Data tab
         label_button_frame = ctk.CTkFrame(data_tab)
@@ -50,14 +54,17 @@ class GUI(ctk.CTk):
 
         data_label = ctk.CTkLabel(label_button_frame, text="Data", font=("Arial", 16))
         data_label.pack(side="left")
+        print("\nData label created.")
 
         # Download button
         download_button = ctk.CTkButton(label_button_frame, text="Download Data", width=120)
         download_button.pack(side="left", padx=10)
+        print("\nDownload button created.")
 
         # Scrollable frame to display the data entries
         self.data_frame = ctk.CTkScrollableFrame(data_tab)
         self.data_frame.grid(row=1, column=0, padx=10, pady=(5, 10), sticky="nsew")
+        # print("\nData scrollable frame created.")
 
         # Placeholder for filter sidebar
         filter_frame = ctk.CTkFrame(data_tab)
@@ -66,44 +73,39 @@ class GUI(ctk.CTk):
         # Header label for the Filters section
         filter_label = ctk.CTkLabel(filter_frame, text="Filters", font=("Arial", 16))
         filter_label.pack(anchor="w", padx=10, pady=5)
-
-        # Placeholder filter labels (Add actual functionality as needed)
-
-
+        print("\nFilters section header created.")
 
         # Store references to buttons and states
-        self.filter_buttons = {}  # To store the button references
-        self.active_filters = {}  # To store the active/inactive states
+        self.filter_buttons = {}
+        self.active_filters = {}
 
-        # Ensure data is available
+        # Initialize filter buttons based on JSON keys
         if self.data_entries:
-            json_keys = self.data_entries[0].keys()  # Get keys from the first entry
+            json_keys = self.data_entries[0].keys()
             for key in json_keys:
-                # Initialize each filter as inactive
-                self.active_filters[key] = False  # Track active/inactive state
+                self.active_filters[key] = False
                 
                 # Create a toggle button for each key
                 toggle_button = ctk.CTkButton(
                     filter_frame,
                     text=f"{key.capitalize()} Filter",
                     width=150,
-                    fg_color="gray",  # Start with inactive color
+                    fg_color="gray",
                     command=lambda k=key: self.toggle_filter(k)
                 )
                 toggle_button.pack(anchor="w", padx=10, pady=2)
                 
                 # Store the button reference
                 self.filter_buttons[key] = toggle_button
-
-
+                # print(f"Filter button created for '{key}'")
 
         # --------------- Pagination Controls ---------------
 
-        # Frame for pagination buttons
         self.pagination_frame = ctk.CTkFrame(data_tab)
         self.pagination_frame.grid(row=2, column=0, columnspan=2, pady=10)
+        print("\nPagination frame created.")
 
-        # Pagination buttons for navigating through pages
+        # Pagination buttons
         self.btn_beginning = ctk.CTkButton(self.pagination_frame, text="<<", width=30, command=self.go_to_beginning)
         self.btn_beginning.pack(side="left", padx=5)
 
@@ -119,94 +121,87 @@ class GUI(ctk.CTk):
 
         self.btn_end = ctk.CTkButton(self.pagination_frame, text=">>", width=30, command=self.go_to_end)
         self.btn_end.pack(side="left", padx=5)
+        # print("\nPagination buttons initialized.")
 
         # Populate initial data
         self.display_page()
+        # print("\nInitial page displayed.")
 
         # --------------- Crawlers Tab ---------------
 
-        crawlers_tab = self.tabview.add("Crawlers")  # Add "Crawlers" tab to the main tab view
-        
+        crawlers_tab = self.tabview.add("Crawlers")
         crawlers_label = ctk.CTkLabel(crawlers_tab, text="Crawlers", font=("Arial", 16))
         crawlers_label.pack(anchor="w", padx=10, pady=10)
 
-        # Placeholder buttons for Crawler functionality
         for i in range(1, 4):
             crawler_button = ctk.CTkButton(crawlers_tab, text=f"Crawler {i}")
             crawler_button.pack(anchor="w", padx=10, pady=5)
+            # print(f"Crawler button {i} initialized.")
 
     # --------------- Helper Methods for Pagination ---------------
 
     def get_page_label_text(self):
-        """Returns the current page label text in the format 'Page X of Y'."""
         total_pages = (len(self.data_entries) - 1) // CONFIG['entries_per_page'] + 1
+        print(f"Page label updated: {self.current_page + 1} / {total_pages}")
         return f"Page {self.current_page + 1} of {total_pages}"
 
-
     def toggle_filter(self, key):
-        """Toggles the filter's active state and updates button appearance."""
         button = self.filter_buttons[key]
+        print(f"Toggling filter '{key}'; Current state: {self.active_filters[key]}")
         
-        # Toggle the color based on the current state
-        if self.active_filters[key]:  # If currently active
-            button.configure(fg_color="gray")  # Set to inactive color (gray)
+        # Toggle the color and state
+        if self.active_filters[key]:
+            button.configure(fg_color="gray")
             self.active_filters[key] = False
         else:
-            button.configure(fg_color="#1f6aa5")  # Set to active color to match the default button blue color
+            button.configure(fg_color="#1f6aa5")
             self.active_filters[key] = True
 
-        # Refresh the display with the active filters
+        print(f"Filter '{key}' new state: {self.active_filters[key]}")
         self.display_page()
 
     def display_page(self):
-        """Displays entries for the current page."""
-        # Clear existing widgets in the data frame
+        # print(f"Displaying page {self.current_page + 1}")
         for widget in self.data_frame.winfo_children():
             if isinstance(widget, ctk.CTkFrame):
                 widget.destroy()
 
-        # Calculate start and end indices for entries
         start_idx = self.current_page * CONFIG['entries_per_page']
         end_idx = min(start_idx + CONFIG['entries_per_page'], len(self.data_entries))
-        url_pattern = re.compile(r'^(http|https)://')  # Pattern to identify URLs
+        # print(f"Displaying entries {start_idx} to {end_idx}")
 
-        # Display each entry
         for idx in range(start_idx, end_idx):
             entry = self.data_entries[idx]
-            background_color = "#333333"
+            if not all(entry.get(key) is not None for key, active in self.active_filters.items() if active):
+                print(f"Skipping entry {idx} due to active filters")
+                continue
 
-            # Frame for each entry with a border
-            entry_frame = ctk.CTkFrame(self.data_frame, corner_radius=10, fg_color=background_color, border_width=2, border_color="#555555")
+            entry_frame = ctk.CTkFrame(self.data_frame, corner_radius=10, fg_color="#333333", border_width=2)
             entry_frame.pack(fill="x", padx=10, pady=10)
+            # print(f"Entry {idx} displayed.")
 
-            # Display fields in the entry
             for field, data in entry.items():
                 if field == "root_url":
-                    continue  # Skip root_url field
-                
-                if isinstance(data, str) and url_pattern.match(data):  # Display URLs as links
-                    link_button = ctk.CTkButton(
-                        entry_frame, text=f"{field.capitalize()} Link", width=100,
-                        command=lambda url=data: webbrowser.open(url)
-                    )
-                    link_button.pack(anchor="w", padx=10, pady=5)
-                elif field == "images" and isinstance(data, list) and data:  # Display images
+                    continue
+                if isinstance(data, str) and re.match(r'^(http|https)://', data):
+                    ctk.CTkButton(entry_frame, text=f"{field.capitalize()} Link", width=100,
+                                  command=lambda url=data: webbrowser.open(url)).pack(anchor="w", padx=10, pady=5)
+                    # print(f"URL link created for '{field}'")
+                elif field == "images" and isinstance(data, list):
                     self.create_image_viewer(entry_frame, data)
+                    # print(f"Image viewer created for '{field}'")
                 else:
                     self.create_toggle_label(entry_frame, field, data)
 
-        # Update page label
         self.page_label.configure(text=self.get_page_label_text())
 
-    # --------------- Image Viewer for Displaying Images ---------------
-
     def create_image_viewer(self, parent, images):
-        """Creates an image viewer with scroll arrows if multiple images are present."""
+        # print(f"Creating image viewer for {len(images)} images")
         image_index = 0
 
         def load_image(index):
-            """Helper to load and display an image from URL at a specific index."""
             img_url = images[index]
+            # print(f"Loading image from URL: {img_url}")
             response = requests.get(img_url)
             img_data = Image.open(BytesIO(response.content))
             img_data.thumbnail((200, 200))
@@ -214,54 +209,35 @@ class GUI(ctk.CTk):
             image_label.configure(image=photo)
             image_label.image = photo
 
-        # Frame to hold image and navigation buttons
         img_frame = ctk.CTkFrame(parent)
         img_frame.pack(fill="x", padx=10, pady=5)
-
-        # Left arrow button for scrolling images
         if len(images) > 1:
-            left_arrow = ctk.CTkButton(img_frame, text="<", width=30, command=lambda: scroll_image(-1))
-            left_arrow.pack(side="left")
-
-        # Label to display the image
+            ctk.CTkButton(img_frame, text="<", width=30, command=lambda: scroll_image(-1)).pack(side="left")
         image_label = ctk.CTkLabel(img_frame, text="")
         image_label.pack(side="left", padx=10, pady=5)
         load_image(image_index)
-
-        # Right arrow button for scrolling images
         if len(images) > 1:
-            right_arrow = ctk.CTkButton(img_frame, text=">", width=30, command=lambda: scroll_image(1))
-            right_arrow.pack(side="right")
+            ctk.CTkButton(img_frame, text=">", width=30, command=lambda: scroll_image(1)).pack(side="right")
 
         def scroll_image(direction):
-            """Scroll through images in the list."""
             nonlocal image_index
             image_index = (image_index + direction) % len(images)
             load_image(image_index)
 
-    # --------------- Toggle Label for Showing Full Text on Click ---------------
-
     def create_toggle_label(self, parent, field, data):
-        """Creates a label with a toggle button on the same row, ensuring it wraps within the column."""
+        # print(f"Creating label for field '{field}'")
         is_truncated = len(data) > CONFIG['string_max']
         display_text = data[:CONFIG['string_max']] + '...' if is_truncated else data
-
-        # Frame to hold the label and the toggle button in the same row
         row_frame = ctk.CTkFrame(parent)
         row_frame.pack(fill="x", padx=10, pady=2)
-
-        # Label with initial display text
         label = ctk.CTkLabel(row_frame, text=f"{field.capitalize()}: {display_text}", anchor="w", wraplength=450)
         label.pack(side="left", fill="x", expand=True)
-
-        # Frame to show additional text when expanded
         expanded_text_label = ctk.CTkLabel(parent, text=f"{field.capitalize()}: {data}", anchor="w", wraplength=450)
         expanded_text_label.pack(anchor="w", padx=10, pady=2)
         expanded_text_label.pack_forget()
 
         if is_truncated:
             def toggle_text():
-                """Toggles between truncated and expanded text display."""
                 if expanded_text_label.winfo_viewable():
                     expanded_text_label.pack_forget()
                     label.configure(text=f"{field.capitalize()}: {display_text}")
@@ -269,37 +245,33 @@ class GUI(ctk.CTk):
                 else:
                     expanded_text_label.pack(anchor="w", padx=10, pady=2)
                     toggle_button.configure(text="Hide")
-
-            # Toggle button to expand/collapse text
             toggle_button = ctk.CTkButton(row_frame, text="Show More", width=70, command=toggle_text)
             toggle_button.pack(side="right")
 
-    # --------------- Pagination Methods ---------------
-
+    # Pagination Methods
     def go_to_beginning(self):
-        """Go to the first page."""
         self.current_page = 0
+        print("\nNavigating to the beginning")
         self.display_page()
 
     def go_back(self):
-        """Go to the previous page if not at the beginning."""
         if self.current_page > 0:
             self.current_page -= 1
+            print("\nNavigating to the previous page")
             self.display_page()
 
     def go_forward(self):
-        """Go to the next page if not at the end."""
         if self.current_page < (len(self.data_entries) - 1) // CONFIG['entries_per_page']:
             self.current_page += 1
+            print("\nNavigating to the next page")
             self.display_page()
 
     def go_to_end(self):
-        """Go to the last page."""
         self.current_page = (len(self.data_entries) - 1) // CONFIG['entries_per_page']
+        print("\nNavigating to the end")
         self.display_page()
 
 # Run the app with a specific path
 if __name__ == "__main__":
-    # Default path or pass a different path like "./demo_data.json" when initializing App
     app = GUI(path="./demo_data.json")
     app.mainloop()
