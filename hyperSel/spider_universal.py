@@ -452,6 +452,7 @@ def crawl(list_of_urls, field_configs, recursion_url_regex, max_recursions=1, ma
     # Start the crawl
     run_crawler()
 
+
+
 if __name__ == "__main__":
-    print(11)
     pass
