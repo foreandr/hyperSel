@@ -7,6 +7,9 @@ from PIL import UnidentifiedImageError
 import requests
 from io import BytesIO
 import datetime
+from threading import Event, Thread
+from collections import Counter
+import random
 
 # Initialize the main application window
 ctk.set_appearance_mode("dark")
@@ -21,7 +24,7 @@ class GUI(ctk.CTk):
     
     # --------------- Initialization and Main Window Setup ---------------
     
-    def __init__(self, path="./logs/crawl_data.json"):
+    def __init__(self, scrapers, path="./logs/crawl_data.json"):
         super().__init__()
         self.title("Hypersel")
         self.after(100, lambda: self.state("zoomed"))
@@ -88,7 +91,7 @@ class GUI(ctk.CTk):
 
         # Initialize filter buttons based on JSON keys
         if self.data_entries:
-            json_keys = self.data_entries[0].keys()
+            json_keys = self.get_all_keys(lst = self.data_entries)
             for key in json_keys:
                 self.active_filters[key] = False
 
@@ -153,14 +156,71 @@ class GUI(ctk.CTk):
         # print("\nInitial page displayed.")
 
         # --------------- Crawlers Tab ---------------
-        crawlers_tab = self.tabview.add("Crawlers")
-        crawlers_label = ctk.CTkLabel(crawlers_tab, text="Crawlers", font=("Arial", 16))
+        # Dynamically initialize scraper threads and stop events for each scraper
+        self.meta_data = {name: {"running_time": 0, "total_data": 0, "rate_per_hour": 0, "duplicate_count": 0} for name in scrapers}
+        self.scraper_threads = {name: {"thread": None, "stop_event": None} for name in scrapers}
+
+        # UI for ScrapersTab with dynamic Start/Stop Buttons
+        crawlers_tab = self.tabview.add("Scrapers")
+        crawlers_label = ctk.CTkLabel(crawlers_tab, text="Scrapers", font=("Arial", 16))
         crawlers_label.pack(anchor="w", padx=10, pady=10)
 
-        for i in range(1, 4):
-            crawler_button = ctk.CTkButton(crawlers_tab, text=f"Crawler {i}")
-            crawler_button.pack(anchor="w", padx=10, pady=5)
-            # print(f"Crawler button {i} initialized.")
+        # Define button functions
+        def start_scraper(scraper_name, scraper_func, start_button, stop_button):
+            print(f"Starting {scraper_name}...")
+            if not self.scraper_threads[scraper_name]["thread"] or not self.scraper_threads[scraper_name]["thread"].is_alive():
+                stop_event = Event()
+                thread = Thread(target=self.run_scraper, args=(scraper_func, scraper_name, stop_event))
+                self.scraper_threads[scraper_name] = {"thread": thread, "stop_event": stop_event}
+                thread.start()
+                
+                # Update button states
+                start_button.configure(state="disabled")
+                stop_button.configure(state="normal")
+
+        def stop_scraper(scraper_name, start_button, stop_button):
+            print(f"Stopping {scraper_name}...")
+            if self.scraper_threads[scraper_name]["stop_event"]:
+                self.scraper_threads[scraper_name]["stop_event"].set()
+                self.scraper_threads[scraper_name]["thread"].join()
+                self.scraper_threads[scraper_name] = {"thread": None, "stop_event": None}
+                
+                # Update button states
+                start_button.configure(state="normal")
+                stop_button.configure(state="disabled")
+
+        # Add buttons for each scraper
+        # Create UI for each scraper
+        self.metadata_labels = {}
+        # Inside the loop where you create UI for each scraper
+        for scraper_name, scraper_func in scrapers.items():
+            # Frame for each scraper's controls
+            scraper_frame = ctk.CTkFrame(crawlers_tab)
+            scraper_frame.pack(fill="x", padx=10, pady=10)
+
+            # Initialize the Start and Stop buttons without assigning command yet
+            start_button = ctk.CTkButton(
+                scraper_frame, text=f"Start {scraper_name}", fg_color="green"
+            )
+            start_button.pack(side="left", padx=5)
+
+            stop_button = ctk.CTkButton(
+                scraper_frame, text=f"Stop {scraper_name}", fg_color="red", state="disabled"
+            )
+            stop_button.pack(side="left", padx=5)
+
+            # Now assign the commands using lambdas that capture start_button and stop_button correctly
+            start_button.configure(
+                command=lambda sn=scraper_name, sf=scraper_func, sb=start_button, stp=stop_button: start_scraper(sn, sf, sb, stp)
+            )
+            stop_button.configure(
+                command=lambda sn=scraper_name, sb=start_button, stp=stop_button: stop_scraper(sn, sb, stp)
+            )
+
+            # Metadata display
+            metadata_label = ctk.CTkLabel(scraper_frame, text=self.get_metadata_text(scraper_name))
+            metadata_label.pack(side="left", padx=20)
+            self.metadata_labels[scraper_name] = metadata_label
 
         # --------------- Reports Tab ---------------
 
@@ -173,50 +233,121 @@ class GUI(ctk.CTk):
             reports_button.pack(anchor="w", padx=10, pady=5)
             # print(f"Crawler button {i} initialized.")
 
-    # --------------- SORT RELATED ---------------
+    # --- KEYS
+
+    def get_all_keys(self, lst, sample_size=1000):
+        all_keys = set()
+        sampled_entries = random.sample(lst, min(sample_size, len(lst)))  # Get a random sample up to 1000 entries
+        for entry in sampled_entries:
+            all_keys.update(entry.keys())
+        return list(all_keys)
+
+        # --------------- SORT RELATED ---------------
+    def most_frequent_type(self, lst, key):
+        type_counter = Counter()
+        
+        # Iterate over the first 100 items (or fewer if the list has less than 100 items)
+        for entry in lst[:100]:
+            if key in entry:
+                value = entry[key]
+                value_type = type(value).__name__  # Get the type name as a string
+                type_counter[value_type] += 1
+        
+        if type_counter:
+            # Return the most common type, but return 'str' if 'NoneType' is the most common
+            most_common = type_counter.most_common(1)[0][0]
+            return 'str' if most_common == 'NoneType' else most_common
+        else:
+            return str  # Return str if no types were found
+        
+    def custom_sort_by_type(self, lst, key, most_frequent_type, reverse=False):
+        sorted_list = []
+        bad_values = []
+
+        # Separate valid and invalid entries based on the most frequent type
+        for entry in lst:
+            if key in entry:
+                value = entry[key]
+                if type(value).__name__ == most_frequent_type:
+                    sorted_list.append(entry)
+                else:
+                    bad_values.append(entry)
+            else:
+                bad_values.append(entry)
+
+        # Implement a simple sort for the valid entries
+        for i in range(len(sorted_list)):
+            for j in range(i + 1, len(sorted_list)):
+                if (not reverse and sorted_list[i][key] > sorted_list[j][key]) or (reverse and sorted_list[i][key] < sorted_list[j][key]):
+                    sorted_list[i], sorted_list[j] = sorted_list[j], sorted_list[i]
+
+        # Append bad values to the end
+        sorted_list.extend(bad_values)
+        return sorted_list
 
     def sort_data(self, ordering, key):
-        print("ORDERING:", ordering)
-        print("key:", key)
-        reverse = ordering == "Desc"
-        print("reverse:", reverse)
-        print("----")
+        reverse = ordering == "Desc"  # Determine if the sort should be in reverse order
 
-        # Define a helper function for type-specific sorting, handling None values
-        def get_sort_key(entry):
-            value = entry.get(key, None)
+        data_type = self.most_frequent_type(self.data_entries, key)
+        print("data_type:", data_type)
 
-            if value is None:
-                return float('inf') if reverse else float('-inf')  # Places None values at the end or beginning based on sorting order
+        items_sorted = self.custom_sort_by_type(self.data_entries, key, data_type, reverse)
+        print("items_sorted:", items_sorted[:10])
+        self.data_entries = items_sorted
 
-            # Handle different data types
-            if isinstance(value, str):
-                # Try to parse as date if it's a date string
-                try:
-                    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    return value.lower()  # Sort case-insensitively for strings
-
-            elif isinstance(value, bool):
-                return value  # Boolean sorts False before True by default
-
-            elif isinstance(value, (int, float)):
-                return value  # Numbers are sortable directly
-
-            elif isinstance(value, list):
-                # Sort lists by length (customizable depending on requirements)
-                return len(value)
-
-            elif isinstance(value, dict):
-                # Sort dictionaries by the number of keys (customizable)
-                return len(value.keys())
-
-            else:
-                return value  # Fallback for any other type
-
-        # Sort data entries by the determined key
-        self.data_entries.sort(key=get_sort_key, reverse=reverse)
         self.display_page()  # Refresh the display to show sorted data
+
+    # -- SCRAPER STUF
+
+    # Format the metadata text to display in the UI
+    def get_metadata_text(self, scraper_name):
+        meta = self.meta_data[scraper_name]
+        return (
+            f"Running Time: {meta['running_time']:.2f}s | "
+            f"Total Data: {meta['total_data']} | "
+            f"Rate/Hour: {meta['rate_per_hour']:.2f} | "
+            f"Duplicates: {meta['duplicate_count']}"
+        )
+
+    # Run each scraper, process, and update metadata
+    def run_scraper(self, scraper_func, name, stop_event):
+        start_time = datetime.datetime.now()
+        data_count = 0
+        duplicate_count = 0
+        unique_records = set()
+        
+        try:
+            for data_batch in scraper_func(stop_event):
+                if stop_event.is_set():
+                    break
+                
+                # Process the data batch
+                data_count += len(data_batch)
+                for record in data_batch:
+                    record_id = tuple(record.items())
+                    if record_id in unique_records:
+                        duplicate_count += 1
+                    else:
+                        unique_records.add(record_id)
+                
+                # Update metadata
+                elapsed_time = (datetime.datetime.now() - start_time).total_seconds()
+                rate_per_hour = data_count / (elapsed_time / 3600) if elapsed_time > 0 else 0
+                self.meta_data[name] = {
+                    "running_time": elapsed_time,
+                    "total_data": data_count,
+                    "rate_per_hour": rate_per_hour,
+                    "duplicate_count": duplicate_count
+                }
+                
+                # Update the UI for metadata
+                self.metadata_labels[name].configure(text=self.get_metadata_text(name))
+
+        except Exception as e:
+            print(f"Error in {name}: {e}")
+        finally:
+            print(f"{name} has stopped.")
+            self.metadata_labels[name].configure(text=self.get_metadata_text(name))
 
     # --------------- Helper Methods for Pagination ---------------
 
@@ -292,8 +423,11 @@ class GUI(ctk.CTk):
 
             # Display each field in the entry
             for field, data in entry.items():
+
                 if field == "root_url":
                     continue
+                #if field == "recent_scrape_time":
+                #    continue
                 elif isinstance(data, str) and re.match(r'^(http|https)://', data):
                     ctk.CTkButton(
                         entry_frame,
@@ -437,178 +571,15 @@ class GUI(ctk.CTk):
         self.display_page(self.query)
     
 
-def t1():
-    print("T1 ESY")
-    import threading
-    import time
-    import random
-    from faker import Faker
-    from datetime import datetime
-    import signal
-    import sys
-
-    fake = Faker()
-
-    # Corrected Import
-    try:
-        from . import log_utilities
-    except Exception as e:
-        import log_utilities
-
-    # Scraper functions with more frequent stop checks
-    def scraper1(stop_event):
-        while not stop_event.is_set():
-            data = [
-                {
-                    "name": fake.name(),
-                    "email": fake.email(),
-                    "address": fake.address(),
-                    "company": fake.company() if random.choice([True, False]) else None
-                }
-                for _ in range(random.randint(10, 50))
-            ]
-            yield data
-            for _ in range(4):  # 2-second delay with frequent stop checks
-                if stop_event.is_set():
-                    return
-                time.sleep(0.5)
-
-    def scraper2(stop_event):
-        while not stop_event.is_set():
-            data = [
-                {
-                    "name": fake.name(),
-                    "email": fake.email(),
-                    "phone": fake.phone_number(),
-                    "company": fake.company(),
-                    "job": fake.job() if random.choice([True, False]) else None
-                }
-                for _ in range(random.randint(25, 100))
-            ]
-            yield data
-            for _ in range(10):  # 5-second delay with frequent stop checks
-                if stop_event.is_set():
-                    return
-                time.sleep(0.5)
-
-    def scraper3(stop_event):
-        while not stop_event.is_set():
-            data = [
-                {
-                    "name": fake.name(),
-                    "email": fake.email(),
-                    "address": fake.address(),
-                    "phone": fake.phone_number(),
-                    "company": fake.company(),
-                    "product": fake.bs() if random.choice([True, False]) else None,
-                    "description": fake.text() if random.choice([True, False]) else None
-                }
-                for _ in range(random.randint(50, 125))
-            ]
-            yield data
-            for _ in range(20):  # 10-second delay with frequent stop checks
-                if stop_event.is_set():
-                    return
-                time.sleep(0.5)
-
-    # Function to run each scraper, process data, and log data
-    def run_scraper(scraper_func, name, meta_data, data_storage, stop_event):
-        start_time = datetime.now()
-        data_count = 0
-        duplicate_count = 0
-        unique_records = set()
-
-        try:
-            for data_batch in scraper_func(stop_event):
-                if stop_event.is_set():
-                    break
-                # Log the data batch
-                log_utilities.log_data(data_object=data_batch)
-
-                # Process data as before
-                data_storage[name].extend(data_batch)
-                data_count += len(data_batch)
-
-                # Check for duplicates
-                for record in data_batch:
-                    record_id = tuple(record.items())
-                    if record_id in unique_records:
-                        duplicate_count += 1
-                    else:
-                        unique_records.add(record_id)
-
-                # Update metadata
-                elapsed_time = (datetime.now() - start_time).total_seconds()
-                rate_per_hour = data_count / (elapsed_time / 3600) if elapsed_time > 0 else 0
-
-                # Update metadata dictionary
-                meta_data[name] = {
-                    "running_time": elapsed_time,
-                    "total_data": data_count,
-                    "rate_per_hour": rate_per_hour,
-                    "duplicate_count": duplicate_count
-                }
-        except Exception as e:
-            print(f"Error in {name}: {e}")
-        finally:
-            print(f"{name} has stopped.")
-
-    # Main function with immediate stop handling
-    def main():
-        stop_event = threading.Event()  # Signal to stop threads gracefully
-
-        meta_data = {
-            "scraper1": {},
-            "scraper2": {},
-            "scraper3": {}
-        }
-        data_storage = {
-            "scraper1": [],
-            "scraper2": [],
-            "scraper3": []
-        }
-
-        # Set up threads
-        threads = [
-            threading.Thread(target=run_scraper, args=(scraper1, "scraper1", meta_data, data_storage, stop_event)),
-            threading.Thread(target=run_scraper, args=(scraper2, "scraper2", meta_data, data_storage, stop_event)),
-            threading.Thread(target=run_scraper, args=(scraper3, "scraper3", meta_data, data_storage, stop_event))
-        ]
-
-        # Start all threads
-        for thread in threads:
-            thread.start()
-
-        # Signal handler to stop threads
-        def signal_handler(sig, frame):
-            print("\nStopping scrapers gracefully...")
-            stop_event.set()  # Signal all threads to stop
-
-        # Bind the signal handler to Ctrl+C
-        signal.signal(signal.SIGINT, signal_handler)
-
-        # Keep the main thread active to handle signals
-        try:
-            while not stop_event.is_set():
-                print("\nScraper Metadata Summary:")
-                for scraper, stats in meta_data.items():
-                    print(f"{scraper}: Running Time: {stats.get('running_time', 0):.2f} seconds, "
-                        f"Total Data: {stats.get('total_data', 0)}, "
-                        f"Rate per Hour: {stats.get('rate_per_hour', 0):.2f}, "
-                        f"Duplicate Count: {stats.get('duplicate_count', 0)}")
-                time.sleep(10)
-        except KeyboardInterrupt:
-            print("keyboard interupt")
-            signal_handler(None, None)
-
-        # Wait for all threads to finish
-        for thread in threads:
-            thread.join()
-        print("All scrapers stopped.")
-
-    main()
-
 # Run the app with a specific path
 if __name__ == "__main__":
-    app = GUI(path="./logs/crawl_data.json")
+    import fake_crawlers
+    scrapers = {
+        "scraper1": fake_crawlers.scraper1,
+        "scraper2": fake_crawlers.scraper2,
+        "scraper3": fake_crawlers.scraper3,
+        # Add more scrapers here as needed
+    }
+
+    app = GUI(scrapers=scrapers, path="./logs/crawl_data.json")
     app.mainloop()
