@@ -193,54 +193,46 @@ class GUI(ctk.CTk):
         # Create UI for each scraper
         self.metadata_labels = {}
         # Inside the loop where you create UI for each scraper
+        # Modify color scheme and design
+        # Update buttons to have white text and no white background
         for scraper_name, scraper_func in scrapers.items():
-            # Frame for each scraper's controls
-            scraper_frame = ctk.CTkFrame(crawlers_tab)
+            # Frame with a consistent, simple background
+            scraper_frame = ctk.CTkFrame(crawlers_tab, fg_color="#2E2E2E", corner_radius=10)  # Dark gray background
             scraper_frame.pack(fill="x", padx=10, pady=10)
 
-            # Initialize the Start and Stop buttons without assigning command yet
+            # Start button with white text and a simple accent color
             start_button = ctk.CTkButton(
-                scraper_frame, text=f"Start {scraper_name}", fg_color="green"
+                scraper_frame, text=f"Start {scraper_name}", fg_color="#2196F3",  # Blue accent
+                text_color="white", corner_radius=8, hover_color="#1976D2"  # Darker blue on hover
             )
             start_button.pack(side="left", padx=5)
 
+            # Stop button with white text for readability
             stop_button = ctk.CTkButton(
-                scraper_frame, text=f"Stop {scraper_name}", fg_color="red", state="disabled"
+                scraper_frame, text=f"Stop {scraper_name}", fg_color="#f44336",  # Red background
+                text_color="white",  # Explicitly set text color to white
+                state="disabled", corner_radius=8, hover_color="#d32f2f"  # Darker red on hover
             )
             stop_button.pack(side="left", padx=5)
 
-            # Now assign the commands using lambdas that capture start_button and stop_button correctly
-            start_button.configure(
-                command=lambda sn=scraper_name, sf=scraper_func, sb=start_button, stp=stop_button: start_scraper(sn, sf, sb, stp)
+            # Metadata label with simplified font color
+            metadata_label = ctk.CTkLabel(
+                scraper_frame, text=self.get_metadata_text(scraper_name), text_color="white",  # White text for clarity
+                font=("Helvetica", 11)
             )
-            stop_button.configure(
-                command=lambda sn=scraper_name, sb=start_button, stp=stop_button: stop_scraper(sn, sb, stp)
-            )
-
-            # Metadata display
-            metadata_label = ctk.CTkLabel(scraper_frame, text=self.get_metadata_text(scraper_name))
             metadata_label.pack(side="left", padx=20)
             self.metadata_labels[scraper_name] = metadata_label
 
-        # --------------- Reports Tab ---------------
 
-        reports_tab = self.tabview.add("Reports")
-        reports_label = ctk.CTkLabel(reports_tab, text="Reports", font=("Arial", 16))
-        reports_label.pack(anchor="w", padx=10, pady=10)
-
-        for i in range(1, 4):
-            reports_button = ctk.CTkButton(reports_tab, text=f"Reports {i}")
-            reports_button.pack(anchor="w", padx=10, pady=5)
-            # print(f"Crawler button {i} initialized.")
 
     # --- KEYS
 
-    def get_all_keys(self, lst, sample_size=1000):
+    def get_all_keys(self,  lst, sample_size=1000):
         all_keys = set()
         sampled_entries = random.sample(lst, min(sample_size, len(lst)))  # Get a random sample up to 1000 entries
         for entry in sampled_entries:
             all_keys.update(entry.keys())
-        return list(all_keys)
+        return sorted(list(all_keys))  # Return keys sorted alphabetically
 
         # --------------- SORT RELATED ---------------
     def most_frequent_type(self, lst, key):
@@ -289,10 +281,10 @@ class GUI(ctk.CTk):
         reverse = ordering == "Desc"  # Determine if the sort should be in reverse order
 
         data_type = self.most_frequent_type(self.data_entries, key)
-        print("data_type:", data_type)
+        # print("data_type:", data_type)
 
         items_sorted = self.custom_sort_by_type(self.data_entries, key, data_type, reverse)
-        print("items_sorted:", items_sorted[:10])
+        # print("items_sorted:", items_sorted[:10])
         self.data_entries = items_sorted
 
         self.display_page()  # Refresh the display to show sorted data
@@ -473,7 +465,7 @@ class GUI(ctk.CTk):
             except Exception as e:
                 print(f"Unexpected error: {e}")
 
-                display_placeholder("Error")  # Show a generic error placeholder
+                display_placeholder("Image did not load.")  # Show a generic error placeholder
 
         def display_placeholder(message):
             # Use grid instead of pack for consistent layout management
@@ -571,8 +563,68 @@ class GUI(ctk.CTk):
         self.display_page(self.query)
     
 
+def load_add_dates_and_save(path):
+    import json
+    import random
+    from datetime import datetime, timedelta
+    from faker import Faker
+
+    fake = Faker()
+
+    # Open and load the JSON data from the file
+    with open(path, 'r') as file:
+        data_entries = json.load(file)
+    
+    # Calculate the earliest date (10 years ago from today)
+    ten_years_ago = datetime.now() - timedelta(days=365 * 10)
+    
+    # Define the number of new entries to add
+    num_new_entries = 10000
+    
+    # Create new entries
+    for _ in range(num_new_entries):
+        # Randomly decide which fields to include
+        entry = {
+            "title": fake.sentence(nb_words=6) if random.choice([True, False]) else None,
+            "description": fake.paragraph(nb_sentences=5) if random.choice([True, False]) else None,
+            "url": fake.url() if random.choice([True, False]) else None,
+            "root_url": fake.url() if random.choice([True, False]) else None,
+            "images": [fake.image_url() for _ in range(random.randint(1, 3))] if random.choice([True, False]) else None,
+            
+            # Dates
+            "upload_date": (ten_years_ago + timedelta(days=random.randint(0, 365 * 10))).strftime("%Y-%m-%d %H:%M:%S") if random.choice([True, False]) else None,
+            "first_crawl": (ten_years_ago + timedelta(days=random.randint(365 * 5, 365 * 10))).strftime("%Y-%m-%d %H:%M:%S") if random.choice([True, False]) else None,
+            "recent_crawl": (datetime.now() - timedelta(days=random.randint(30 * 6, 365 * 2))).strftime("%Y-%m-%d %H:%M:%S") if random.choice([True, False]) else None,
+            
+            # Other data types
+            "is_active": random.choice([True, False]),
+            "view_count": random.randint(0, 10000),
+            "rating": round(random.uniform(0, 5), 2),
+            "author": fake.name() if random.choice([True, False]) else None,
+            "tags": [fake.word() for _ in range(random.randint(1, 5))] if random.choice([True, False]) else None,
+            "metadata": {
+                "created_by": fake.name() if random.choice([True, False]) else None,
+                "category": fake.word() if random.choice([True, False]) else None
+            },
+            
+            # New fields
+            "capital": random.randint(1000, 1000000),  # Random integer for "capital"
+            "formatted_date": (ten_years_ago + timedelta(days=random.randint(0, 365 * 10))).strftime("%Y/%m/%d"),  # Date in yyyy/mm/dd format
+            "extra_images": [fake.image_url() for _ in range(random.randint(1, 5))] if random.choice([True, False]) else None  # Additional random image links
+        }
+        
+        # Append the new entry to the data entries list
+        data_entries.append(entry)
+    
+    # Write the updated entries (original + new) back to the file
+    with open(path, 'w') as file:
+        json.dump(data_entries, file, indent=4)
+
 # Run the app with a specific path
 if __name__ == "__main__":
+    # load_add_dates_and_save(path="./logs/crawl_data.json")
+    # exit()
+
     import fake_crawlers
     scrapers = {
         "scraper1": fake_crawlers.scraper1,

@@ -16,12 +16,12 @@ global hyperSelProxies
 hyperSelProxies = None
 
 # Async functions
-async def asyc_open_browser():
-    browser = await open_nodriver(headless=False, proxy=None, max_attempts=3)
+async def asyc_open_browser(headless=False, proxy=None, max_attempts=3):
+    browser = await open_nodriver(headless, proxy, max_attempts)
     return browser
 
-def open_browser():
-    return asyncio.run(asyc_open_browser())
+def open_browser(headless=False, proxy=None, max_attempts=3):
+    return asyncio.run(asyc_open_browser(headless, proxy, max_attempts))
 
 async def async_go_to_site(browser, url):
     page = await browser.get(url=url)
@@ -151,5 +151,4 @@ async def custom_kill_browser(browser):
         pass
     
 if __name__ == '__main__':
-    # since asyncio.run never worked (for me)
-    nd.loop().run_until_complete(main_test())
+    browser = open_browser(headless=True, proxy=None, max_attempts=3)
