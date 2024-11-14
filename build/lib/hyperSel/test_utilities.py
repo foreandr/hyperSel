@@ -1,85 +1,172 @@
+import threading
+import time
+import random
+from faker import Faker
+from datetime import datetime
+import signal
+import sys
+
+fake = Faker()
+
+# Corrected Import
 try:
-    from . import soup_utilities
-    from . import spider_universal
-    from . import ui_utilities
-    
-except:
-    import soup_utilities
-    import spider_universal
-    import ui_utilities
+    from . import log_utilities
+except Exception as e:
+    import log_utilities
 
-import json
+# Scraper functions with more frequent stop checks
+def scraper1(stop_event):
+    while not stop_event.is_set():
+        data = [
+            {
+                "name": fake.name(),
+                "email": fake.email(),
+                "address": fake.address(),
+                "company": fake.company() if random.choice([True, False]) else None
+            }
+            for _ in range(random.randint(10, 50))
+        ]
+        print("INSIDE SCRAPER1:", len(data))
+        yield data
+        for _ in range(4):  # 2-second delay with frequent stop checks
+            if stop_event.is_set():
+                print("INSIDE STOPPING")
+                return
+            time.sleep(0.5)
 
-# Example user-provided field configurations
-def test():
-    # Example URLs (can be more dynamic in a real-world scenario)
-    list_of_urls = [
-        "https://podcasts.apple.com/us/podcast/lex-fridman-podcast/id1434243584",
-        "https://podcasts.apple.com/us/podcast/modern-wisdom/id1347973549",
-        "https://podcasts.apple.com/us/podcast/the-tim-ferriss-show/id863897795",
+def scraper2(stop_event):
+    while not stop_event.is_set():
+        data = [
+            {
+                "name": fake.name(),
+                "email": fake.email(),
+                "phone": fake.phone_number(),
+                "company": fake.company(),
+                "job": fake.job() if random.choice([True, False]) else None
+            }
+            for _ in range(random.randint(25, 100))
+        ]
+        yield data
+        for _ in range(10):  # 5-second delay with frequent stop checks
+            if stop_event.is_set():
+                return
+            time.sleep(0.5)
 
+def scraper3(stop_event):
+    while not stop_event.is_set():
+        data = [
+            {
+                "name": fake.name(),
+                "email": fake.email(),
+                "address": fake.address(),
+                "phone": fake.phone_number(),
+                "company": fake.company(),
+                "product": fake.bs() if random.choice([True, False]) else None,
+                "description": fake.text() if random.choice([True, False]) else None
+            }
+            for _ in range(random.randint(50, 125))
+        ]
+        yield data
+        for _ in range(20):  # 10-second delay with frequent stop checks
+            if stop_event.is_set():
+                return
+            time.sleep(0.5)
+
+# Function to run each scraper, process data, and log data
+def run_scraper(scraper_func, name, meta_data, data_storage, stop_event):
+    start_time = datetime.now()
+    data_count = 0
+    duplicate_count = 0
+    unique_records = set()
+
+    try:
+        for data_batch in scraper_func(stop_event):
+            if stop_event.is_set():
+                break
+            # Log the data batch
+            log_utilities.log_data(data_object=data_batch)
+
+            # Process data as before
+            data_storage[name].extend(data_batch)
+            data_count += len(data_batch)
+
+            # Check for duplicates
+            for record in data_batch:
+                record_id = tuple(record.items())
+                if record_id in unique_records:
+                    duplicate_count += 1
+                else:
+                    unique_records.add(record_id)
+
+            # Update metadata
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            rate_per_hour = data_count / (elapsed_time / 3600) if elapsed_time > 0 else 0
+
+            # Update metadata dictionary
+            meta_data[name] = {
+                "running_time": elapsed_time,
+                "total_data": data_count,
+                "rate_per_hour": rate_per_hour,
+                "duplicate_count": duplicate_count
+            }
+    except Exception as e:
+        print(f"Error in {name}: {e}")
+    finally:
+        print(f"{name} has stopped.")
+
+# Main function with immediate stop handling
+def main():
+    stop_event = threading.Event()  # Signal to stop threads gracefully
+
+    meta_data = {
+        "scraper1": {},
+        "scraper2": {},
+        "scraper3": {}
+    }
+    data_storage = {
+        "scraper1": [],
+        "scraper2": [],
+        "scraper3": []
+    }
+
+    # Set up threads
+    threads = [
+        threading.Thread(target=run_scraper, args=(scraper1, "scraper1", meta_data, data_storage, stop_event)),
+        threading.Thread(target=run_scraper, args=(scraper2, "scraper2", meta_data, data_storage, stop_event)),
+        threading.Thread(target=run_scraper, args=(scraper3, "scraper3", meta_data, data_storage, stop_event))
     ]
-    
-    # USER-DEFINED FIELD CONFIGURATIONS
-    
-    root_config = spider_universal.create_field_config(
-        name="root_section",
-        function=soup_utilities.get_full_soup_by_tag_and_class,
-        tag="li",
-        selector_name="svelte-8rlk6b",
-        single=False
-    )
-    
-    title_config = spider_universal.create_field_config(
-        name="title",
-        function=soup_utilities.get_text_by_tag_and_class,
-        tag="span",
-        selector_name="episode-details__title-text"
-    )
 
-    description_config = spider_universal.create_field_config(
-        name="description",
-        function=soup_utilities.get_text_by_tag_and_class,
-        tag="span",
-        selector_name="multiline-clamp__text svelte-73d2pa",
-        single=False,
-        index=1
-    )
+    # Start all threads
+    for thread in threads:
+        thread.start()
 
-    url_config = spider_universal.create_field_config(
-        name="url",
-        function=soup_utilities.get_href_by_tag_and_class,
-        tag="a",
-        selector_name="link-action svelte-1wtdvjb",
-        needed=True
-    )
+    # Signal handler to stop threads
+    def signal_handler(sig, frame):
+        print("\nStopping scrapers gracefully...")
+        stop_event.set()  # Signal all threads to stop
 
-    field_configs = {**root_config, **title_config, **description_config, **url_config}
-    
-    # Recursion regex pattern
-    recursion_url_regex = r'https:\/\/podcasts\.apple\.com\/[a-z]{2}\/podcast\/[a-zA-Z\-]+\/id\d+'
+    # Bind the signal handler to Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
 
-    # Call the crawl function, passing the user-defined fields and options
-    spider_universal.crawl(
-        list_of_urls=list_of_urls,
-        field_configs=field_configs,
-        recursion_url_regex=recursion_url_regex,
-        max_recursions=3,
-        max_time=30,
-        site_time_delay=8,
-        headless=False,
-    )
+    # Keep the main thread active to handle signals
+    try:
+        while not stop_event.is_set():
+            print("\nScraper Metadata Summary:")
+            for scraper, stats in meta_data.items():
+                print(f"{scraper}: Running Time: {stats.get('running_time', 0):.2f} seconds, "
+                      f"Total Data: {stats.get('total_data', 0)}, "
+                      f"Rate per Hour: {stats.get('rate_per_hour', 0):.2f}, "
+                      f"Duplicate Count: {stats.get('duplicate_count', 0)}")
+            time.sleep(10)
+    except KeyboardInterrupt:
+        print("keyboard interupt")
+        signal_handler(None, None)
 
-def test2():
-    # Load data from demo_data1.json
-    with open('./demo_data1.json', 'r') as file:
-        data_entries = json.load(file)
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+    print("All scrapers stopped.")
 
-        app = ui_utilities.App()
-        app.mainloop()
-    pass
-
-# Run the app
+# Run the application
 if __name__ == "__main__":
-    test2()
-    
+    main()

@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Setup configuration
 setup(
     name="hyperSel",
-    version=3.15,
+    version=3.16,
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description
@@ -29,6 +29,7 @@ setup(
         "screeninfo",
         "customtkinter",
         "pillow",
+        "autoscraper"
     ],
     include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
     package_data={

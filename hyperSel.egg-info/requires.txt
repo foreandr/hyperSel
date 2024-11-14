@@ -8,3 +8,5 @@ psutil
 playwright
 undetected-playwright
 screeninfo
+customtkinter
+pillow
