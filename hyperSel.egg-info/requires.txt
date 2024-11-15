@@ -10,3 +10,4 @@ undetected-playwright
 screeninfo
 customtkinter
 pillow
+autoscraper

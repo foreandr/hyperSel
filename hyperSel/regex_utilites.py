@@ -212,3 +212,13 @@ ZIP_CODE_JAPAN = r'^\d{3}-\d{4}$'
 ZIP_CODE_UK = r'^[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2}$'
 ZIP_CODE_UK = r'^[A-Z]{1,2}\d{1,2} \d[A-Z]{2}$'
 ZIP_CODE_US = r'^\d{5}(?:-\d{4})?$'
+
+def extract_numbers(text):
+    # Extract all parts of the number and join them
+    match = ''.join(re.findall(r'\d+\.?\d*', text))
+    return match
+
+def extract_year(title):
+    # Regular expression to find the first four-digit year in the title
+    match = re.search(r'\b\d{4}\b', title)
+    return match.group(0) if match else None  # Return the year or None if no match

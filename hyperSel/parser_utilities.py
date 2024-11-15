@@ -1,157 +1,110 @@
-
-import requests
-import time
-import json
 from autoscraper import AutoScraper
-
-import re
-
-import re
-
-def build_flexible_car_regex(strings):
-    """
-    Generates a regex pattern that captures the structure of car titles across diverse examples.
-
-    Parameters:
-        strings (list of str): The list of car title strings to analyze.
-
-    Returns:
-        str: A regex pattern that generalizes the provided car titles.
-    """
-    if not strings:
-        return ""
-
-    # Split each string into tokens
-    tokenized_strings = [s.split() for s in strings]
-    num_tokens = max(len(tokens) for tokens in tokenized_strings)
-
-    # List to store regex patterns for each token position
-    patterns = []
-
-    for i in range(num_tokens):
-        token_samples = [tokens[i] for tokens in tokenized_strings if len(tokens) > i]
-        
-        # Identify the common structure of each token position
-        if all(re.match(r'^\d{4}$', t) for t in token_samples):  # Year (e.g., "2012")
-            patterns.append(r'\d{4}')
-        elif all(re.match(r'^[A-Z][a-zA-Z]+$', t) for t in token_samples):  # Capitalized words (Make/Model)
-            patterns.append(r'[A-Z][a-zA-Z]+')
-        elif all(re.match(r'^\d+[a-zA-Z]*$', t) for t in token_samples):  # Numeric with possible suffix (e.g., "135i")
-            patterns.append(r'\d+[a-zA-Z]*')
-        elif all(re.match(r'^[a-zA-Z]+$', t) for t in token_samples):  # Alphanumeric words (Trims)
-            patterns.append(r'[a-zA-Z]+')
-        else:
-            patterns.append(r'\S+')  # Fallback pattern for mixed/unknown formats
-
-    # Join patterns with spaces and optional groups to handle missing parts
-    final_pattern = r'\b' + r'\s+'.join(f'(?:{pat})?' for pat in patterns) + r'\b'
-    return final_pattern
-
-# Example usage with diverse car titles
-strings = [
-    "2012 BMW 1 Series 135i",
-    "2011 BMW 1 Series",
-    "2008 BMW 1 Series 128",
-    "2010 BMW 1 Series 128i",
-    "2012 BMW 1 Series M Sport",
-    "2020 Audi A4 Allroad",
-    "2019 Mercedes-Benz GLC 300 4MATIC",
-    "2017 Honda Civic LX",
-    "2015 Ford Mustang GT",
-    "2018 Tesla Model 3 Performance"
-]
-
-pattern = build_flexible_car_regex(strings)
-print("Generated regex pattern:", pattern)
-
-# Test the pattern
-for s in strings:
-    print(f"Testing '{s}':", bool(re.match(pattern, s)))
-
-exit()
+import os
+import time
 try:
     from . import log_utilities
     from . import selenium_utilities
-except ImportError:
-    import selenium_utilities
+except:
     import log_utilities
+    import selenium_utilities
 
-# Fetch HTML content from the Kijiji Autos page using Selenium
-url = "https://www.kijijiautos.ca/cars/bmw/1-series/#ms=3500%3B132&od=down&sb=rel"
-driver = selenium_utilities.open_site_selenium(url)
-html_content = str(selenium_utilities.get_driver_soup(driver))
 
-def generate_wanted_list(data_dicts):
+def generate_wanted_list(demo_objects):
     wanted_list = []
     num_fields = 0
-    if data_dicts:
-        for data_dict in data_dicts:
+    if demo_objects:
+        for data_dict in demo_objects:
             wanted_list.extend(data_dict.values())
-        num_fields = len(data_dicts[0])
+        num_fields = len(demo_objects[0])
     return wanted_list, num_fields
 
-# Example input data to generate the `wanted_list`
-example_data = [
-    {
-        "title": "2012 BMW 1 Series 135i",
-        "mileage": "125,800 km",
-        "location": "-, NB",
-        "price": "$14,950"
-    },
-    {
-        "title": "2011 BMW 1 Series",
-        "mileage": "230,000 km",
-        "location": "-, ON",
-        "price": "$4,500"
-    }
-]
+def get_data(demo_objects, html_content, save_scraper=False):
+    scraper = AutoScraper()
+    scraper_name="scraper"
+    scraper_path = f"{scraper_name}.json"
 
-# Generate the wanted list and determine the number of fields per dictionary
-wanted_list, num_fields = generate_wanted_list(example_data)
+    # Check if the scraper is already saved in the filesystem
+    if os.path.exists(scraper_path):
+        scraper.load(scraper_name)
+    else:
+        wanted_list, num_fields = generate_wanted_list(demo_objects)
+        result = scraper.build(html=html_content, wanted_list=wanted_list)
 
-# Initialize AutoScraper
-scraper = AutoScraper()
+        if save_scraper:
+            scraper.save(scraper_name)
 
-print("\nRunning AutoScraper...")
-start_time = time.time()
+    # Return results after loading or building
+    return scraper.get_result_similar(html_content)
 
-# Build the scraper using the generated wanted list
-result = scraper.build(html=html_content, wanted_list=wanted_list)
+def foo(soup, wanted_list):
+    scraper = AutoScraper()
+    result = scraper.build(html=str(soup), wanted_list=wanted_list)
+    return result
 
-# Function to categorize the items based on patterns
-def categorize_items(result):
-    titles = [item for item in result if "BMW" in item]
-    mileages = [item for item in result if "km" in item and "km" in item]
-    locations = [item for item in result if any(loc in item for loc in ["ON", "NB", "QC", "AB", "BC"])]
-    prices = [item for item in result if "$" in item]
-    return titles, mileages, locations, prices
+def get_demo_soup():
+    driver = selenium_utilities.open_site_selenium(site='https://toronto.craigslist.org/search/cta#search=1~gallery~0~0')
+    time.sleep(2)
+    log_utilities.log_function(log_string=selenium_utilities.get_driver_soup(driver))
+    
+def testing_auto_scraper():
+    soup = log_utilities.load_file_as_soup("./logs/test_soup.txt")
+    print("soup:", len(str(soup)))
 
-# Categorize the extracted items
-titles, mileages, locations, prices = categorize_items(result)
+    wanted_list = ['2010 Lexus gs 350 AWD']
+    res = foo(soup, wanted_list)
+    for i in range(len(res)):
+        print(i, res[i])
 
-# Ensure that all lists have the same length
-min_length = min(len(titles), len(mileages), len(locations), len(prices))
-titles, mileages, locations, prices = titles[:min_length], mileages[:min_length], locations[:min_length], prices[:min_length]
+    print(len(res))
 
-# Combine the data into structured JSON format
-cars = []
-for i in range(min_length):
-    car_entry = {
-        "title": titles[i],
-        "mileage": mileages[i],
-        "location": locations[i],
-        "price": prices[i]
-    }
-    cars.append(car_entry)
+'''
+47 2022 FORD MUSTANG MACH 1 PREMIUM 5.0L 470HP MANUAL |HANDLING/ELITEPKG
+48 2019 JAGUAR F-TYPE R AWD 550HP |NAV|PANO|BLINDSPT|MERIDIAN|SELFPARK
+49 2010 DODGE CHALLENGER SRT8 MANUAL 425HP |RAREB5BLUE|ROOF|BLUETOOTH
 
-# Log the structured data
-log_utilities.log_data(cars)
 
-# Print structured data for verification
-print("Structured Car Data:", json.dumps(cars, indent=4))
+# MISSING 2020 HYUNDAI TUCSON PREFERRED AWD
+'''
 
-# Print execution time
-print("Execution Time:", time.time() - start_time)
+def bar():
+    soup = log_utilities.load_file_as_soup("./logs/test_soup.txt")
+    target_string = '2010 Lexus gs 350 AWD'
 
-# Optional: Save the model for reuse
-scraper.save("kijiji_car_scraper")
+    occ = find_all_occurrences(soup, target_string)
+    for i in range(len(occ)):
+        print(i, occ[i])
+
+def find_all_occurrences(soup, target_string):
+    # Retrieve all tags in document order
+    all_tags = soup.find_all(True)
+
+    # Filter tags where the target string is in text or attributes
+    matching_tags = [
+        tag for tag in all_tags 
+        if target_string in tag.get_text() or any(target_string in str(value) for value in tag.attrs.values())
+    ]
+
+    return matching_tags
+
+
+if __name__ == '__main__':
+    bar()
+    exit()
+    testing_auto_scraper()
+
+    '''
+    STEPS FOR WRITING ME OWN
+
+    1. FIRST TEST BY PUTTING IN TITLE SAME FUNCTIONALITY
+        - IT SHOULD FIRST GO FIND ALL THE TAGS WITH THAT TITLE
+        - THEN GET ANYTHING ELSE THAT HAS THOSE TAGS,
+        - HOWEVER ELSE IT NEEDS TO GET THAT DATA
+            - TAGS, TEXT, INNARDS, WHATEVER
+        - THEN RETURN THE ONE THAT GETS THE MOST
+
+    2. NEXT VERSION
+        - GO THROUGHT HE PAGE AND DO IT AUTOMATIALLY SOMEHOW 
+            (THIS SHOULD TAKE A LONG TIME)
+        - THEN IT SHOULD LIKKE, SEE WHERE THERE ARE LARGE AMOUNTS OF SIMILAR SIZE DATA
+        - TAKE THOSE
+    '''

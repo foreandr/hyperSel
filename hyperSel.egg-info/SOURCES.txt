@@ -11,6 +11,7 @@ hyperSel/general_utilities.py
 hyperSel/log_utilities.py
 hyperSel/nodriver_utilities.py
 hyperSel/notification_utilities.py
+hyperSel/parser_utilities.py
 hyperSel/playwright_utilites.py
 hyperSel/proxies_utilities.py
 hyperSel/regex_utilites.py
