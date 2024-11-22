@@ -76,3 +76,46 @@ need a good UI way in the scrapers thing to say I want to get data from these si
 
     3. create scraper
         1. clcik 1n scrapers, name it, and then can activate it
+
+    google sheets has to be one of the things I can write to
+
+
+- google sheets as another file options
+
+THIS WILL MOSTL BE USED FOR PEOPLE TO ARB SITES THE UBUY THINGS ON
+
+END GOAL REALLY SHOULD BE LLM, BUT IT CANT USE AN API,
+    - need something running locally
+    - as a BUSINESS, i COULD buy a 10g MACHINE and have it runing locally   
+    - and compiled in the exe. is like an API request or something
+    (meh) id rather just have it running on thie rmachine
+
+Name: "Christoffel", to represent local crawling, vs global
+
+a b testing on the messages I send out
+    - how much  i pay to have them ranked etc
+
+
+THE LONGEST STIRNG UNDER N CHARS SHOULD BE title
+THE LONGEST STRING OVER N CHARST IS DESC _n
+
+
+for each field in the dict {
+    field1: obviousl a string
+    field1: sdasassdfadasdasfasdfdsasafsadffsdadsadfsdfaasdfsadfsadfdf
+    field1: "1"
+    field1: "$20.19" # probably money
+    field1: "2033/43/32"
+}
+
+i should be able to train a very simple neural net to classify them
+user faker libary
+    - pay extra attention to,
+    addresses
+    postal codes
+    multiple date formats
+    currency types
+    distances, with km, ir miles in them and a number 
+
+
+need to be able to save searches

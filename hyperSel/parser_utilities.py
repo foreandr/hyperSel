@@ -4,14 +4,20 @@ import time
 from collections import Counter
 import html_to_json # html-to-json
 from bs4 import BeautifulSoup
+
+from difflib import SequenceMatcher
+
+from pprint import pprint
 try:
     from . import log_utilities
     from . import selenium_utilities
     from . import regex_utilities
+    from . import classifier_utilities
 except:
     import log_utilities
     import selenium_utilities
     import regex_utilities
+    import classifier_utilities
 
 
 def generate_wanted_list(demo_objects):
@@ -22,54 +28,6 @@ def generate_wanted_list(demo_objects):
             wanted_list.extend(data_dict.values())
         num_fields = len(demo_objects[0])
     return wanted_list, num_fields
-
-def get_data(demo_objects, html_content, save_scraper=False):
-    scraper = AutoScraper()
-    scraper_name="scraper"
-    scraper_path = f"{scraper_name}.json"
-
-    # Check if the scraper is already saved in the filesystem
-    if os.path.exists(scraper_path):
-        scraper.load(scraper_name)
-    else:
-        wanted_list, num_fields = generate_wanted_list(demo_objects)
-        result = scraper.build(html=html_content, wanted_list=wanted_list)
-
-        if save_scraper:
-            scraper.save(scraper_name)
-
-    # Return results after loading or building
-    return scraper.get_result_similar(html_content)
-
-def foo(soup, wanted_list):
-    scraper = AutoScraper()
-    result = scraper.build(html=str(soup), wanted_list=wanted_list)
-    return result
-
-def get_demo_soup():
-    driver = selenium_utilities.open_site_selenium(site='https://toronto.craigslist.org/search/cta#search=1~gallery~0~0')
-    time.sleep(2)
-    log_utilities.log_function(log_string=selenium_utilities.get_driver_soup(driver))
-    
-def testing_auto_scraper():
-    soup = log_utilities.load_file_as_soup("./logs/test_soup.txt")
-    print("soup:", len(str(soup)))
-
-    wanted_list = ['2010 Lexus gs 350 AWD']
-    res = foo(soup, wanted_list)
-    for i in range(len(res)):
-        print(i, res[i])
-
-    print(len(res))
-
-'''
-47 2022 FORD MUSTANG MACH 1 PREMIUM 5.0L 470HP MANUAL |HANDLING/ELITEPKG
-48 2019 JAGUAR F-TYPE R AWD 550HP |NAV|PANO|BLINDSPT|MERIDIAN|SELFPARK
-49 2010 DODGE CHALLENGER SRT8 MANUAL 425HP |RAREB5BLUE|ROOF|BLUETOOTH
-
-
-# MISSING 2020 HYUNDAI TUCSON PREFERRED AWD
-'''
 
 def most_frequent_item_percentage(items):
     # Count the occurrences of each item in the list
@@ -97,7 +55,7 @@ def print_all_tag_children_counts(soup):
     print("total_tags:", len(total_tags))
     for tag in total_tags:
         # 1  
-        if len(tag) != 120:#<5
+        if len(tag) <= 5:# 120
             continue
         # 2
         if tag.name in tag_skippers:
@@ -126,7 +84,8 @@ def print_all_tag_children_counts(soup):
 
         tags_to_go_through.append(tag)
     
-    go_through_filtered_tags(tags_to_go_through)
+    data = go_through_filtered_tags(tags_to_go_through)
+    return data
 
 def extract_attributes(tag, single_class=True):
     """
@@ -169,54 +128,304 @@ def extract_attributes(tag, single_class=True):
 
     return tag_info
 
-def go_through_filtered_tags(tags_to_go_through):
-    '''
-        One of the big ones gotte in cl-search-results
+def extract_all_texts(data):
+    try:
+        texts = []
 
-        and the other is the ol which is inside it, im not sure if it makes more sense to grab the inner or the outer..
-            - my guess rn is the inner but im not sure if it makes the most sense on other sites
-            - run some experiments on other sites to test
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == "text" and isinstance(value, str):
+                    texts.append(value)
+                else:
+                    texts.extend(extract_all_texts(value))
+        elif isinstance(data, list):
+            for item in data:
+                texts.extend(extract_all_texts(item))
 
-        - then we also need some tooling for guessing what the data that comes back means
-            - should be eaiser enough for dates, time,s addresses, postal codes, prices, 
-    '''
+        # Deduplicate while preserving order and avoiding unhashable types
+        unique_texts = []
+        seen = set()
+        for text in texts:
+            if isinstance(text, str) and text not in seen:
+                unique_texts.append(text)
+                seen.add(text)
+
+        return unique_texts
+    except Exception as e:
+        print(e)
+        print(data)
+        input("PAUSE HERE")
+
+def extract_all_urls(data):
+    try:
+        urls = []
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key in ["href", "src", "data-url"] and isinstance(value, str):
+                    urls.append(value)
+                else:
+                    urls.extend(extract_all_urls(value))
+        elif isinstance(data, list):
+            for item in data:
+                urls.extend(extract_all_urls(item))
+
+        # Deduplicate while preserving order and avoiding unhashable types
+        unique_urls = []
+        seen = set()
+        for url in urls:
+            if isinstance(url, str) and url not in seen:
+                unique_urls.append(url)
+                seen.add(url)
+
+        return unique_urls
+    except Exception as e:
+        print(e)
+        print(data)
+        input("PAUSE HERE")
+
+def create_dict_from_list(items):
+    tag_json = {}
+    for i, item in enumerate(items, start=0):
+        tag_json[f"item_{i}"] = item
+    return tag_json
+
+def skip_string(s):
+    s = str(s)
+    remove_list = ["\n", "/", "\\", "\t"]
+    # Remove each character in the list from the string
+    for char in remove_list:
+        s = s.replace(char, "")
+    
+    try:
+        if s[0] == "#":
+            return True
+    except Exception as e:
+        return True
+    try:
+        if s[1] == "#":
+            return True
+    except Exception as e:
+        return True
+    
+    # JUST EMPIRICAL 
+    long_list_of_phrases_to_skip = [
+        "+ taxes", "details", "features", "save", "read more", "other", "+ gst", 
+        "no image"
+    ]
+    if s.lower() in long_list_of_phrases_to_skip:
+        return True
+    
+
+    return len(s) <= 2
+
+def go_through_filtered_tags(tags_to_go_through):    
     print("tags_to_go_through", len(tags_to_go_through))
+    all_tag_data = []
+    skipped_data = []
     for i, tag in enumerate(tags_to_go_through):
+        all_data_for_tag = []
         for item in tag:
-            print(item)
+            #print(item)
             data = extract_attributes(item)
-            print("data:", data)
-            for j in data:
-                print(j)
-            print("==")
-            input("---------------")
-        exit()
-        input("==")
+            all_data = []
+            
+            text_data = extract_all_texts(data)
+            for j in text_data:
+                if skip_string(j):
+                    skipped_data.append(f"SKIPPED: [{j}]")
+                    # print("SKIPPING", j)
+                    continue
+                else:
+                    all_data.append(j)
 
+            for o in extract_all_urls(data):
+                if skip_string(o):
+                    skipped_data.append(f"SKIPPED: [{o}]")
+                    continue
+                else:
+                    all_data.append(o)
 
+            data_dict = create_dict_from_list(all_data)
 
-def bar():
-    soup = log_utilities.load_file_as_soup("./logs/test_soup.txt")
-    print_all_tag_children_counts(soup)
+            all_data_for_tag.append(data_dict)
+
+        all_tag_data.append(all_data_for_tag)
+    
+    filtered_data = filter_valid_data(all_tag_data)
+    
+    second_filtered = size_filterer(filtered_data=filtered_data)
+    print("second_filtered:", len(second_filtered))
+
+    return second_filtered
+
+def size_filterer(filtered_data, min_size=3):
+    print("filtered_data:", len(filtered_data))
+    all_data_filtered = []
+    for i, data in enumerate(filtered_data, start=0):
+        local_data = []
+        # print(i, "data:", len(data))
+        for j in data:
+            if len(j) < min_size:
+                # print("SKIP SMALL SIZE", len(j), j)
+                continue
+            else:
+                local_data.append(j)
+
+        all_data_filtered.append(local_data)
+    print("all_data_filtered:", len(all_data_filtered))
+
+    data_filtered_for_size = []
+    for i in all_data_filtered:
+        if len(i) < 3:
+            continue
+        else:
+            data_filtered_for_size.append(i)
+
+    if len(data_filtered_for_size) == 1:
+        final_data = data_filtered_for_size[0]
+        print("ONLY ONE SET OF DATA POINTS LEFT; RETURN", len(final_data))
+        return final_data
+    if len(data_filtered_for_size) == 0:
+        print("NO DATA AT ALL")
+        return []
+    
+    #print("***"*2)
+    #print("***"*2)
+    #print("***"*2)
+    # log_utilities.log_function(data_filtered_for_size)
+    #for i, i_data in enumerate(data_filtered_for_size, start=0):
+    #    for j, j_data in enumerate(i_data, start=0):
+    #        log_utilities.log_function(f"[i:{i}][j:{j}]{j_data}")
+
+    #    print("======")
+    # input("MORE THAN IS NEEDED")
+    return data_filtered_for_size
+
+    # MULTIPLE DATA POINTS, GOTTA FIGURE OUT WHAT IS THE RIGHT STUFF
+
+def filter_valid_data(all_tag_data):
+    """
+    Filters `all_tag_data` to remove entries where:
+    1. The majority of elements are 0.
+    2. The majority of elements have a length of 1.
+
+    Args:
+        all_tag_data (list of lists): A list where each item is a list of elements to process.
+
+    Returns:
+        list: A filtered list containing only the valid entries.
+    """
+    valid_data = []
+
+    for data in all_tag_data:
+        # Extract lengths of each item in `data`
+        lengths = [len(item) for item in data]
+        
+        # Skip empty data
+        if not lengths:
+            continue
+
+        # Count occurrences of each length
+        length_counts = {length: lengths.count(length) for length in set(lengths)}
+        most_common_length = max(length_counts, key=length_counts.get)  # Length with the highest count
+
+        # Check if the most common length is 0 or 1
+        majority_is_zero_or_one = most_common_length in [0, 1]
+
+        # Exclude data if the majority of elements are 0 or 1
+        if majority_is_zero_or_one:
+            # log_utilities.log_function(f"MAJORITY ZERO OR 1 {data}")
+            continue 
+
+        valid_data.append(data)
+
+    return valid_data
+
+def  alpha_sort_objects(obj):
+    ''' EXAMPLE
+    {
+        "title_0": "2019 Chrysler Pacifica Touring L Minivan",
+        "datetime_0": "11/18",
+        "distance_0": "175,000km",
+        "price_0": "$9,500",
+        "url_0": "https://syracuse.craigslist.org/cto/d/liverpool-2019-chrysler-pacifica/7803364992.html",
+        "text_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAtJREFUGFdjYAACAAAFAAGq1chRAAAAAElFTkSuQmCC",
+        "original_scrape_time": "2024-11-19 11:04:34",
+        "recent_scrape_time": "2024-11-19 11:04:34"
+    },
+    '''
+    return dict(sorted(obj.items()))
+
+def assign_types_to_data(data):
+    #NOTE: THIS SEEMS, LIKE IT WOULD BE VERY INEFFICIENT LMAOOO 4 LOOPS
+    finished_typed_data_sets = []
+    for data_set in data:
+        typed_data = []
+        for item in data_set:
+            new_type_items = {}
+            for key, value in item.items():
+                value_type = classifier_utilities.classify(value)
+                value_type_indexed = 0
+                while True:
+                    value_type_full_string = f"{value_type}_{value_type_indexed}"
+                    if value_type_full_string in new_type_items:
+                        value_type_indexed+=1
+                    else:
+                        new_type_items[value_type_full_string] = value
+                        break
+            
+            typed_sorted = alpha_sort_objects(new_type_items)
+            typed_data.append(typed_sorted)
+        finished_typed_data_sets.append(typed_data)
+
+    return finished_typed_data_sets
+
+def pull_data_from_soup(soup):
+    data = print_all_tag_children_counts(soup)
+    print("[1]:", len(data))
+    typed_data = assign_types_to_data(data)
+    print("[2]:", len(typed_data))
+
+    print("[3]: todo")
+    '''
+    FOR EACH DATASET, we are going to rank them by some criterion
+    # size: longest is GENERALLY GOOD
+    # internal consistec across object
+    [{},{},{},{},] #similar compare somehow
+    #try to think of more
+
+    '''
+    return typed_data
+
+def auto_pull_data_from_site(soup, data_index=None):
+    data = pull_data_from_soup(soup)
+    if data_index:
+        try:
+            return data[data_index]
+        except Exception as e:
+            print("EXCELSIRO", e)
+            return data
+            
+    return data
 
 if __name__ == '__main__':
-    bar()
+    site_1 = 'https://peterborough.craigslist.org/search/cta?purveyor=owner#search=1~gallery~0~0'
+    driver = selenium_utilities.open_site_selenium(site=site_1)
+    selenium_utilities.maximize_the_window(driver)
+    time.sleep(5)
+    soup = selenium_utilities.get_driver_soup(driver)
+    data = auto_pull_data_from_site(soup, data_index=None)
+    print("data;", len(data))
+    for i in data:
+        log_utilities.log_data(i)
     exit()
-    testing_auto_scraper()
 
-    '''
-    STEPS FOR WRITING ME OWN
+    site_1 = 'https://www.kijijiautos.ca/cars/bmw/#c=EstateCar&c=Suv&c=Van&ms=3500&od=down&sb=rel&sc=5%3A'
+    driver = selenium_utilities.open_site_selenium(site=site_1)
+    soup = selenium_utilities.get_driver_soup(driver)
+    data = auto_pull_data_from_site(soup, data_index=None)
+    log_utilities.log_data(data)
 
-    1. FIRST TEST BY PUTTING IN TITLE SAME FUNCTIONALITY
-        - IT SHOULD FIRST GO FIND ALL THE TAGS WITH THAT TITLE
-        - THEN GET ANYTHING ELSE THAT HAS THOSE TAGS,
-        - HOWEVER ELSE IT NEEDS TO GET THAT DATA
-            - TAGS, TEXT, INNARDS, WHATEVER
-        - THEN RETURN THE ONE THAT GETS THE MOST
+    
 
-    2. NEXT VERSION
-        - GO THROUGHT HE PAGE AND DO IT AUTOMATIALLY SOMEHOW 
-            (THIS SHOULD TAKE A LONG TIME)
-        - THEN IT SHOULD LIKKE, SEE WHERE THERE ARE LARGE AMOUNTS OF SIMILAR SIZE DATA
-        - TAKE THOSE
-    '''

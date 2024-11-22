@@ -30,6 +30,7 @@ setup(
         "customtkinter",
         "pillow",
         "autoscraper",
+        "pyinstaller",
     ],
     include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
     package_data={

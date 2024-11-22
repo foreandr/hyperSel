@@ -4,9 +4,64 @@ upload_github.bat
 update_package_num.bat
 notes.txt
 venv/
+resources/
+tor/
 hyperSel/__pycache__/
 hyperSel/__pycache__/
 hyperSel/__pycache__/
 hyperSel/logs
 hyperSel/config.json
 hyperSel/demo_data1.json
+hyperSel/data/phone.csv
+hyperSel/data/names.txt
+hyperSel/data/addresses.csv
+hyperSel/data/email.txt
+hyperSel/SVC.pkl
+hyperSel/RandomForestClassifier.pkl
+hyperSel/LogisticRegression.pkl
+# Logs and temporary files
+*.pkl
+*.log
+*.logs.txt
+logs/
+log.txt
+logs.txt
+geckodriver.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE files
+.vscode/
+.vs/
+.idea/
+*.swp
+
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+*.log
+*.pid
+*.tgz
+*.gz
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg

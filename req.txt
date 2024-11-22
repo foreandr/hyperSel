@@ -13,3 +13,4 @@ screeninfo
 customtkinter
 pillow
 autoscraper
+pyinstaller
