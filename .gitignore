@@ -21,6 +21,7 @@ hyperSel/RandomForestClassifier.pkl
 hyperSel/LogisticRegression.pkl
 # Logs and temporary files
 *.pkl
+*.spec
 *.log
 *.logs.txt
 logs/
@@ -65,3 +66,4 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+hyperSel/foo_trial.spec

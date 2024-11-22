@@ -1,22 +1,15 @@
-from autoscraper import AutoScraper
+
 import os
 import time
 from collections import Counter
-import html_to_json # html-to-json
-from bs4 import BeautifulSoup
-
-from difflib import SequenceMatcher
-
 from pprint import pprint
 try:
     from . import log_utilities
     from . import selenium_utilities
-    from . import regex_utilities
     from . import classifier_utilities
 except:
     import log_utilities
     import selenium_utilities
-    import regex_utilities
     import classifier_utilities
 
 

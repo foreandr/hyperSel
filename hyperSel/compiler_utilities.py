@@ -1,5 +1,6 @@
 import subprocess
 import datetime
+import os
 
 def modify_file_for_trial(file_name, free_trial, trial_duration_minutes=5, email="foreandr@gmail.com"):
     """
@@ -81,13 +82,27 @@ def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True):
     # Add free trial logic to the file if necessary
     original_code = modify_file_for_trial(file_name, free_trial)
 
+    # Determine output file name
+    base_name = os.path.splitext(os.path.basename(file_name))[0]
+    if free_trial:
+        output_name = f"{base_name}_trial"
+    else:
+        output_name = base_name
+
     # Print debug information
     print(f"File Name: {file_name}")
+    print(f"Output Name: {output_name}")
     print(f"Is GUI: {is_gui}")
     print(f"Free Trial: {free_trial}")
 
     # Build the PyInstaller command
-    command = ["pyinstaller", "--onefile", file_name]
+    command = [
+        "pyinstaller",
+        "--onefile",
+        file_name,
+        "--name",
+        output_name
+    ]
     if is_gui:
         command.append("--noconsole")
 
@@ -112,4 +127,4 @@ def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True):
 
 if __name__ == "__main__":
     # Run with default parameters
-    run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True)
+    run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=False)

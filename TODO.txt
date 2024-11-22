@@ -1,5 +1,4 @@
 
-print("ADD A WAY TO SAY, THE LAST TIME I CRAWLED X URL WAS AT X TIME")
 print("THREADING DOESNT EXIST")
 1. change the headers to look like a google bot?
 2. bing bot etc try that
