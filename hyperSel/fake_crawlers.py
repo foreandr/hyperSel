@@ -1,14 +1,8 @@
 try:
-    from . import playwright_utilites
-    from . import colors_utilities
-    from . import soup_utilities
     from . import log_utilities
-    
 except:
-    import playwright_utilites
-    import colors_utilities
-    import soup_utilities
     import log_utilities
+    
 import random
 import time
 from faker import Faker

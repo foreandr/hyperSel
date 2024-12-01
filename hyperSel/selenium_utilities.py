@@ -237,6 +237,11 @@ def open_site_selenium(site, show_browser=True, tor=False):
         print("Routing requests through Tor...")
         options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
 
+    options.add_argument("--disable-features=NetworkService")
+    options.add_argument("--log-level=3")  # Suppress unnecessary logs
+    options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
+    
     # Initialize the driver
     driver = webdriver.Chrome(options=options)
     go_to_site(driver, site)

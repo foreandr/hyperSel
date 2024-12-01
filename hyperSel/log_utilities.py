@@ -4,8 +4,6 @@ import datetime
 import json
 from bs4 import BeautifulSoup
 
-
-
 try:
     from . import colors_utilities
 except:

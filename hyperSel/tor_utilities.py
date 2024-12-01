@@ -17,15 +17,19 @@ TOR_PATH = os.path.join(TOR_EXTRACT_DIR, "Tor", "tor.exe")
 TOR_PID = None
 
 # --- Tor Process Management ---
-def start_tor():
+def start_tor(verbose=False):
     global TOR_PID
     if not os.path.exists(TOR_PATH):
-        print("Tor executable not found. Downloading Tor...")
+        if verbose:
+            print("Tor executable not found. Downloading Tor...")
         download_tor()
     else:
-        print("Tor is already downloaded.")
+        if verbose:
+            print("Tor is already downloaded.")
 
-    print("Starting Tor...")
+    if verbose:
+        print("Starting Tor...")
+
     tor_process = subprocess.Popen(
         [TOR_PATH, "--SOCKSPort", "9050", "--ControlPort", "9051"],
         stdout=subprocess.PIPE,
@@ -34,16 +38,19 @@ def start_tor():
         creationflags=subprocess.DETACHED_PROCESS  # Prevent auto cleanup
     )
     TOR_PID = tor_process.pid
-    print(f"Tor started with PID: {TOR_PID}")
+    if verbose:
+        print(f"Tor started with PID: {TOR_PID}")
 
     # Wait for Tor to stabilize
     for _ in range(10):  # Retry 10 times
         if psutil.pid_exists(TOR_PID):
-            print(f"Tor process {TOR_PID} is alive.")
+            if verbose:
+                print(f"Tor process {TOR_PID} is alive.")
             break
         time.sleep(1)
     else:
-        print("Tor process did not stabilize. Exiting...")
+        if verbose:
+            print("Tor process did not stabilize. Exiting...")
 
 
 

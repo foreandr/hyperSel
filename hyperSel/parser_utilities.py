@@ -2,7 +2,10 @@
 import os
 import time
 from collections import Counter
+from difflib import SequenceMatcher
+from collections import Counter
 from pprint import pprint
+import re
 try:
     from . import log_utilities
     from . import selenium_utilities
@@ -283,16 +286,6 @@ def size_filterer(filtered_data, min_size=3):
         print("NO DATA AT ALL")
         return []
     
-    #print("***"*2)
-    #print("***"*2)
-    #print("***"*2)
-    # log_utilities.log_function(data_filtered_for_size)
-    #for i, i_data in enumerate(data_filtered_for_size, start=0):
-    #    for j, j_data in enumerate(i_data, start=0):
-    #        log_utilities.log_function(f"[i:{i}][j:{j}]{j_data}")
-
-    #    print("======")
-    # input("MORE THAN IS NEEDED")
     return data_filtered_for_size
 
     # MULTIPLE DATA POINTS, GOTTA FIGURE OUT WHAT IS THE RIGHT STUFF
@@ -376,23 +369,94 @@ def assign_types_to_data(data):
 
 def pull_data_from_soup(soup):
     data = print_all_tag_children_counts(soup)
-    print("[1]:", len(data))
     typed_data = assign_types_to_data(data)
-    print("[2]:", len(typed_data))
-
-    print("[3]: todo")
-    '''
-    FOR EACH DATASET, we are going to rank them by some criterion
-    # size: longest is GENERALLY GOOD
-    # internal consistec across object
-    [{},{},{},{},] #similar compare somehow
-    #try to think of more
-
-    '''
     return typed_data
 
+def calculate_regularity_score(data):
+    """
+    Calculate the regularity score for a list of objects.
+    Structured and meaningful datasets will score higher.
+    
+    :param data: List of dictionaries
+    :return: Regularity score (higher is better)
+    """
+    if not data:
+        return 0
+
+    # Step 1: Key Frequency Consistency
+    key_prefixes = [key.rsplit("_", 1)[0] for obj in data for key in obj.keys()]
+    prefix_counts = Counter(key_prefixes)
+    total_keys = sum(prefix_counts.values())
+    key_frequency_score = sum((count / total_keys) ** 2 for count in prefix_counts.values())
+
+    # Step 2: Value Pattern Consistency
+    url_pattern = re.compile(r'https?://[^\s]+')
+    price_pattern = re.compile(r'^\$\d+(,\d{3})*(\.\d+)?$')
+    date_pattern = re.compile(r'\d{1,2}/\d{1,2}')
+    value_pattern_score = 0
+    total_values = 0
+
+    for obj in data:
+        for key, value in obj.items():
+            total_values += 1
+            if url_pattern.match(str(value)):
+                value_pattern_score += 1
+            elif price_pattern.match(str(value)):
+                value_pattern_score += 1
+            elif date_pattern.match(str(value)):
+                value_pattern_score += 1
+            else:
+                # Use SequenceMatcher to compare values across objects
+                for other_obj in data:
+                    if other_obj is not obj and key in other_obj:
+                        similarity = SequenceMatcher(None, str(value), str(other_obj[key])).ratio()
+                        value_pattern_score += similarity
+
+    value_pattern_score /= total_values
+
+    # Step 3: Combine Scores
+    regularity_score = 0.5 * key_frequency_score + 0.5 * value_pattern_score
+    return regularity_score
+
+def decide_which_data_to_use(data_lists_of_objects):
+    """
+    Decide which list of objects to return based on size and regularity.
+    """
+    if len(data_lists_of_objects) == 1:
+        return data_lists_of_objects[0]
+    
+    # Step 1: Calculate size percentages
+    sizes = [len(lst) for lst in data_lists_of_objects]
+    total_size = sum(sizes)
+    percentages = [(size / total_size) * 100 for size in sizes]
+    
+    # Step 2: Calculate regularity scores
+    regularity_scores = [calculate_regularity_score(lst) for lst in data_lists_of_objects]
+    
+    # Step 3: Combine size and regularity scores into a scoring system
+    scoring = []
+    for i, (size, percentage, regularity_score) in enumerate(zip(sizes, percentages, regularity_scores)):
+        scoring.append({
+            "index": i,
+            "size_rank": None,  # Placeholder for ranking
+            "percentage": percentage,
+            "regularity_score": regularity_score
+        })
+    
+    # Rank by regularity score and size percentage (weighted equally)
+    scoring.sort(key=lambda x: (x["regularity_score"], x["percentage"]), reverse=True)
+    for rank, score in enumerate(scoring, start=1):
+        score["size_rank"] = rank
+    
+    # Print scoring system
+    print("Scoring system:", scoring)
+
+    # exit()
+    return data_lists_of_objects
+
 def auto_pull_data_from_site(soup, data_index=None):
-    data = pull_data_from_soup(soup)
+    data_lists_of_objects = pull_data_from_soup(soup) # [[{}{}}{}], [{}{}}{}]]
+    data = decide_which_data_to_use(data_lists_of_objects)
     if data_index:
         try:
             return data[data_index]
@@ -402,16 +466,119 @@ def auto_pull_data_from_site(soup, data_index=None):
             
     return data
 
+import random
+import string
+import json
+
+def generate_random_person():
+    """
+    Generate a random person with mandatory and optional fields.
+    """
+    # Mandatory fields
+    person = {
+        "first_name": ''.join(random.choices(string.ascii_letters, k=random.randint(5, 10))).capitalize(),
+        "last_name": ''.join(random.choices(string.ascii_letters, k=random.randint(5, 10))).capitalize(),
+        "age": random.randint(18, 90)
+    }
+
+    # Optional fields
+    optional_fields = {
+        "address": f"{random.randint(100, 999)} {random.choice(['Main St', 'Elm St', 'Maple Ave'])}",
+        "postal_code": f"{''.join(random.choices(string.ascii_uppercase + string.digits, k=6))}",
+        "phone_number": f"({random.randint(100, 999)}) {random.randint(100, 999)}-{random.randint(1000, 9999)}",
+        "email": f"{''.join(random.choices(string.ascii_letters, k=5))}@example.com",
+        "occupation": random.choice(["Engineer", "Doctor", "Artist", "Teacher", "Developer"]),
+        "hobbies": random.sample(
+            ["reading", "sports", "coding", "painting", "gardening", "gaming"], 
+            k=random.randint(0, 3)
+        )
+    }
+
+    # Add a random subset of optional fields
+    for key in random.sample(list(optional_fields.keys()), k=random.randint(0, len(optional_fields))):
+        person[key] = optional_fields[key]
+    
+    return person
+
+def generate_structured_data(num_objects):
+    """
+    Generate structured data with consistent core fields and optional random fields.
+    """
+    return [generate_random_person() for _ in range(num_objects)]
+
+def generate_unstructured_data(num_objects):
+    """
+    Generate unstructured data with semi-sensible keys and random values.
+    """
+    categories = ["text", "string", "number", "address", "title", "url"]
+    data = []
+    
+    for _ in range(num_objects):
+        obj = {}
+        for _ in range(random.randint(1, 10)):  # Random number of fields
+            # Generate a random key with a sensible prefix
+            prefix = random.choice(categories)
+            key = f"{prefix}_{random.randint(0, 100)}"
+            
+            # Generate a random value
+            value_type = random.choice(["text", "number", "url", "address"])
+            if value_type == "text":
+                value = ''.join(random.choices(string.ascii_letters + " ", k=random.randint(5, 20))).strip()
+            elif value_type == "number":
+                value = random.randint(0, 10000)
+            elif value_type == "url":
+                value = f"https://example.com/{random.randint(1, 1000)}"
+            elif value_type == "address":
+                value = f"{random.randint(1, 9999)} {random.choice(['Main St', '2nd Ave', 'Broadway'])}"
+            
+            obj[key] = value
+        data.append(obj)
+    return data
+
+def test_structured_vs_unstructured_scoring():
+    """
+    Test the scoring system with a mix of structured and unstructured datasets.
+    """
+    datasets = []
+
+    # Generate structured datasets
+    for _ in range(3):  # Three structured datasets
+        datasets.append(generate_structured_data(random.randint(5, 15)))
+
+    # Generate unstructured datasets
+    for _ in range(2):  # Two unstructured datasets
+        datasets.append(generate_unstructured_data(random.randint(5, 15)))
+
+    # Run the scoring system on the generated datasets
+    print("Generated datasets and their scores:\n")
+    for i, dataset in enumerate(datasets):
+        print(f"Dataset {i}:")
+        print(json.dumps(dataset, indent=2))  # Pretty-print the dataset
+        score = calculate_regularity_score(dataset)
+        print(f"Regularity Score: {score:.2f}\n{'-' * 50}\n")
+
+    # Use the decision function to select the best dataset
+    best_dataset = decide_which_data_to_use(datasets)
+    print("Best dataset based on scoring:")
+    print(json.dumps(best_dataset, indent=2))
+
+# Run the test function
+test_structured_vs_unstructured_scoring()
 if __name__ == '__main__':
+    # Run the test function
+    test_structured_vs_unstructured_scoring()
+    exit()
+
     site_1 = 'https://peterborough.craigslist.org/search/cta?purveyor=owner#search=1~gallery~0~0'
     driver = selenium_utilities.open_site_selenium(site=site_1)
     selenium_utilities.maximize_the_window(driver)
     time.sleep(5)
     soup = selenium_utilities.get_driver_soup(driver)
     data = auto_pull_data_from_site(soup, data_index=None)
+    print("WE WANT TO REMOVE DATA INDEX")
     print("data;", len(data))
     for i in data:
-        log_utilities.log_data(i)
+        log_utilities.log_function(i)
     exit()
 
     site_1 = 'https://www.kijijiautos.ca/cars/bmw/#c=EstateCar&c=Suv&c=Van&ms=3500&od=down&sb=rel&sc=5%3A'

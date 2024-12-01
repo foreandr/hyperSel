@@ -126,5 +126,4 @@ def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True):
 
 
 if __name__ == "__main__":
-    # Run with default parameters
     run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=False)
