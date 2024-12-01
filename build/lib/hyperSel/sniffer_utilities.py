@@ -1,31 +1,6 @@
 import re
 from playwright.sync_api import sync_playwright
 import time
-try:
-    from . import log_utilities
-except:
-    import log_utilities
-
-
-'''
-TODO:
-1. it sniffs a thing
-2. set params (searching for)
-    where you go to the site ahead of time, eg(https://www.amazon.com/Notebooks-Laptop-Computers/b?ie=UTF8&node=565108)
-    givethe keyword apple, it will go throgh the json and see apple,
-    and then gfind out how ot go back up through the tree
-    eg = {
-        'content':{
-            'data':{
-                'title':laptop,
-                'title':apple laptop,
-
-            }
-        }
-    }
-
-    so it will see apple, and then figure out to go to the top level where ALL the laptops are
-'''
 
 # Function to check if the URL matches any of the skip patterns
 def should_skip(url, skip_patterns):

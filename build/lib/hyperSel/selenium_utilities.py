@@ -13,9 +13,11 @@ from selenium.webdriver.support.ui import Select
 try:
     from . import colors_utilities
     from . import general_utilities
+    from . import tor_utilities # need these imports to start tor
 except:
     import colors_utilities
     import general_utilities
+    import tor_utilities
 
 def clear_input_field_by_xpath(driver, xpath, timeout=10):
     try:
@@ -219,14 +221,28 @@ def select_multiple_elements_by_class(driver, class_name, timeout=10):
         colors_utilities.c_print(f"Elements not found or couldn't be interacted with: {e}")
         return []
 
-def open_site_selenium(site, show_browser=True):
+def open_site_selenium(site, show_browser=True, tor=False):
+    """
+    Open a site using Selenium, optionally routing through Tor.
+    """
     options = Options()
     if not show_browser:
-        options.add_argument("--headless") # Run in headless mode
+        options.add_argument("--headless")  # Run in headless mode
 
- 
+    # Add user-agent
     options.add_argument(f"--user-agent={general_utilities.generate_random_user_agent()}")
 
+    # Use Tor if specified
+    if tor:
+        print("Routing requests through Tor...")
+        options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
+
+    options.add_argument("--disable-features=NetworkService")
+    options.add_argument("--log-level=3")  # Suppress unnecessary logs
+    options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
+    
+    # Initialize the driver
     driver = webdriver.Chrome(options=options)
     go_to_site(driver, site)
     return driver
@@ -273,4 +289,7 @@ def take_screenshot(driver, file_path="./pics"):
     driver.save_screenshot(file_path)
 
 if __name__ == '__main__':
+
+    driver = open_site_selenium("http://check.torproject.org", show_browser=True, tor=True)
+    input("--")
     pass

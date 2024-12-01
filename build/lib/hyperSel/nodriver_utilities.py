@@ -7,21 +7,22 @@ from bs4 import BeautifulSoup
 try:
     from . import general_utilities
     from . import proxies_utilities
-
+    from . import tor_utilities
 except:
     import general_utilities
     import proxies_utilities
+    import tor_utilities
 
 global hyperSelProxies
 hyperSelProxies = None
 
 # Async functions
-async def asyc_open_browser():
-    browser = await open_nodriver(headless=False, proxy=None, max_attempts=3)
+async def asyc_open_browser(headless, proxy, tor, max_attempts):
+    browser = await open_nodriver(headless, proxy, tor, max_attempts)
     return browser
 
-def open_browser():
-    return asyncio.run(asyc_open_browser())
+def open_browser(headless=False, proxy=None, tor=False, max_attempts=3):
+    return asyncio.run(asyc_open_browser(headless, proxy, tor, max_attempts))
 
 async def async_go_to_site(browser, url):
     page = await browser.get(url=url)
@@ -83,65 +84,53 @@ async def async_get_site_soup(browser, site, wait=0.5):
 def get_site_soup(browser, site, wait=0.5):
     return asyncio.run(async_get_site_soup(browser, site, wait))
 
-async def open_nodriver(headless=False, proxy=None, max_attempts=3):
+async def open_nodriver(headless=False, proxy=None, tor=False, max_attempts=3):
+    """
+    Open a browser instance using NoDriver.
+    
+    Args:
+        headless (bool): Whether to run the browser in headless mode.
+        proxy (bool): Whether to use a proxy server.
+        tor (bool): Whether to route requests through Tor.
+        max_attempts (int): Maximum attempts for fetching a proxy.
+
+    Returns:
+        browser: The initialized browser instance.
+    """
     global hyperSelProxies
-    if proxy:
+    browser_args = ["--start-maximized"]
+    browser_args.append(f"--user-agent={general_utilities.generate_random_user_agent()}")
+
+    if tor:
+        # print("Routing requests through Tor (127.0.0.1:9050).")
+        browser_args.append("--proxy-server=socks5://127.0.0.1:9050")
+
+    elif proxy:
         hyperSelProxies = proxies_utilities.HyperSelProxies()
         print("SLEEPING FOR PROXY...")
         time.sleep(10)
-    browser_args = ["--start-maximized"]
-    browser_args.append(f"--user-agent={general_utilities.generate_random_user_agent()}")
-    
-    if proxy:
         start = time.time()
-        
         attempts = 0
-        time.sleep(5)
+
         while True:
             try:
                 proxy_ip = random.choice(hyperSelProxies.current_proxies)
                 browser_args.append(f"--proxy-server={proxy_ip}")
-                print("GOT PROXY", time.time()-start)
+                print("GOT PROXY", time.time() - start)
                 break
             except Exception as e:
-                print(F"Failed to get proxy [ATTEMPT:{attempts}]...")
+                print(f"Failed to get proxy [ATTEMPT:{attempts}]...")
                 time.sleep(10)
-                attempts+=1
-                
+                attempts += 1
+                if attempts >= max_attempts:
+                    raise RuntimeError("Failed to fetch proxy after maximum attempts.")
+
     browser = await nd.start(
         headless=headless,
         browser_args=browser_args,
         lang="en-US",
     )
     return browser
-
-async def main_test():
-    while True:
-        list_of_urls = [
-            'https://snse.ca/',
-            #'https://realestate.snse.ca/',
-            #'https://jailpdftocsv.snse.ca/',
-            #'http://localhost:5000',
-            #'http://realestate.localhost:5000',
-            #'http://jailpdftocsv.localhost:5000',
-            # 'https://www.zillow.com/homedetails/30154106_zpid',
-            #'https://www.zillow.com/homedetails/2055079760_zpid',
-            #'https://www.zillow.com/homedetails/2082409198_zpid',
-            #'https://www.zillow.com/homedetails/30258798_zpid',
-            #'https://www.zillow.com/homedetails/30398040_zpid',
-            #'https://www.zillow.com/homedetails/30400280_zpid',
-        ]
-        browser = await open_nodriver(headless=False, proxy=False)
-        page = await browser.get(url='https://snse.ca/')
-        time.sleep(5)
-        await custom_kill_browser(browser)
-
-        
-    await custom_kill_browser(browser)
-    custom_kill_browser(browser2)
-    exit()
-
-
 
 async def custom_kill_browser(browser):
     general_utilities.kill_process_by_pid(browser._process_pid)
@@ -150,6 +139,25 @@ async def custom_kill_browser(browser):
     except Exception as e:
         pass
     
+def test():
+    try:
+        # Open the browser
+        browser = open_browser(headless=False, proxy=None, tor=True, max_attempts=3)
+        
+        # Navigate to the site
+        page = go_to_site(browser=browser, url="http://check.torproject.org")
+        print(page)
+        
+        # Check the current URL to verify navigation
+        current_url = get_current_url(page)
+        print(f"Current URL: {current_url}")
+
+        input("WAIT")
+    except Exception as e:
+        print(f"Error during execution: {e}")
+    finally:
+        # Custom kill browser if needed
+        asyncio.run(custom_kill_browser(browser))
+
 if __name__ == '__main__':
-    # since asyncio.run never worked (for me)
-    nd.loop().run_until_complete(main_test())
+    test()

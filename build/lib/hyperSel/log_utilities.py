@@ -4,8 +4,6 @@ import datetime
 import json
 from bs4 import BeautifulSoup
 
-
-
 try:
     from . import colors_utilities
 except:
@@ -22,7 +20,7 @@ def check_and_save_dir(path):
     if not isExist:
         os.makedirs(path)
         
-def log_function(log_string, msg_type='test', session_user="", function_name=""):
+def log_function(log_string, msg_type='test', session_user="", function_name="", verbose=False):
     log_string = str(log_string)
     
     # Split the log_string by ", " and join it with newline characters
@@ -30,8 +28,13 @@ def log_function(log_string, msg_type='test', session_user="", function_name="")
     
     current_datetime = datetime.datetime.now()
     current_date = current_datetime.strftime('%Y-%m-%d')
-    err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{split_log_string}\n" 
     
+    if verbose:
+        err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{split_log_string}\n" 
+    else:
+        err_string = f"{split_log_string}\n" 
+
+
     day = current_date.split("-")[2]
     mon = current_date.split("-")[1]
     yea = current_date.split("-")[0]
@@ -118,7 +121,7 @@ def log_data(data_object, file_name='data', unique_criterion=None, verbose=False
         item_copy = {k: v for k, v in item.items() if k not in ["recent_scrape_time", "original_scrape_time"]}
         
         # Determine the unique key based on unique_criterion or entire item
-        unique_key = item_copy.get(unique_criterion) if unique_criterion else frozenset(item_copy.items())
+        unique_key = item_copy.get(unique_criterion) if unique_criterion else json.dumps(item_copy, sort_keys=True)
         
         # Only add to unique_data if this unique_key hasn't been seen
         if unique_key not in seen_criteria:

@@ -6,6 +6,9 @@ from difflib import SequenceMatcher
 from collections import Counter
 from pprint import pprint
 import re
+import random
+import string
+import json
 try:
     from . import log_utilities
     from . import selenium_utilities
@@ -44,11 +47,11 @@ def most_frequent_item_percentage(items):
 
 def print_all_tag_children_counts(soup):
     # Iterate through every tag in the soup
-    print("NEED LEN 120 OL HERE, how can I know which is correct?")
+    #print("NEED LEN 120 OL HERE, how can I know which is correct?")
     tag_skippers = ['svg', 'head', 'body', 'footer','g']
     tags_to_go_through = []
     total_tags = soup.find_all(True)
-    print("total_tags:", len(total_tags))
+    #print("total_tags:", len(total_tags))
     for tag in total_tags:
         # 1  
         if len(tag) <= 5:# 120
@@ -149,8 +152,8 @@ def extract_all_texts(data):
         return unique_texts
     except Exception as e:
         print(e)
-        print(data)
-        input("PAUSE HERE")
+        # print(data)
+        # input("PAUSE HERE")
 
 def extract_all_urls(data):
     try:
@@ -178,7 +181,7 @@ def extract_all_urls(data):
     except Exception as e:
         print(e)
         print(data)
-        input("PAUSE HERE")
+        # input("PAUSE HERE")
 
 def create_dict_from_list(items):
     tag_json = {}
@@ -216,7 +219,7 @@ def skip_string(s):
     return len(s) <= 2
 
 def go_through_filtered_tags(tags_to_go_through):    
-    print("tags_to_go_through", len(tags_to_go_through))
+    # print("tags_to_go_through", len(tags_to_go_through))
     all_tag_data = []
     skipped_data = []
     for i, tag in enumerate(tags_to_go_through):
@@ -251,12 +254,12 @@ def go_through_filtered_tags(tags_to_go_through):
     filtered_data = filter_valid_data(all_tag_data)
     
     second_filtered = size_filterer(filtered_data=filtered_data)
-    print("second_filtered:", len(second_filtered))
+    # print("second_filtered:", len(second_filtered))
 
     return second_filtered
 
 def size_filterer(filtered_data, min_size=3):
-    print("filtered_data:", len(filtered_data))
+    # print("filtered_data:", len(filtered_data))
     all_data_filtered = []
     for i, data in enumerate(filtered_data, start=0):
         local_data = []
@@ -269,7 +272,7 @@ def size_filterer(filtered_data, min_size=3):
                 local_data.append(j)
 
         all_data_filtered.append(local_data)
-    print("all_data_filtered:", len(all_data_filtered))
+    # print("all_data_filtered:", len(all_data_filtered))
 
     data_filtered_for_size = []
     for i in all_data_filtered:
@@ -280,10 +283,10 @@ def size_filterer(filtered_data, min_size=3):
 
     if len(data_filtered_for_size) == 1:
         final_data = data_filtered_for_size[0]
-        print("ONLY ONE SET OF DATA POINTS LEFT; RETURN", len(final_data))
+        # print("ONLY ONE SET OF DATA POINTS LEFT; RETURN", len(final_data))
         return final_data
     if len(data_filtered_for_size) == 0:
-        print("NO DATA AT ALL")
+        # print("NO DATA AT ALL")
         return []
     
     return data_filtered_for_size
@@ -449,7 +452,7 @@ def decide_which_data_to_use(data_lists_of_objects):
         score["size_rank"] = rank
     
     # Print scoring system
-    print("Scoring system:", scoring)
+    # print("Scoring system:", scoring)
 
     # exit()
     return data_lists_of_objects
@@ -461,14 +464,12 @@ def auto_pull_data_from_site(soup, data_index=None):
         try:
             return data[data_index]
         except Exception as e:
-            print("EXCELSIRO", e)
+            print("ERROR", e)
             return data
             
     return data
 
-import random
-import string
-import json
+
 
 def generate_random_person():
     """
@@ -563,7 +564,7 @@ def test_structured_vs_unstructured_scoring():
     print(json.dumps(best_dataset, indent=2))
 
 # Run the test function
-test_structured_vs_unstructured_scoring()
+# test_structured_vs_unstructured_scoring()
 if __name__ == '__main__':
     # Run the test function
     test_structured_vs_unstructured_scoring()
