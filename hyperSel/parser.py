@@ -4,7 +4,7 @@ import networkx as nx
 from bs4 import BeautifulSoup
 import unicodedata
 import pickle
-from selenium_utilities import open_site_selenium, get_driver_soup, maximize_the_window
+from selenium_utilities import open_site_selenium, get_driver_soup, maximize_the_window, close_driver
 from log import log_function
 import util
 import classifier
@@ -49,12 +49,11 @@ def extract_all_attributes(tag):
 def html_to_graph(soup):
     skippers = [
         'class', 'data-testid', 'height', 'width', 'aria-hidden',
-        'style', 'loading', 'id', "viewbox", "aria-pressed", "aria-label", "role"
-        'lang',"type",
+        'style', 'loading', 'id', "viewbox", "aria-pressed", "aria-label", "role",
+        'lang', "type",
     ]
     """Convert a BeautifulSoup object into a NetworkX directed graph."""
     graph = nx.DiGraph()
-    # print("[html_to_graph] Created an empty directed graph.")
 
     # Recursive function to add nodes and edges
     def add_nodes_edges(tag, parent=None):
@@ -62,7 +61,6 @@ def html_to_graph(soup):
             if tag.name:
                 label = normalize_label(tag.name)
                 attributes = extract_all_attributes(tag)
-
 
                 attribute_list_to_include = []
 
@@ -74,18 +72,17 @@ def html_to_graph(soup):
                         values = [values]
 
                     for value in values:
-                        # string = f"[key: {key}]--[value:{value}]"
-                        # log_function(log_string=string)
-
                         if not util.full_html_tag_check(value):
                             # This is not an HTML-like thing; we can add it to the node
                             attribute_list_to_include.append((key, value))
-                        #else:
-                        #    # Log the flagged HTML-like attribute for verification
-                        #    print(f"[Flagged as HTML-like] Key: {key}, Value: {value}")
-                    
+
+                # Check for conflicts with the 'label' key
+                attribute_dict = dict(attribute_list_to_include)
+                if 'label' not in attribute_dict:
+                    attribute_dict['label'] = label  # Add the label if it's not already present
+
                 # Add the node to the graph with filtered attributes
-                graph.add_node(id(tag), label=label, **dict(attribute_list_to_include))  # Use id(tag) for unique node ID
+                graph.add_node(id(tag), **attribute_dict)  # Use id(tag) for unique node ID
 
                 if parent:
                     graph.add_edge(id(parent), id(tag))  # Edge from parent to child
@@ -310,6 +307,9 @@ def process_results(result):
     return all_data
 
 def remove_larger_strings(data, length_threshold=100):
+    if data == None:
+        print("NO DATA RETURN NONE")
+        return []
     """
     Removes larger strings from a list of lists if they contain smaller strings 
     from the same sublist, unless their length exceeds the specified threshold.
@@ -369,14 +369,25 @@ def full_conversion(soup):
     return final_classified_data
 
 if __name__ == '__main__':
-    site_url = 'https://www.kijiji.ca/b-cars-trucks/peterborough/new__used/c174l1700218a49'
-    driver = open_site_selenium(site=site_url)
-    maximize_the_window(driver)
-    soup = get_driver_soup(driver)
+    urls = [
+        'https://www.cars.com/shopping/results/?stock_type=all&makes%5B%5D=bmw&models%5B%5D=bmw-128&maximum_distance=all&zip=48061',
+        'https://www.autotrader.ca/cars/?rcp=0&rcs=0&prx=100&hprc=True&wcp=True&sts=New-Used&inMarket=basicSearch&mdl=Accord&make=Honda&loc=N5V%204E1',
+        'https://www.edmunds.com/inventory/srp.html?make=honda&model=honda%7Ccivic',
+        'https://www.cargurus.ca/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?sourceContext=carGurusHomePageModel&srpVariation=SEARCH_AS_FILTERS&makeModelTrimPaths=m6%2Fd586&zip=N5Z',
+        'https://www.kijiji.ca/b-cars-trucks/peterborough/new__used/c174l1700218a49',
+        'https://londonon.craigslist.org/search/cta',
+    ]
+    for url in urls:
+        print("=====================================")
+        print("url:", url)
+        site_url = url 
+        driver = open_site_selenium(site=site_url)
+        maximize_the_window(driver)
+        soup = get_driver_soup(driver)
 
-    final_classified_data = full_conversion(soup)
-    for i in final_classified_data:
-        for j in i:
-            print(j)
-        print("====================")
-        # log_function(lo)
+        final_classified_data = full_conversion(soup)
+        for i in final_classified_data:
+            for j in i:
+                log_function(log_string=j)
+            log_function(log_string="================================================================================")
+        close_driver(driver)    
