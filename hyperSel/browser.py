@@ -14,6 +14,7 @@ import gc
 import time
 import asyncio
 from playwright.async_api import async_playwright
+from bs4 import BeautifulSoup
 
 WEBDRIVER = None
 PAGE = None
@@ -150,12 +151,23 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def go_to_site(self, site):
+        global WEBDRIVER
+        global PAGE
+        sleep_time = 2
+        
         if self.driver_choice == 'selenium':
-            pass
-        elif self.driver_choice == 'playwright':
-            pass
+            WEBDRIVER.get(site)
+            time.sleep(sleep_time)
         elif self.driver_choice == 'nodriver':
-            pass
+            async def async_go_to_site(browser, url):
+                page = await browser.get(url=url)
+                return page
+            
+            def go_to_site(browser, url):
+                return asyncio.run(async_go_to_site(browser, url))
+
+            page = go_to_site(WEBDRIVER, site)    
+            PAGE = page
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
@@ -230,12 +242,26 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def return_current_soup(self):
+        global WEBDRIVER
+        global PAGE
         if self.driver_choice == 'selenium':
-            pass
-        elif self.driver_choice == 'playwright':
-            pass
+            html = WEBDRIVER.page_source
+            soup = BeautifulSoup(html, features="lxml")
+            return soup
         elif self.driver_choice == 'nodriver':
-            pass
+
+            async def async_get_site_soup():
+                page = PAGE
+                content = await page.get_content()
+                soup = BeautifulSoup(content, 'html.parser')
+                return soup
+            
+            def get_site_soup():
+                return asyncio.run(async_get_site_soup())
+            
+            return get_site_soup()
+        
+        
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
@@ -278,10 +304,17 @@ class Browser:
 if __name__ == "__main__":
     # Instantiate browser objects for each driver type
     # drivers = ["selenium", "playwright", "nodriver"]
-    #browser = Browser("nodriver", False, False)
-    #time.sleep(3)
-    #browser.close_browser()
-    #input("----DONE ONE")
+
     browser = Browser("selenium", False, False)
+    browser.go_to_site("http://check.torproject.org")
+    soup = browser.return_current_soup()
+    print(len(str(soup)))
+    time.sleep(3)
+    browser.close_browser()
+
+    browser = Browser("nodriver", False, False)
+    browser.go_to_site("http://check.torproject.org")
+    soup = browser.return_current_soup()
+    print(len(str(soup)))
     time.sleep(3)
     browser.close_browser()
