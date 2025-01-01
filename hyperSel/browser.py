@@ -15,6 +15,9 @@ import time
 import asyncio
 from playwright.async_api import async_playwright
 
+WEBDRIVER = None
+PAGE = None
+
 class Browser:
     def __init__(self, driver_choice, headless, use_tor):
         if use_tor:
@@ -28,11 +31,13 @@ class Browser:
         self.driver_choice = driver_choice
         self.headless = bool(headless)
         self.use_tor = bool(use_tor)
-        self.driver = self.init_browser()
+        self.init_browser()
 
     def init_browser(self):
+        global WEBDRIVER
         if self.driver_choice == 'selenium':
             def open_site_selenium():
+                global WEBDRIVER
                 options = Options()
                 if self.headless:
                     options.add_argument("--headless")  # Run in headless mode
@@ -52,20 +57,35 @@ class Browser:
                 
                 # Initialize the driver
                 driver = webdriver.Chrome(options=options)
-                return driver
-            
-            return open_site_selenium()
-            
-        elif self.driver_choice == 'playwright':
-            playwright, browser = open_playwright_browser(headless=False, tor=True)
-            print("playwright:", playwright)
-            print("browser   :", browser)
-            return browser
+                WEBDRIVER = driver
+
+            open_site_selenium()
+
 
         elif self.driver_choice == 'nodriver':
-            playwright, browser = open_playwright_browser(headless=False, tor=True)
-            print("playwright:", playwright)
-            print("browser   :", browser)
+            async def open_nodriver(headless=False, tor=False):
+                browser_args = ["--start-maximized"]
+                browser_args.append(f"--user-agent={util.generate_random_user_agent()}")
+
+                if tor:
+                    browser_args.append("--proxy-server=socks5://127.0.0.1:9050")
+
+                browser = await nd.start(
+                    headless=headless,
+                    browser_args=browser_args,
+                    lang="en-US",
+                )
+                return browser
+            
+            async def asyc_open_browser(headless, tor):
+                browser = await open_nodriver(headless, tor)
+                return browser
+
+            def open_browser(headless=False, tor=False):
+                return asyncio.run(asyc_open_browser(headless, tor))
+
+            browser = open_browser(headless=self.headless, tor=self.use_tor)
+            WEBDRIVER = browser 
 
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
@@ -82,26 +102,29 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def close_browser(self):
+        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
-                self.driver.quit()
-                self.driver = None
+                WEBDRIVER.quit()
+                WEBDRIVER = None
                 gc.collect()
             except Exception as e:
                 print(f"Error closing Selenium browser: {e}")
 
+        elif self.driver_choice == 'playwright':
+            print("GETTING HERE?")
+            gc.collect()
 
         elif self.driver_choice == 'nodriver':
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(self.driver.stop())
-                else:
-                    loop.run_until_complete(self.driver.stop())
-                self.driver = None
-                gc.collect()
-            except Exception as e:
-                print(f"Error closing Nodriver browser: {e}")
+            async def custom_kill_browser(browser):
+                util.kill_process_by_pid(browser._process_pid)
+
+            def kill_browser(browser):
+                asyncio.run(custom_kill_browser(browser))
+
+            kill_browser(WEBDRIVER)
+            WEBDRIVER = None
+
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
@@ -252,78 +275,13 @@ class Browser:
             f"headless={self.headless}, use_tor={self.use_tor})"
         )
 
-def create_playwright():
-    async def create_playwright():
-        try:
-            # Start Playwright session
-            playwright = await async_playwright().start()
-            return playwright
-        except Exception as e:
-            print(f"Error creating Playwright instance: {e}")
-            return None
-    # Run the asynchronous function synchronously
-    return asyncio.run(create_playwright())
-
-def open_playwright_browser(headless=True, tor=False):
-    async def open_browser():
-        try:
-            # Start Playwright session
-            playwright = await async_playwright().start()
-
-            # Get screen dimensions (modify if necessary)
-            # width, height = util.get_display_dimensions()['width'], util.get_display_dimensions()['height']
-
-            # Launch Chromium browser with Tor support if enabled
-            launch_options = {
-                "headless": headless,
-                "proxy": {"server": "socks5://127.0.0.1:9050"} if tor else None,
-                # "args": [f"--window-size={width},{height}"],  # Set the window size
-            }
-            if tor:
-                print("Routing requests through Tor...")
-
-            browser = await playwright.chromium.launch(**launch_options)
-
-            # Create a new browser context with viewport size matching screen dimensions
-            context = await browser.new_context(
-                # viewport={"width": 1920, "height": 1080},
-                user_agent=util.generate_random_user_agent()
-            )
-
-            page = await context.new_page()
-            return playwright, browser
-        except Exception as e:
-            print(f"Error opening Playwright browser: {e}")
-            return None, None
-
-    # Run the asynchronous function synchronously
-    return asyncio.run(open_browser())
-
-def close_playwright_browser(playwright, browser):
-    async def close_browser():
-        try:
-            # Close the browser
-            if browser:
-                print("Closing browser...")
-                await browser.close()
-                print("Browser closed.")
-            
-            # Stop the Playwright session
-            if playwright:
-                print("Stopping Playwright...")
-                await playwright.stop()
-                print("Playwright stopped.")
-        except Exception as e:
-            print(f"Error closing Playwright browser: {e}")
-
-    # Run the asynchronous function synchronously
-    asyncio.run(close_browser())
-
 if __name__ == "__main__":
     # Instantiate browser objects for each driver type
-    drivers = ["selenium", "playwright", "nodriver"]
-    browser = Browser("nodriver", False, False)
-    input("-")
-    time.sleep(5)
+    # drivers = ["selenium", "playwright", "nodriver"]
+    #browser = Browser("nodriver", False, False)
+    #time.sleep(3)
+    #browser.close_browser()
+    #input("----DONE ONE")
+    browser = Browser("selenium", False, False)
+    time.sleep(3)
     browser.close_browser()
-    input("--")

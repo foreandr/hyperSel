@@ -8,16 +8,16 @@ try:
     from . import util
     from . import tor_util
 except:
-    import hyperSel.util as util
-    import hyperSel.tor_util as tor_util
+    import util as util
+    import tor_util as tor_util
 
 # Async functions
-async def asyc_open_browser(headless, proxy, tor, max_attempts):
-    browser = await open_nodriver(headless, proxy, tor, max_attempts)
+async def asyc_open_browser(headless, tor):
+    browser = await open_nodriver(headless, tor)
     return browser
 
-def open_browser(headless=False, proxy=None, tor=False, max_attempts=3):
-    return asyncio.run(asyc_open_browser(headless, proxy, tor, max_attempts))
+def open_browser(headless=False, tor=False):
+    return asyncio.run(asyc_open_browser(headless, tor))
 
 async def async_go_to_site(browser, url):
     page = await browser.get(url=url)
@@ -79,25 +79,11 @@ async def async_get_site_soup(browser, site, wait=0.5):
 def get_site_soup(browser, site, wait=0.5):
     return asyncio.run(async_get_site_soup(browser, site, wait))
 
-async def open_nodriver(headless=False, proxy=None, tor=False, max_attempts=3):
-    """
-    Open a browser instance using NoDriver.
-    
-    Args:
-        headless (bool): Whether to run the browser in headless mode.
-        proxy (bool): Whether to use a proxy server.
-        tor (bool): Whether to route requests through Tor.
-        max_attempts (int): Maximum attempts for fetching a proxy.
-
-    Returns:
-        browser: The initialized browser instance.
-    """
-    global hyperSelProxies
+async def open_nodriver(headless=False, tor=False):
     browser_args = ["--start-maximized"]
     browser_args.append(f"--user-agent={util.generate_random_user_agent()}")
 
     if tor:
-        # print("Routing requests through Tor (127.0.0.1:9050).")
         browser_args.append("--proxy-server=socks5://127.0.0.1:9050")
 
     browser = await nd.start(
@@ -110,25 +96,25 @@ async def open_nodriver(headless=False, proxy=None, tor=False, max_attempts=3):
 async def custom_kill_browser(browser):
     util.kill_process_by_pid(browser._process_pid)
 
+def kill_browser(browser):
+    asyncio.run(custom_kill_browser(browser))
+
 def test():
     try:
         # Open the browser
-        browser = open_browser(headless=False, proxy=None, tor=True, max_attempts=3)
+        browser = open_browser(headless=False, tor=True)
         
         # Navigate to the site
         page = go_to_site(browser=browser, url="http://check.torproject.org")
-        print(page)
         
         # Check the current URL to verify navigation
         current_url = get_current_url(page)
         print(f"Current URL: {current_url}")
-
-        input("WAIT")
+        
+        kill_browser(browser)
+        input("--")
     except Exception as e:
         print(f"Error during execution: {e}")
-    finally:
-        # Custom kill browser if needed
-        asyncio.run(custom_kill_browser(browser))
 
 if __name__ == '__main__':
     test()

@@ -22,7 +22,8 @@ NOTES:
 
         3. on the right hand side, have a big crawled catalogue that people can search through and download and run
     5. Script is exiting., when script exists, run an exiter with a try catch the make sure all the dirvers close
-    
+    6. fix the sniffer, rename, and make it not use local instance of playwrght, also have it navigate around the urls on the page abit for broader snif
+
 OUTPUT:
     1. OUTPUT IN CSV OR JSON OR WHATEVER, SQLITE DATABASE IS THE WAY TO GO, CAN HAVE INDEXES AND ALL THAT
     2. all data needs to be in a .py file and the crawl file, and onload do both, because the data here wont be in thier EXE, BUT WE CAN give them the py
