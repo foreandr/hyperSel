@@ -3,12 +3,11 @@ import inspect
 import datetime
 import json
 from bs4 import BeautifulSoup
-
-try:
-    from . import colors_utilities
-except:
-    import colors_utilities
-
+import os
+import json
+import csv
+import xml.etree.ElementTree as ET
+import datetime
 
 GLOBAL_CHECKPOINT = 0
 
@@ -20,7 +19,7 @@ def check_and_save_dir(path):
     if not isExist:
         os.makedirs(path)
         
-def log_function(log_string, msg_type='test', session_user="", function_name="", verbose=False):
+def log_function(log_string, msg_type='test', session_user="", function_name="", verbose=False, file_name=None):
     log_string = str(log_string)
     
     # Split the log_string by ", " and join it with newline characters
@@ -34,7 +33,6 @@ def log_function(log_string, msg_type='test', session_user="", function_name="",
     else:
         err_string = f"{split_log_string}\n" 
 
-
     day = current_date.split("-")[2]
     mon = current_date.split("-")[1]
     yea = current_date.split("-")[0]
@@ -42,8 +40,13 @@ def log_function(log_string, msg_type='test', session_user="", function_name="",
     location_logger = f"{yea}/{mon}/{day}/{current_date}"
     
     if msg_type == "error":      
-        colors_utilities.c_print(text=f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!========= ", color='red')
-            
+        print(f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!=========")
+    
+    if file_name != None:
+        with open(f'./logs/{file_name}.txt', 'w', encoding='utf-8') as f:
+            f.write(err_string)     
+        return 1
+    
     try:
         file = f"./logs/"
         check_and_save_dir(f'{file}{location_logger_dateless}')
@@ -74,23 +77,6 @@ def load_file_as_soup(file_path):
         print(f"Error loading file: {e}")
         return None
 
-import os
-import json
-import datetime
-
-import os
-import json
-import datetime
-
-import os
-import json
-import datetime
-
-import os
-import json
-import csv
-import xml.etree.ElementTree as ET
-import datetime
 
 def log_data(data_object, file_name='data', unique_criterion=None, verbose=False, max_age_days=None, file_type='json'):
     """
@@ -232,13 +218,6 @@ def log_data(data_object, file_name='data', unique_criterion=None, verbose=False
     if verbose:
         print(f"Data logged to {file_name}.{file_type.lower()} as {len(new_entries)} new entries.")
 
-
-
-
-
-
-
-
 def checkpoint(pause=False, str_to_print=None):
     global GLOBAL_CHECKPOINT
     # Get the current frame and then the caller's frame
@@ -255,10 +234,10 @@ def checkpoint(pause=False, str_to_print=None):
     
     # Print the file, line number, function name, GLOBAL_CHECKPOINT, and current timestamp
     log_str = f"[CHECKPOINT:{GLOBAL_CHECKPOINT}][FILE:{current_file}][FUNC:{caller_function_name}][TIME:{current_time}][LINE:{frame.f_lineno}]"
-    colors_utilities.c_print(text=log_str, color="cyan")
+    print(log_str)
 
     if str_to_print != None:
-        colors_utilities.c_print(text=str_to_print, color="cyan")
+        print(str_to_print)
 
     if pause:
         input("STOPPING UNTIL YOU TYPE SOMETHIN")

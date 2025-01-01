@@ -5,16 +5,11 @@ import asyncio
 from bs4 import BeautifulSoup
 
 try:
-    from . import general_utilities
-    from . import proxies_utilities
-    from . import tor_utilities
+    from . import util
+    from . import tor_util
 except:
-    import general_utilities
-    import proxies_utilities
-    import tor_utilities
-
-global hyperSelProxies
-hyperSelProxies = None
+    import hyperSel.util as util
+    import hyperSel.tor_util as tor_util
 
 # Async functions
 async def asyc_open_browser(headless, proxy, tor, max_attempts):
@@ -99,31 +94,11 @@ async def open_nodriver(headless=False, proxy=None, tor=False, max_attempts=3):
     """
     global hyperSelProxies
     browser_args = ["--start-maximized"]
-    browser_args.append(f"--user-agent={general_utilities.generate_random_user_agent()}")
+    browser_args.append(f"--user-agent={util.generate_random_user_agent()}")
 
     if tor:
         # print("Routing requests through Tor (127.0.0.1:9050).")
         browser_args.append("--proxy-server=socks5://127.0.0.1:9050")
-
-    elif proxy:
-        hyperSelProxies = proxies_utilities.HyperSelProxies()
-        print("SLEEPING FOR PROXY...")
-        time.sleep(10)
-        start = time.time()
-        attempts = 0
-
-        while True:
-            try:
-                proxy_ip = random.choice(hyperSelProxies.current_proxies)
-                browser_args.append(f"--proxy-server={proxy_ip}")
-                print("GOT PROXY", time.time() - start)
-                break
-            except Exception as e:
-                print(f"Failed to get proxy [ATTEMPT:{attempts}]...")
-                time.sleep(10)
-                attempts += 1
-                if attempts >= max_attempts:
-                    raise RuntimeError("Failed to fetch proxy after maximum attempts.")
 
     browser = await nd.start(
         headless=headless,
@@ -133,12 +108,8 @@ async def open_nodriver(headless=False, proxy=None, tor=False, max_attempts=3):
     return browser
 
 async def custom_kill_browser(browser):
-    general_utilities.kill_process_by_pid(browser._process_pid)
-    try:
-        hyperSelProxies.stop_threads_and_exit()
-    except Exception as e:
-        pass
-    
+    util.kill_process_by_pid(browser._process_pid)
+
 def test():
     try:
         # Open the browser

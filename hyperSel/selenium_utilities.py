@@ -11,13 +11,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
 try:
-    from . import colors_utilities
-    from . import general_utilities
-    from . import tor_utilities # need these imports to start tor
+    from . import log
+    from . import util
+    from . import tor_util # need these imports to start tor
 except:
-    import colors_utilities
-    import general_utilities
-    import tor_utilities
+    import util as util
+    import log as log
+    import tor_util as tor_util
 
 def clear_input_field_by_xpath(driver, xpath, timeout=10):
     try:
@@ -202,6 +202,7 @@ def go_to_site(driver, site, tries=10):
     for i in range(tries):
         try:
             driver.get(site)
+            time.sleep(3)
             return True
         except Exception as e:
             colors_utilities.c_print(e)
@@ -230,7 +231,7 @@ def open_site_selenium(site, show_browser=True, tor=False):
         options.add_argument("--headless")  # Run in headless mode
 
     # Add user-agent
-    options.add_argument(f"--user-agent={general_utilities.generate_random_user_agent()}")
+    options.add_argument(f"--user-agent={util.generate_random_user_agent()}")
 
     # Use Tor if specified
     if tor:
@@ -290,6 +291,6 @@ def take_screenshot(driver, file_path="./pics"):
 
 if __name__ == '__main__':
 
-    driver = open_site_selenium("http://check.torproject.org", show_browser=True, tor=True)
-    input("--")
+    driver = open_site_selenium("https://www.walmart.ca/en/shop/boxing-week/2095175067092?catId=10010&icid=home_page_gifts_and_seasonal_sports_and_rec_114453_6ZC97WCTOE", show_browser=True, tor=False)
+    log.log_function(log_string=get_driver_soup(driver), file_name="walmart_soup")
     pass

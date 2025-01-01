@@ -156,7 +156,7 @@ def main():
     soup = BeautifulSoup(html, "html.parser")
     print("LEN OF SOUP", len(str(soup)))
 
-start_tor()
+
 
 if __name__ == "__main__":
     terminate_existing_tor()

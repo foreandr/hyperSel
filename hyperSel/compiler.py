@@ -2,7 +2,7 @@ import subprocess
 import datetime
 import os
 
-def modify_file_for_trial(file_name, free_trial, trial_duration_minutes=5, email="foreandr@gmail.com"):
+def modify_file_for_trial(file_name, free_trial, trial_duration_minutes=10000, email="foreandr@gmail.com"):
     """
     Modifies the given Python file to include free trial logic if free_trial is True.
 
@@ -17,6 +17,8 @@ def modify_file_for_trial(file_name, free_trial, trial_duration_minutes=5, email
         trial_code = f"""
 # Free Trial Logic
 import datetime
+import customtkinter as ctk
+import sys
 
 # Compilation time
 compile_time_str = "{compile_time}"  # Compilation time recorded at compile time
@@ -32,21 +34,48 @@ elapsed_time = (current_time - compile_time).total_seconds()
 elapsed_minutes = elapsed_time / 60
 
 if current_time > trial_end_time:
-    print("Your free trial has ended.")
-    print(f"Compilation Time: {{compile_time}}")
-    print(f"Current Time: {{current_time}}")
-    print(f"Elapsed Time: {{elapsed_minutes:.2f}} minutes")
-    print(f"Allowed Trial Period: {{trial_duration}} minutes")
-    print("Contact {email} for the full version.")
-    input("Press Enter to close this program...")
-    exit()
+    # Create a customtkinter GUI to inform the user
+    def trial_expired_popup():
+        root = ctk.CTk()
+        root.title("Trial Expired")
+        root.geometry("500x300")
+        
+        # Details of the trial expiration
+        details = (
+            "Your free trial has ended.\\n\\n"
+            f"Compilation Time: {{compile_time_str}}\\n"
+            f"Current Time: {{current_time.strftime('%Y-%m-%d %H:%M:%S')}}\\n"
+            f"Elapsed Time: {{elapsed_minutes:.2f}} minutes\\n"
+            f"Trial Duration: {{trial_duration}} minutes\\n\\n"
+            f"Contact {email} for the full version."
+        )
+        
+        label = ctk.CTkLabel(
+            root,
+            text=details,
+            font=("Arial", 12),
+            wraplength=450,
+            justify="left"
+        )
+        label.pack(pady=20)
+        
+        button = ctk.CTkButton(root, text="Close", command=root.destroy)
+        button.pack(pady=20)
+        
+        root.mainloop()
+    
+    trial_expired_popup()
+    sys.exit()
 """
         print("BEGIN: Adding free trial logic to the file.")
         with open(file_name, "r+") as f:
             original_code = f.read()
             f.seek(0, 0)
             f.write(trial_code + "\n" + original_code)
-        print("END: Free trial logic added successfully.")
+        print(f"Trial logic added successfully with the following details:")
+        print(f"- Compilation Time: {compile_time}")
+        print(f"- Trial Duration: {trial_duration_minutes} minutes")
+        print(f"- Contact Email: {email}")
         return original_code  # Return the original content for restoration later
     else:
         print("Free trial logic not added since free_trial is False.")

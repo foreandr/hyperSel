@@ -1,120 +1,121 @@
 
-print("THREADING DOESNT EXIST")
-1. change the headers to look like a google bot?
-2. bing bot etc try that
-
-3. i might be able to write something that turns int html into tag based objects
-    <input name="value" value="28">
-    final_obj = 
-    {
-        value:28
-    }
-
-4. api scraper auto download browser mob
-
-5. SHOULD BE ABLE TO HAVE AN LLM PARSE html
-    WRITE SOMETHING beforehand to parse SOME of the html to remove the junk, might be able to get it to tags that I need
-
-6. maybe have some system that does an appraisal of a site?
-    -  does it have apis? does it need browser, proxy, etc
-
-print("HSOULD be some wa to chekc the relevant apis we get from sniffing to see if compatible, so go through each one, see if it can be compared to stuff we know frmo title")
-print("OUTPUT IN CSV OR JSON OR WHATEVER")
-
-print("NOTE: this can be a wonderful function that takes in booleans, and the tag, and class/id name, the function can be abstracted out, and the soup")
-
-CREATE A SINGLE ISNTANCE RUN OF PLAYWRIGHT SO IT'S OBVIOUS, EVEN WRAP THE FUNC IN THE ASYNC CALL SO USER DOESNT HAVE TO SEE IT?\
-
-need some tooling for crawling maps
-
-ROBOTICS SOLUTION FOR CAPTCHA MOUSE CLICKS? SELL robotics bots, plug in  by USb
-
-all data needs to be in a .py file and the crawl file, and onload do both, because the data here wont be in thier EXE, BUT WE CAN give them the py
-
-log data needs to be RPLEACING dtaa
-
-chrme plugins? check tiktok for scraping, they got google map sdata with ti
-    https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda
-    https://chatgpt.com/c/67237b1b-ca60-8008-8def-9384a55cc65e
 
 
-think about this as a general personalized search tool
-    1. - if a person wants videos, it will spin up and get videos
-    - iframe local to be able to show videos?
-
-    2. if a person wants cars, it will basically act as youtube for cars, u toggle which sites u want grawled, it gets the data 
-
-    3. on the right hand side, have a big crawled catalogue that people can search through and download and run
-
-be able to save listings, make playlists
-    - everything I do on youtube, I should in principle be able to do here
-
-in the code clearly dilineate where the columns are
-
-allow "download data (sizegb)" in the third column next to enabling cralwers or not, csv, json, xml, etc
-
-i need some way that, someone else could write a cralwwer, like an extension, and then I download it locally, and then u can run it, and have it showing
-    - use case:
-    - i want cars, so I run hypersel, i run with auto and edmunds, turns out I can turn on other cralwers too, great, download and riunh
-
-https://chatgpt.com/c/6724fa6f-06d4-8008-aa99-4f216677bfc2
-slite in memory db, can just use SQL? dont needall the json possibly, then can havbe indexes and stuff
 
 
-if its a url that we can convert into an iframe
-    eg 
-    https://www.youtube.com/watch?v=vBCNlxFTkJk&ab_channel=ChrisLuno
-    do it, probably threaded, and make a space for that next to the thumnnail images, or instead of them
-
-for the filter side, if its a number or a date,ID like to also have greater than elss than
-
-need a good UI way in the scrapers thing to say I want to get data from these sites
-    1. go tocralwers tab
-    2. get new cralwers
-    download cralwers form somewhere
-
-    3. create scraper
-        1. clcik 1n scrapers, name it, and then can activate it
-
-    google sheets has to be one of the things I can write to
 
 
-- google sheets as another file options
-
-THIS WILL MOSTL BE USED FOR PEOPLE TO ARB SITES THE UBUY THINGS ON
-
-END GOAL REALLY SHOULD BE LLM, BUT IT CANT USE AN API,
-    - need something running locally
-    - as a BUSINESS, i COULD buy a 10g MACHINE and have it runing locally   
-    - and compiled in the exe. is like an API request or something
-    (meh) id rather just have it running on thie rmachine
-
-Name: "Christoffel", to represent local crawling, vs global
-
-a b testing on the messages I send out
-    - how much  i pay to have them ranked etc
 
 
-THE LONGEST STIRNG UNDER N CHARS SHOULD BE title
-THE LONGEST STRING OVER N CHARST IS DESC _n
+PROPOSALS:
+    1. a b testing on the messages I send out
+    2. how much  i pay to have them ranked etc, (do i need to pay the max to get a response kinda thing)
+
+NOTES:
+    1. EXTRACT AS MUCH VALUE AS POSSIBLE OUT OF THIS, then when it becomes mainstream, we go peer to peer, with the vscode style extensions as the crawlers, and we can send back and forth
+    2. THIS WILL MOSTL BE USED FOR PEOPLE TO ARB SITES THE UBUY THINGS ON
+    3. think about this as a general personalized search tool
+    4. - if a person wants videos, it will spin up and get videos
+        - iframe local to be able to show videos?
+
+        2. if a person wants cars, it will basically act as youtube for cars, u toggle which sites u want grawled, it gets the data 
+
+        3. on the right hand side, have a big crawled catalogue that people can search through and download and run
+    5. Script is exiting., when script exists, run an exiter with a try catch the make sure all the dirvers close
+    
+OUTPUT:
+    1. OUTPUT IN CSV OR JSON OR WHATEVER, SQLITE DATABASE IS THE WAY TO GO, CAN HAVE INDEXES AND ALL THAT
+    2. all data needs to be in a .py file and the crawl file, and onload do both, because the data here wont be in thier EXE, BUT WE CAN give them the py
+        what i mean by this is, when i give my work to customers, i cant give them the json or csv attached when i compress it, so what i can do in the crawls is have a data1.py data2.py and they have n lines each before a new one is created. Then every time i compile I will always have my most recent updated data, even without saving it, the python will be a kind of database, 
+    3. google sheets as another file options
+    4. log data needs to be RPLEACING dtaa (i have later questions about this, because like)
+    5. allow "download data (sizegb)" in the third column next to enabling cralwers or not, csv, json, xml, etc, download by time fram
 
 
-for each field in the dict {
-    field1: obviousl a string
-    field1: sdasassdfadasdasfasdfdsasafsadffsdadsadfsdfaasdfsadfsadfdf
-    field1: "1"
-    field1: "$20.19" # probably money
-    field1: "2033/43/32"
-}
+COMPILATION:  
+    1. add to the compiler the abilitiy to say, hey a new version of this software has been made, it has these new sites or whatever, buy it here
+    2. test it: try to find wayscmpiler switch from onefile to --onedir
+    3. encrypto code on compilation
+        https://stackoverflow.com/questions/64788656/exe-file-made-with-pyinstaller-being-reported-as-a-virus-threat-by-windows-defen
 
-i should be able to train a very simple neural net to classify them
-user faker libary
-    - pay extra attention to,
-    addresses
-    postal codes
-    multiple date formats
-    currency types
-    distances, with km, ir miles in them and a number 
+APPRAISAL:
+    1. maybe have some system that does an appraisal of a site? does it have apis? does it need browser, proxy, etc
+
+RETRIEVAL (GETTING THE DATA) 
+    1. change the headers to look like a google bot/BING bot, general official scraping bots
+
+SEARCH (ONCE WE HAVE THE DATA):
+    1. for the filter side, if its a number or a date,ID like to also have greater than elss than
+    2. i need some way that, someone else could write a cralwwer, like an extension, and then I download it locally, and then u can run it, and have it showing
+        - use case:
+        - i want cars, so I run hypersel, i run with auto and edmunds, turns out I can turn on other cralwers too, great, download and riunh
+
+PARSING:
+    1. SHOULD BE ABLE TO HAVE AN LLM PARSE html. WRITE SOMETHING beforehand to parse SOME of the html to remove the junk, might be able to get it to tags that I need
+        1(a). END GOAL REALLY SHOULD BE LLM, BUT IT CANT USE AN API,
+            - need something running locally
+            - as a BUSINESS, i COULD buy a 10g MACHINE and have it runing locally   
+            - and compiled in the exe. is like an API request or something
+            (meh) id rather just have it running on thie rmachine
 
 
-need to be able to save searches
+    1. CLASSIFYING (DONT KNOW IF I NEED):
+        1. 
+        i should be able to train a very simple neural net to classify them
+        user faker libary
+            - pay extra attention to,
+            addresses
+            postal codes
+            multiple date formats
+            currency types
+            distances, with km, ir miles in them and a number 
+BUGS:
+    '''bug
+    WEIRD BUG 
+
+    if i have chrome upen to some site, say https://www.ssllabs.com/ssltest/
+
+    and then i driver.get(https://www.ssllabs.com/ssltest/)
+
+    it breaks because the cookies overlap or something??
+
+    -- something with cookies being stored, probably gunna OOP refactor, then test bwteen to see if issue persists
+    '''
+
+
+NOT SURE:
+    1. Api scraper auto download browser mob
+
+COMPLEX CRAWLS THAT ARE LUCRATIVE:
+    1. need some tooling for crawling maps, GOOGLE MAPS, COORDS, ETC
+    2. ROBOTICS SOLUTION FOR CAPTCHA MOUSE CLICKS? SELL robotics bots, plug in  by USb
+        - SOME Kind of device u can hook up to your machine, with a ui, and u can program interactions with somehow
+        - there are some browser based versions
+
+UI:
+
+    1. 
+        1. go tocralwers tab
+        2. get new cralwers
+        download cralwers form somewhere
+
+        3. create scraper
+            1. clcik 1n scrapers, name it, and then can activate it
+        
+
+    2.  if its a url that we can convert into an iframe
+        eg 
+        https://www.youtube.com/watch?v=vBCNlxFTkJk&ab_channel=ChrisLuno
+        do it, probably threaded, and make a space for that next to the thumnnail images, or instead of them
+        
+    3. 
+        be able to save listings, make playlists
+            - everything I do on youtube, I should in principle be able to do here
+
+    4. need a good UI way in the scrapers thing to say I want to get data from these sites
+
+INTERESTING ALTERNATIVES:
+    1. DOWNLOADS CHROME EXTENSION, PUT IT INTO BROWSER WE USING
+        chrme plugins? check tiktok for scraping, they got google map sdata with ti
+            https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda
+            https://chatgpt.com/c/67237b1b-ca60-8008-8def-9384a55cc65e

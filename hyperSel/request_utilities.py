@@ -2,18 +2,18 @@ import requests
 from bs4 import BeautifulSoup
 
 try:
-    from . import general_utilities
+    from . import util
     from . import colors_utilities
-    from . import tor_utilities
+    from . import tor_util
 except:
-    import general_utilities
+    import hyperSel.util as util
     import colors_utilities
-    import tor_utilities
+    import hyperSel.tor_util as tor_util
 
 def get_soup(url, extra_headers=None, proxy=None):
     # Headers
     headers = {
-        'user-agent': general_utilities.generate_random_user_agent(),
+        'user-agent': util.generate_random_user_agent(),
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     }
     if extra_headers:
