@@ -91,7 +91,7 @@ class Browser:
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
-    def sniff_site(self):
+    def sniff_site(self, url):
         '''CHECKS FOR OPEN JSONS AND APIS'''
         if self.driver_choice == 'selenium':
             pass
@@ -318,3 +318,9 @@ if __name__ == "__main__":
     print(len(str(soup)))
     time.sleep(3)
     browser.close_browser()
+
+    '''
+    SCROLLS AND CLICKS, FIND by xpath, css selector, class, get current url
+    sending keys, scroll into vieew
+    
+    '''

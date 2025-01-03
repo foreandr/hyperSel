@@ -1,9 +1,5 @@
-import os
-import time
 import networkx as nx
-from bs4 import BeautifulSoup
 import unicodedata
-import pickle
 from selenium_utilities import open_site_selenium, get_driver_soup, maximize_the_window, close_driver
 from log import log_function
 import util

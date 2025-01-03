@@ -1,10 +1,17 @@
+ticketmaster?
 
+# KEEP THE END  GOAL IN MIND, 
+# KEEP THE REVOLUTION IN MIND
+# KEEP MANKIND IN MIND
+# KEEP YOUR SOUL IN MIND
 
+# in order for it to be completely general where people put in new sites, I need a way to auto go through the site, find pagination links, and search fieldss
+# if we cant find a pagination, we need to scroll to the bottom, look for buttons, detect if new code is loaded on those button clicks
 
+# i sell them a particular use case of the system, then pitch them the general case
 
-
-
-
+when we do the snif, if we find big json, we add it to the root of the tree, and so the samething
+so all those json will be brothers do the head
 
 
 PROPOSALS:
