@@ -15,12 +15,21 @@ import time
 import asyncio
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
+import os
+import socket
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from subprocess import Popen
+import util
+import tor_util
 
 WEBDRIVER = None
 PAGE = None
 
 class Browser:
-    def __init__(self, driver_choice, headless, use_tor):
+    def __init__(self, driver_choice, headless, use_tor, default_profile=True):
         if use_tor:
             print("TOR INIT")
             tor_util.start_tor()
@@ -32,36 +41,109 @@ class Browser:
         self.driver_choice = driver_choice
         self.headless = bool(headless)
         self.use_tor = bool(use_tor)
+        self.default_profile = default_profile
         self.init_browser()
+
+    def find_chrome_path(self):
+        """Find the Chrome executable path."""
+        possible_paths = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        raise FileNotFoundError("Chrome executable not found. Please install Google Chrome or specify the path manually.")
+
+    def is_port_in_use(self, port):
+        """Check if a port is already in use."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex(("127.0.0.1", port)) == 0
+
+    def start_chrome_with_default_profile(self, port):
+        """Start Chrome with the Default profile and remote debugging port."""
+        try:
+            # Ensure Chrome executable is found
+            chrome_path = self.find_chrome_path()
+            profile_path = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")  # Parent directory of profiles
+
+            # Check if the port is already in use
+            if self.is_port_in_use(port):
+                print(f"Port {port} is already in use. Assuming Chrome is already running.")
+                return  # Do not start a new Chrome instance
+
+            # Command to start Chrome
+            cmd = [
+                chrome_path,
+                f"--remote-debugging-port={port}",
+                f"--user-data-dir={profile_path}",
+                "--disable-blink-features=AutomationControlled",
+                "--start-maximized",
+            ]
+
+            # Add Tor proxy logic if enabled
+            if self.use_tor:
+                print("Routing Chrome through Tor...")
+                cmd.append("--proxy-server=socks5://127.0.0.1:9050")
+
+            print(f"Starting Chrome with Default profile: {cmd}")
+            Popen(cmd)
+            time.sleep(5)  # Allow Chrome to start
+
+        except Exception as e:
+            print(f"Error starting Chrome: {e}")
+            raise
+
+    def connect_to_chrome(self, port):
+        """Use Selenium to connect to Chrome running on the specified port."""
+        try:
+            options = Options()
+            options.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+            driver = webdriver.Chrome(service=Service(), options=options)
+            return driver
+        except Exception as e:
+            print(f"Error connecting to Chrome: {e}")
+            raise
+
+    def open_site_selenium(self):
+        """Open a Selenium driver without using a profile."""
+        global WEBDRIVER
+        options = Options()
+        if self.headless:
+            options.add_argument("--headless")  # Run in headless mode
+
+        # Add user-agent
+        options.add_argument(f"--user-agent={util.generate_random_user_agent()}")
+
+        # Use Tor if specified
+        if self.use_tor:
+            print("Routing requests through Tor...")
+            options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
+
+        options.add_argument("--disable-features=NetworkService")
+        options.add_argument("--log-level=3")  # Suppress unnecessary logs
+        options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
+
+        # Initialize the driver
+        WEBDRIVER = webdriver.Chrome(options=options)
 
     def init_browser(self):
         global WEBDRIVER
         if self.driver_choice == 'selenium':
-            def open_site_selenium():
-                global WEBDRIVER
-                options = Options()
-                if self.headless:
-                    options.add_argument("--headless")  # Run in headless mode
-
-                # Add user-agent
-                options.add_argument(f"--user-agent={util.generate_random_user_agent()}")
-
-                # Use Tor if specified
-                if self.use_tor:
-                    print("Routing requests through Tor...")
-                    options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
-
-                options.add_argument("--disable-features=NetworkService")
-                options.add_argument("--log-level=3")  # Suppress unnecessary logs
-                options.add_experimental_option("excludeSwitches", ["enable-logging"])
-                options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
-                
-                # Initialize the driver
-                driver = webdriver.Chrome(options=options)
-                WEBDRIVER = driver
-
-            open_site_selenium()
-
+            if self.default_profile:
+                port = 9222  # Default debugging port
+                try:
+                    # Attempt to start Chrome with the Default profile
+                    self.start_chrome_with_default_profile(port)
+                    WEBDRIVER = self.connect_to_chrome(port)
+                except Exception as e:
+                    print(f"Failed to connect to local Chrome instance: {e}")
+                    print("Falling back to a fresh Selenium session...")
+                    self.open_site_selenium()
+            else:
+                print("Default profile disabled. Starting fresh Selenium session...")
+                self.open_site_selenium()
 
         elif self.driver_choice == 'nodriver':
             async def open_nodriver(headless=False, tor=False):
@@ -305,13 +387,14 @@ if __name__ == "__main__":
     # Instantiate browser objects for each driver type
     # drivers = ["selenium", "playwright", "nodriver"]
 
-    browser = Browser("selenium", False, False)
+    browser = Browser(driver_choice='selenium', headless=False, use_tor=False, default_profile=False)
     browser.go_to_site("http://check.torproject.org")
     soup = browser.return_current_soup()
     print(len(str(soup)))
     time.sleep(3)
     browser.close_browser()
 
+    exit()
     browser = Browser("nodriver", False, False)
     browser.go_to_site("http://check.torproject.org")
     soup = browser.return_current_soup()
