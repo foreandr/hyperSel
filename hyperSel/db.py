@@ -3,9 +3,6 @@ import json
 from datetime import datetime
 from datetime import datetime, timedelta
 
-import hyperSel.log
-import hyperSel.nodriver_utilities
-
 db_name = "jobs.db"
 file_path = "./logs/data.json"
 

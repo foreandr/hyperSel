@@ -10,6 +10,9 @@ from bs4 import BeautifulSoup
 from html.parser import HTMLParser
 from lxml.html import fromstring
 import html5lib
+import psutil
+import os
+import signal
 
 valid_html_tags = [
     # Comprehensive list of tags
@@ -62,8 +65,6 @@ things_to_add_in_multiple_of_n = [
 for item in things_to_add_in_multiple_of_n:
     for i in range(30):
         valid_html_tags.append(f"{item*i}")
-
-
 
 def get_similarity_ratio(str1, str2):
     """
@@ -345,3 +346,42 @@ def full_html_tag_check(string, verbose=False):
     if verbose:
         print(f"{string} passed all checks")
     return True
+
+
+def close_process_by_pid(pid):
+    print('THIS ISclose_process_by_pidNT WORKING FOR SOME REASON')
+    """
+    Attempts to close a process given its PID.
+    
+    Args:
+        pid (int): The process ID to terminate.
+    
+    Returns:
+        bool: True if the process was successfully terminated, False otherwise.
+    """
+    try:
+        # Check if the process exists
+        process = psutil.Process(pid)
+        print(f"Attempting to terminate process: {process.as_dict(attrs=['pid', 'name', 'status'])}")
+        
+        # Terminate the process
+        os.kill(pid, signal.SIGTERM)  # Sends SIGTERM to the process
+        process.wait(timeout=5)  # Wait for process to terminate
+        print(f"Process {pid} terminated successfully.")
+        return True
+    except psutil.NoSuchProcess:
+        print(f"No process found with PID: {pid}")
+    except psutil.AccessDenied:
+        print(f"Access denied to terminate PID: {pid}")
+    except psutil.TimeoutExpired:
+        print(f"Process {pid} did not terminate in time. Attempting force kill.")
+        try:
+            os.kill(pid, signal.SIGKILL)  # Sends SIGKILL if SIGTERM fails
+            print(f"Process {pid} forcefully terminated.")
+            return True
+        except Exception as e:
+            print(f"Failed to forcefully terminate process {pid}: {e}")
+    except Exception as e:
+        print(f"An error occurred while trying to terminate process {pid}: {e}")
+    
+    return False

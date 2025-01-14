@@ -7,7 +7,7 @@ import socks
 import socket
 from bs4 import BeautifulSoup
 import psutil
-import atexit
+
 
 # Constants
 BASE_URL = "https://dist.torproject.org/torbrowser/"
@@ -52,8 +52,6 @@ def start_tor(verbose=False):
         if verbose:
             print("Tor process did not stabilize. Exiting...")
 
-
-
 # --- Tor Download and Extraction ---
 def get_latest_tor_url(base_url):
     """Find the latest Tor Expert Bundle folder from the base URL."""
@@ -67,7 +65,6 @@ def get_latest_tor_url(base_url):
     print(f"Latest version found: {latest_version}")
     return os.path.join(base_url, latest_version)
 
-
 def get_tor_download_link(latest_url):
     """Find the download link for the Tor Expert Bundle."""
     response = requests.get(latest_url)
@@ -80,7 +77,6 @@ def get_tor_download_link(latest_url):
             return os.path.join(latest_url, a['href'])
 
     raise ValueError("Tor Expert Bundle for Windows not found.")
-
 
 def download_and_extract_tor(download_url, tar_path, extract_dir):
     """Download and extract the Tor Expert Bundle."""
@@ -135,17 +131,6 @@ def route_request_through_tor(url):
     response = requests.get(url)
     return response.text
 
-
-# --- Ensure Cleanup on Script Exit ---
-def cleanup():
-    """Cleanup logic at script exit."""
-    print("Script is exiting.")
-    #if TOR_PID and psutil.pid_exists(TOR_PID):
-    #    print(f"Tor process {TOR_PID} is still running.")
-
-atexit.register(cleanup)
-
-
 # --- Main Execution ---
 def main():
     # Fetch a webpage through Tor
@@ -155,7 +140,6 @@ def main():
     # Parse and display the HTML
     soup = BeautifulSoup(html, "html.parser")
     print("LEN OF SOUP", len(str(soup)))
-
 
 
 if __name__ == "__main__":

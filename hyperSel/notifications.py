@@ -2,7 +2,7 @@ import requests
 import json
 
 # Load the BOT_TOKEN from config.json
-with open('./config.json', 'r') as config_file:
+with open('./hypersel_extras/config.json', 'r') as config_file:
     config = json.load(config_file)
     BOT_TOKEN = config["BOT_TOKEN"]
 
