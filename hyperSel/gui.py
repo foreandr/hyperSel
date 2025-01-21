@@ -10,15 +10,11 @@ import datetime
 from threading import Event, Thread
 from collections import Counter
 import random
+import config
 
 # Initialize the main application window
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
-
-CONFIG = {
-    'string_max': 40,
-    'entries_per_page': 8  # Number of entries to display per page
-}
 
 class GUI(ctk.CTk):
     
@@ -352,7 +348,7 @@ class GUI(ctk.CTk):
     # --------------- Helper Methods for Pagination ---------------
 
     def get_page_label_text(self, total_entries):
-        total_pages = (total_entries - 1) // CONFIG['entries_per_page'] + 1
+        total_pages = (total_entries - 1) // config.CONFIG['entries_per_page'] + 1
         print(f"Page label updated: {self.current_page + 1} / {total_pages}")
         return f"Page {self.current_page + 1} of {total_pages}"
 
@@ -411,8 +407,8 @@ class GUI(ctk.CTk):
 
         # Calculate pagination based on the filtered data with active filters applied
         total_entries = len(self.filtered_data)
-        start_idx = self.current_page * CONFIG['entries_per_page']
-        end_idx = min(start_idx + CONFIG['entries_per_page'], total_entries)
+        start_idx = self.current_page * config.CONFIG['entries_per_page']
+        end_idx = min(start_idx + config.CONFIG['entries_per_page'], total_entries)
 
         for idx in range(start_idx, end_idx):
             entry = self.filtered_data[idx]
@@ -503,8 +499,8 @@ class GUI(ctk.CTk):
     def create_toggle_label(self, parent, field, data):
         # Determine if the data can be truncated
         if isinstance(data, (str, list, tuple)):  # Only types that have a length
-            is_truncated = len(data) > CONFIG['string_max']
-            display_text = data[:CONFIG['string_max']] + '...' if is_truncated else data
+            is_truncated = len(data) > config.CONFIG['string_max']
+            display_text = data[:config.CONFIG['string_max']] + '...' if is_truncated else data
         else:
             is_truncated = False
             display_text = str(data)  # Convert non-truncatable data to string for display
@@ -556,7 +552,7 @@ class GUI(ctk.CTk):
     def go_forward(self):
         # Use the length of filtered data if it exists, otherwise fall back to data_entries
         total_entries = len(self.filtered_data) if hasattr(self, 'filtered_data') else len(self.data_entries)
-        max_page = (total_entries - 1) // CONFIG['entries_per_page']
+        max_page = (total_entries - 1) // config.CONFIG['entries_per_page']
         
         if self.current_page < max_page:
             self.current_page += 1
@@ -566,7 +562,7 @@ class GUI(ctk.CTk):
     def go_to_end(self):
         # Use the length of filtered data if it exists, otherwise fall back to data_entries
         total_entries = len(self.filtered_data) if hasattr(self, 'filtered_data') else len(self.data_entries)
-        self.current_page = (total_entries - 1) // CONFIG['entries_per_page']
+        self.current_page = (total_entries - 1) // config.CONFIG['entries_per_page']
         print("\nNavigating to the end")
         self.display_page(self.query)
     

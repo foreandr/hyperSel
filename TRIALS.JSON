@@ -1,0 +1,21 @@
+{
+    "working": [
+        "https://www.cars.com/shopping/results/?stock_type=all&makes%5B%5D=bmw&models%5B%5D=bmw-128&maximum_distance=all&zip=48061",
+        "https://www.autotrader.ca/cars/?rcp=0&rcs=0&prx=100&hprc=True&wcp=True&sts=New-Used&inMarket=basicSearch&mdl=Accord&make=Honda&loc=N5V%204E1",
+        "https://www.kijiji.ca/b-peterborough/cars/k0l1700218?dc=true",
+        "https://www.edmunds.com/inventory/srp.html?make=honda&model=honda%7Ccivic",
+        "https://www.ebay.com/b/Ford-Cars-and-Trucks/6001/bn_24016471",
+        "https://londonon.craigslist.org/search/cta"
+    
+    ],
+    "not_working": [
+        "https://www.youtube.com/results?search_query=marc+andreesen"
+    ],
+    "to_try": [
+        "https://www.canadacomputers.com/en/1151/cell-phones"
+    ],
+    "capthca_fail":[
+        "https://www.cargurus.ca/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?sourceContext=carGurusHomePageModel&srpVariation=SEARCH_AS_FILTERS&makeModelTrimPaths=m6%2Fd586&zip=N5Z'"
+    ]
+
+}

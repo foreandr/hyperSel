@@ -19,7 +19,7 @@ def check_and_save_dir(path):
     if not isExist:
         os.makedirs(path)
         
-def log_function(log_string, msg_type='test', session_user="", function_name="", verbose=False, file_name=None):
+def log_function(log_string, msg_type='test', session_user="", function_name="", verbose=False, file_name=None, new_line=False):
     log_string = str(log_string)
     
     # Split the log_string by ", " and join it with newline characters
@@ -28,10 +28,15 @@ def log_function(log_string, msg_type='test', session_user="", function_name="",
     current_datetime = datetime.datetime.now()
     current_date = current_datetime.strftime('%Y-%m-%d')
     
+
     if verbose:
-        err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{split_log_string}\n" 
+        err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{split_log_string}\n"
+        if new_line:
+            err_string += "\n"
     else:
-        err_string = f"{split_log_string}\n" 
+        err_string = f"{split_log_string}\n"
+        if new_line:
+            err_string += "\n"
 
     day = current_date.split("-")[2]
     mon = current_date.split("-")[1]
@@ -43,7 +48,7 @@ def log_function(log_string, msg_type='test', session_user="", function_name="",
         print(f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!=========")
     
     if file_name != None:
-        with open(f'./logs/{file_name}.txt', 'w', encoding='utf-8') as f:
+        with open(f'./logs/{file_name}.txt', 'a+', encoding='utf-8') as f:
             f.write(err_string)     
         return 1
     

@@ -95,21 +95,5 @@ def classify(s):
         else:
             return "text"
 
-# Tests
-inputs = [
-    "10/16",                             # Valid date (month/day)
-    "46,000km",                          # Distance
-    "$36,000",                           # Price with comma
-    "12345",                             # Ambiguous: ZIP code vs price -> number
-    "12345-6789",                        # US ZIP+4 code
-    "K1A 0B1",                           # Canadian postal code
-    "SW1A 1AA",                          # UK postal code
-    "123456",                            # Invalid postal code
-    "abc123",                            # Invalid postal code
-    "Rochester ny",                      # Text (location)
-    "$10,000",                           # Price with comma
-    "https://example.com/path",          # URL
-    "2024-11-17",                        # Datetime
-    "plainaddress",                      # Invalid email
-    "https://example.com/image.png",     # Image URL
-]
+if __name__ == "__main__":
+    pass

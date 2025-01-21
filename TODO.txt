@@ -14,6 +14,8 @@ when we do the snif, if we find big json, we add it to the root of the tree, and
 so all those json will be brothers do the head
 
 
+# THE PARSER COULD REALLY USE A SECOND LOOK, IT HAS TONS OF BLOAT IN THE LOGIC IT DOESNT NEED
+
 PROPOSALS:
     1. a b testing on the messages I send out
     2. how much  i pay to have them ranked etc, (do i need to pay the max to get a response kinda thing)

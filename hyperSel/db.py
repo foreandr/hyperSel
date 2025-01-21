@@ -2,14 +2,14 @@ import sqlite3
 import json
 from datetime import datetime
 from datetime import datetime, timedelta
-
-db_name = "jobs.db"
+import config
+import log
 file_path = "./logs/data.json"
 
 # Function to create the table
 def create_table():
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS jobs (
@@ -33,8 +33,8 @@ def create_table():
     conn.close()
 
 def insert_or_update_job(job_data):
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
 
     # Predefined columns in the database schema
@@ -95,8 +95,8 @@ def insert_or_update_job(job_data):
 # Function to insert multiple jobs with extra fields handling
 def insert_many_jobs(job_list):
     
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
 
     predefined_columns = {
@@ -157,8 +157,8 @@ def insert_many_jobs(job_list):
 
 # Function to delete all jobs from the table
 def delete_all_jobs():
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM jobs')
     conn.commit()
@@ -167,8 +167,8 @@ def delete_all_jobs():
 
 # Function to count the number of entries
 def count_entries():
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
     cursor.execute('SELECT COUNT(*) FROM jobs')
     count = cursor.fetchone()[0]
@@ -182,7 +182,7 @@ def load_data_from_file(file_path):
     insert_many_jobs(data)  # Insert all data into the database
 
 def add_current_data():
-    global db_name
+    
 
     file_path = "./logs/data.json"
 
@@ -200,8 +200,8 @@ def add_current_data():
     conn.close()
 
 def search_jobs(include_words, exclude_words, days_ago=None):
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
 
     # Base query
@@ -242,7 +242,7 @@ def search_jobs(include_words, exclude_words, days_ago=None):
     return results
 
 def use_search():
-    global db_name
+    
     # Search example
     include_words = ["kijiji"]
     exclude_words = []
@@ -254,12 +254,12 @@ def use_search():
     # Print results
     print(f"Found {len(results)} jobs:")
     for job in results:
-        hyperSel.log.log_function(job)
+        log.log_function(job)
         # print(job)
 
 def get_website_frequency_from_content():
-    global db_name
-    conn = sqlite3.connect(db_name)
+    
+    conn = sqlite3.connect(config.DB_NAME)
     cursor = conn.cursor()
 
     # Expanded websites list
@@ -283,7 +283,7 @@ def get_website_frequency_from_content():
     ]
 
     # Query to fetch titles and descriptions
-    with sqlite3.connect(db_name) as conn:
+    with sqlite3.connect(config.DB_NAME) as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT job_title, job_description FROM jobs')
         jobs = cursor.fetchall()

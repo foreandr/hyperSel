@@ -1,40 +1,30 @@
+import os
+import re
+import gc
+import time
+import socket
+import asyncio
+from subprocess import Popen
+import atexit
+
 import tor_util
 import util
-import asyncio
 import nodriver as nd
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from bs4 import BeautifulSoup
-import os
-import socket
-import time
-from subprocess import Popen
-import gc
-import re
-import atexit
-import re
-from playwright.sync_api import sync_playwright
-import time
-import time
-from bs4 import BeautifulSoup
-import gc
-
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
-
-
-
+from playwright.sync_api import sync_playwright
 
 '''TODO
 ALL THESE VARS SHOUDL BE LISTS, AND WE WILL ASSIGN AN INDEX TO EACH browser
 CUZ I MAY WANT 5 OF THESE OPEN
 '''
+
 WEBDRIVER = None
 PAGE = None
 PID = None
@@ -412,6 +402,7 @@ class Browser:
         if self.driver_choice == 'selenium':
             WEBDRIVER.get(site)
             time.sleep(sleep_time)
+
         elif self.driver_choice == 'nodriver':
             async def async_go_to_site(browser, url):
                 page = await browser.get(url=url)
@@ -657,9 +648,6 @@ class Browser:
             f"headless={self.headless}, use_tor={self.use_tor})"
         )
     
-
-
-
 # --- Ensure Cleanup on Script Exit ---
 def cleanup():
     global PID
@@ -673,13 +661,4 @@ def cleanup():
 atexit.register(cleanup)
 
 if __name__ == "__main__":
-
-    browser = Browser(driver_choice='selenium', headless=False, use_tor=False, default_profile=False)
-    print("chromedriver_pid = service.process.pid", PID)
-
-    input("-----")
-    '''
-    SCROLLS AND CLICKS, FIND by xpath, css selector, class, get current url
-    sending keys, scroll into vieew
-    
-    '''
+    pass

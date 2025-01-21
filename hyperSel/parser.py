@@ -1,9 +1,12 @@
 import networkx as nx
 import unicodedata
-from selenium_utilities import open_site_selenium, get_driver_soup, maximize_the_window, close_driver
-from log import log_function
+import log
 import util
 import classifier
+import config
+import math
+import statistics
+from tabulate import tabulate
 
 def normalize_label(label):
     """Normalize node labels to ASCII and replace unsupported characters."""
@@ -12,7 +15,8 @@ def normalize_label(label):
     )
 
 def extract_all_attributes(tag):
-    """Extract all attributes, text, and URLs from a tag."""
+    
+    """Extract all attributes, text, URLs, and individual text sections from a tag."""
     attributes = {k: v for k, v in tag.attrs.items()}  # Keep all attributes
 
     # Extract partitioned text content based on child elements
@@ -29,10 +33,30 @@ def extract_all_attributes(tag):
             if nested_text:
                 sections.append(nested_text)
 
-    if sections:
-        attributes['partitioned_text'] = sections  # Store partitioned text as a list
+        # Debug condition for specific content
 
-    # Extract href, src, and other URL-related attributes
+    # Extract all individual texts in the tag using stripped_strings
+    individual_texts = list(tag.stripped_strings)
+    if "2015 Honda" in individual_texts and "Civic EX" in individual_texts:
+        # print(individual_texts)
+        for i,item in enumerate(individual_texts):
+            print(i, item)
+        log.log_function(log_string=f"tag: {tag}", file_name=file, verbose=True)
+        input("PRINT INDIVIUDAL TEXTS")
+    # print("Extracted individual_texts:", individual_texts)
+    # log.log_function(log_string=f"{individual_texts}", file_name=file)
+    
+    # input("--")
+    for i in individual_texts:
+        if type(i) != str:
+            input("NOT STR", i)
+        # print(type(i), i)
+        sections.append(i)
+
+    attributes['partitioned_text'] = sections  # Store partitioned text as a list
+
+    log.log_function(log_string=f"attributes: {attributes}", file_name=file, verbose=True)
+
     urls = []
     for key, value in tag.attrs.items():
         if key in ["href", "src", "data-url"] and isinstance(value, str):
@@ -43,10 +67,11 @@ def extract_all_attributes(tag):
     return attributes
 
 def html_to_graph(soup):
+    log.checkpoint()
     skippers = [
         'class', 'data-testid', 'height', 'width', 'aria-hidden',
         'style', 'loading', 'id', "viewbox", "aria-pressed", "aria-label", "role",
-        'lang', "type",
+        'lang', "type"
     ]
     """Convert a BeautifulSoup object into a NetworkX directed graph."""
     graph = nx.DiGraph()
@@ -57,6 +82,8 @@ def html_to_graph(soup):
             if tag.name:
                 label = normalize_label(tag.name)
                 attributes = extract_all_attributes(tag)
+                main_string = f"{type(attributes)} | {attributes}"
+                # log.log_function(log_string=f"{main_string}", file_name="testerino", verbose=True)
 
                 attribute_list_to_include = []
 
@@ -85,203 +112,441 @@ def html_to_graph(soup):
 
                 for child in tag.children:
                     add_nodes_edges(child, tag)
+
+                #for key,value in attribute_dict.items():
+                #    main_string = f"{type(value)} | {key}:{value}"
+                    # log.log_function(log_string=f"{i}:{main_string}", file_name=file, verbose=True)
+                #    log.log_function(log_string=f"{main_string}", file_name=file, verbose=True, new_line=True)
+                    #print("key  :", key)
+                    #print("value:", value)
+
         except Exception as e:
             print(f"[Error] {e}")
             print(tag)
-            input("---")
+            # input("---")
 
     add_nodes_edges(soup)
-
+    # exit()
     return graph
 
 def extract_relevant_data_flat(descendants):
-    """Extract and flatten meaningful data from descendants into a list."""
+    log.checkpoint()
+    wanted_tags = ["label", "class", "href", "src", "text", "urls", "alt", "title", "data-pid", "value", "partitioned_text"]
+    """
+    Extract and flatten meaningful data from descendants into a list.
+    """
     flattened_data = []
-    for descendant in descendants:
+
+    for i, descendant in enumerate(descendants):
+        print("DESCENDENT", i, descendant)
+
         label = descendant.get("label", "")
+        if label == "button":
+            if config.VERBOSE_DEBUG_FLAG:
+                print("NOTE, WE ARE SKIPPING BUTTONS HERE BECAUSE MOST UI ARE NOT GUNNA HAVE USEFUL INFO IN THERE")
+            continue
+
         # Include all meaningful attributes
         if label:
-            filtered_descendant = {
-                k: v
-                for k, v in descendant.items()
-                if k in {"label", "class", "href", "src", "text", "urls", "alt", "title", "data-pid", "value", "partitioned_text"}
-            }
+            filtered_descendant = {}
+            for k, v in descendant.items():
+                if k in wanted_tags:
+                    # print("k:", k, "v:", v)
+                    filtered_descendant[k] = v
             flattened_data.append(filtered_descendant)
+
     return flattened_data
 
-def calculate_children_count(graph, excluded_labels):
-    """
-    Calculate the number of children for each node, excluding certain labels,
-    and remove nodes with fewer than 10 children or more than 200 children.
-    Additionally, calculate the average amount of string data (from attributes) 
-    in the children of each node, and skip nodes with an average below 20 chars.
-    """
-    # Configuration constants
-    MAX_CHILDREN = 200
-    MIN_CHILDREN = 10
-    AVG_CHARS_MINIMUM = 20
+def filter_valid_nodes(graph):
+    excluded_labels = ['select', 'body', 'head', 'svg', 'html', "a"]
+    log.checkpoint()
 
-    # Step 1: Filter out excluded nodes
+    """Filter out nodes with labels in excluded_labels."""
     valid_nodes = []
     for node in graph.nodes:
         label = graph.nodes[node].get('label', 'Unknown')
         if label not in excluded_labels:
             valid_nodes.append(node)
-            # print(f"Node: {node}, Label: {label}")  # Debug: Print each valid node and its label
+        # else:
+    return valid_nodes
 
-    # Step 2: For each valid node, find its children and calculate average string data
-    node_children = []
-    avg_data_per_child = {}  # Store average data per child for each node
-
-    for node in valid_nodes:
-        children = [
-            child for child in graph.successors(node)
-            if graph.nodes[child].get('label', 'Unknown') != 'script'
-        ]
-
-        # Calculate the total string data from all attributes of all children
-        total_data_length = 0
-        for child in children:
-            attributes = graph.nodes[child]  # Get all attributes of the child node
-            for key, value in attributes.items():
-                if isinstance(value, str):  # Only count string data
-                    total_data_length += len(value)
-                elif isinstance(value, list):  # If it's a list of strings, count their lengths
-                    total_data_length += sum(len(str(v)) for v in value)
-
-        # Calculate the average data length per child
-        avg_chars = total_data_length / len(children) if children else 0
-
-        # Skip nodes based on the constraints
-        if MIN_CHILDREN <= len(children) <= MAX_CHILDREN and avg_chars >= AVG_CHARS_MINIMUM:
-            avg_data_per_child[node] = avg_chars  # Store for later output
-            node_children.append((node, len(children)))
-
-    # Step 3: Sort nodes by the number of children in descending order
-    node_children.sort(key=lambda x: x[1], reverse=True)
-
-    '''
-    # Step 4: Print a sample of the ranked nodes with average data per child
-    print(f"Sample of ranked nodes (children between {MIN_CHILDREN} and {MAX_CHILDREN}, avg data >= {AVG_CHARS_MINIMUM} chars):")
-    for node, count in node_children[:5]:
-        avg_chars = avg_data_per_child.get(node, 0)
-        print(f"Node: {node}, Children count: {count}, Avg data in children: {avg_chars:.2f} chars")
-
-    print("excluded_labels:", excluded_labels)
-
-    # Step 5: Return the sorted list of node children counts
-    exit()  # Debugging stop point
-    '''
-    return node_children
-
-def get_top_node_with_most_children(node_children_count, graph):
+def get_children(graph, node):
     """
-    Get the node with the most children from the calculated list.
+    Retrieve children for a given node, excluding nodes with specific labels or tags.
     """
-    if not node_children_count:
-        print("No valid nodes found that meet the criteria.")
+    # Define a list of excluded labels and tags
+    excluded_labels = ['script', 'a']
+
+    # Initialize an empty list for valid children
+    children = []
+
+    # Iterate through the successors of the given node
+    for child in graph.successors(node):
+        # Retrieve label and tag for debugging
+        label = graph.nodes[child].get('label', 'Unknown')
+
+        # Print the label and tag for debugging
+        # print(f"Child: {child}, Label: {label}")
+
+        # Exclude nodes with specified labels or tags
+        if label in excluded_labels:
+            continue
+
+        # Add the valid child to the list
+        children.append(child)
+
+    return children
+
+
+def calculate_child_data_lengths(graph, children):
+    """Calculate string data lengths for all children of a node."""
+    data_lengths = []
+    for child in children:
+        attributes = graph.nodes[child]
+        child_data_length = sum(
+            len(value) if isinstance(value, str) else sum(len(str(v)) for v in value)
+            for key, value in attributes.items() if isinstance(value, (str, list))
+        )
+        data_lengths.append(child_data_length)
+        # Debug: Print each child's attributes and data length
+        # print(f"  Child: {child}, Attributes: {attributes}, Data Length: {child_data_length}")
+    return data_lengths
+
+
+def calculate_stats(data_lengths):
+    """Calculate detailed statistics for the given data."""
+    total_data_length = sum(data_lengths)
+    avg_chars = total_data_length / len(data_lengths)
+    variance = sum((x - avg_chars) ** 2 for x in data_lengths) / len(data_lengths)
+    std_dev = math.sqrt(variance)
+    relative_spread = std_dev / avg_chars if avg_chars > 0 else 0
+    
+    # Additional statistics
+    median = statistics.median(data_lengths)
+    mode = statistics.mode(data_lengths) if len(set(data_lengths)) > 1 else "No mode"
+    data_range = max(data_lengths) - min(data_lengths)
+    
+    return {
+        'avg_chars': avg_chars,
+        'std_dev': std_dev,
+        'relative_spread': relative_spread,
+        'median': median,
+        'mode': mode,
+        'range': data_range
+    }
+
+
+def filter_nodes_by_constraints(node, children, avg_chars):
+    """Check if a node meets the constraints."""
+    if (
+        config.MIN_CHILDREN <= len(children) <= config.MAX_CHILDREN
+        and avg_chars >= config.AVG_CHARS_MINIMUM
+    ):
+        return True
+    # print(f"Node: {node} does not meet constraints.")  # Debug
+    return False
+
+
+def find_most_consistent_node(consistency_data):
+    """Find the node with the lowest relative spread."""
+    if not consistency_data:
+        # print("No nodes met the consistency criteria.")  # Debug
         return None
+    return min(consistency_data, key=lambda x: x['relative_spread'])
 
-    node_children_count.sort(key=lambda x: x[1], reverse=True)
-    top_node, top_children_count = node_children_count[0]
-    top_node_label = graph.nodes[top_node].get('label', 'Unknown')
 
-    return top_node, top_children_count, top_node_label
+def print_node_data(graph, node):
+    """
+    Print the data of a node and its children in a readable format.
+    """
+    print(f"\nNode: {node}")
+    node_data = graph.nodes[node]
+    print("Node Metadata:")
+    for key, value in node_data.items():
+        print(f"{key}: {value}")
+
+    children = get_children(graph, node)
+
+    print("  Children:")
+    for child in children:
+        child_data = graph.nodes[child]
+        print(f"    - Child: {child}")
+        for key, value in child_data.items():
+            print(f"        {key}: {value}")
+            print("-")
+        print("====")
+
+    
+def calculate_children_count(graph):
+    log.checkpoint()
+    """
+    Calculate the number of children for each node, excluding certain labels,
+    and remove nodes with fewer than a configured range of children.
+    Additionally, calculate detailed statistics and output a well-formatted table,
+    including node properties retrieved from the graph.
+    """
+    valid_nodes = filter_valid_nodes(graph)
+    consistency_data = []
+    
+    print("\n\n*****************************************************************")
+    print("num_valid nodes:", len(valid_nodes))
+
+    for i, node in enumerate(valid_nodes):
+        # Get and log main node properties
+        node_properties = graph.nodes[node]
+        main_string = f"Main Node: {node}, Properties: {node_properties}"
+        # log.log_function(log_string=f"{i}:{main_string}", file_name=file, verbose=True)
+
+        children = get_children(graph, node)
+        if len(children) < config.MIN_CHILDREN:
+            continue
+        print(len(children))
+
+        # Log children properties
+        children_strings = []
+        for child in children:
+            child_properties = graph.nodes[child]
+            child_string = f"Child Node: {child}, Properties: {child_properties}"
+            # print(child_string)
+            children_strings.append(child_string)
+
+
+        data_lengths = calculate_child_data_lengths(graph, children)
+
+        if not data_lengths:
+            print("NO LENGTHS?", stats['avg_chars'], "  |    NUM CHILD:", len(children))
+            continue
+
+        stats = calculate_stats(data_lengths)
+
+        # Skip nodes with insufficient avg_chars
+        if stats['avg_chars'] < config.AVG_CHARS_MINIMUM:
+            print("TOO LOW AVG CHARS", stats['avg_chars'], "  |    NUM CHILD:", len(children))
+            continue
+
+        # Retrieve node properties from the graph for the output
+        node_summary = {
+            'id': node,
+        }
+
+        # Add only nodes passing all filters to consistency_data
+        consistency_data.append({
+            'node': node_summary,
+            'children_count': len(children),
+            **stats
+        })
+
+    print_tabulated_data(consistency_data)
+    most_consistent = find_most_consistent_node(consistency_data)
+
+    # input("-------")
+
+    # Print the most consistent node details
+    print("most_consistent['node']['id']:", most_consistent)
+    input("--")
+
+    if not consistency_data:
+        return []
+    
+    if most_consistent:
+        # print_node_data(graph, most_consistent['node'])
+        return most_consistent['node']['id']
+    
+    print("we hit the failure mode?")
+    input("--")
+    return []
+
+def print_tabulated_data(consistency_data): 
+    # Create table headers and rows
+    headers = [
+        "Node", "Children Count", "Std Dev",
+        "Relative Spread", "Avg Chars", "Median", "Mode", "Range"
+    ]
+    rows = [
+        [
+            entry['node'], 
+            entry['children_count'], 
+            f"{entry['std_dev']:.2f}", 
+            f"{entry['relative_spread']:.2f}",
+            f"{entry['avg_chars']:.2f}",
+            f"{entry['median']:.2f}", 
+            f"{entry['mode']:.2f}", 
+            f"{entry['range']:.2f}", 
+        
+        ]
+        for entry in consistency_data
+    ]
+
+    print(tabulate(rows, headers, tablefmt="grid"))
+
+def search_graph_for_string(graph, search_string):
+    """
+    Search the entire graph for a specific string in node attributes.
+    Outputs the node and the string where the search string is found.
+    """
+    matches = []
+
+    for node, attributes in graph.nodes(data=True):
+        for key, value in attributes.items():
+            if isinstance(value, str) and search_string in value:
+                matches.append((node, value))  # Add the node and matching string
+            elif isinstance(value, (list, dict)):  # Handle complex structures
+                if search_string in str(value):
+                    matches.append((node, str(value)))
+
+    # Output matching nodes and strings
+    for match in matches:
+        if len(match[1]) <30:
+            print(match[1])
+        print(f"Node: {match[0]} | Containing String: {len(match[1])}")
+
+    return matches
 
 
 def collect_child_details(graph, top_node):
+    log.checkpoint()
+    print("graph   :", graph)
+    print("top_node1:", top_node)
     """
     Collect details about the children of the top node.
     """
     children_details = []
 
+    def gather_all_data_recursive(node, combined_data):
+        """
+        Recursively gather all data for the node and its descendants.
+        """
+        # Add the node's attributes to the combined data
+        node_attrs = graph.nodes[node]
+        for key, value in node_attrs.items():
+            if key in combined_data:
+                counter = 1
+                new_key = f"{key}{counter}"
+                while new_key in combined_data:
+                    counter += 1
+                    new_key = f"{key}{counter}"
+                combined_data[new_key] = value
+            else:
+                combined_data[key] = value
+
+        # Recur for all children of this node
+        for child in graph.successors(node):
+            gather_all_data_recursive(child, combined_data)
+
     for child in graph.successors(top_node):
-        child_label = graph.nodes[child].get('label', 'Unknown')
-        child_attrs = graph.nodes[child]
-        grandchild_count = len(list(graph.successors(child)))
+        print("top_node2:", top_node)
+        #print("\n\n\nchild:", child)
 
-        descendant_attributes = [
-            graph.nodes[desc] for desc in nx.descendants(graph, child)
-        ]
+        # Initialize combined_data for this child
+        combined_data = {}
 
-        unique_descendants = sort_unique_descendants(descendant_attributes)
+        # Gather all data recursively down to the root for this child
+        gather_all_data_recursive(child, combined_data)
+        #print("Combined Data Before Processing:", combined_data)
+
+        # Ensure `sort_unique_descendants` receives a list
+        unique_descendants = sort_unique_descendants([combined_data])
 
         # Flatten meaningful data
         relevant_flattened = extract_relevant_data_flat(unique_descendants)
 
+        #print("FLATTENED DATA:", type(relevant_flattened), len(relevant_flattened))
+        #for i in relevant_flattened:
+        #    print(i)
+        #    print("===")
+
+        # Add the processed child details to the result
         children_details.append({
-            "label": child_label,
-            "grandchildren_count": grandchild_count,
-            "attributes": child_attrs,
+            "label": graph.nodes[child].get('label', 'Unknown'),
+            "attributes": graph.nodes[child],
             "flattened_relevant_data": relevant_flattened
         })
+        # print("**********************************************************************")
+
+    # # input("--")
+
+    #for i in children_details:
+    #    print(i)
+    #    print("--")
 
     return children_details
 
 
 def sort_unique_descendants(descendant_attributes):
+    log.checkpoint()
+    
     """
     Sort and deduplicate descendant attributes for a node.
     """
-    return sorted(
-        {
-            frozenset(
-                (k, tuple(v) if isinstance(v, list) else v)  # Convert lists to tuples
-                for k, v in item.items()
-            ): item
-            for item in descendant_attributes if isinstance(item, dict)
-        }.values(),
-        key=lambda x: x.get('label', 'Unknown')
-    )
+    unique_items = {}
 
+    for item in descendant_attributes:
+        # print("item:", item)
+        if isinstance(item, dict):
+            normalized_item = []
+            for k, v in item.items():
+                if isinstance(v, list):
+                    v = tuple(v)  # Convert lists to tuples for immutability
+                normalized_item.append((k, v))
+            normalized_item = tuple(sorted(normalized_item))  # Sort for consistent deduplication
+            unique_items[normalized_item] = item
 
-def calculate_total_descendants(graph, top_node):
-    """
-    Calculate the total number of descendants for the top node.
-    """
-    return len([desc for desc in nx.descendants(graph, top_node)])
+    sorted_items = sorted(unique_items.values(), key=lambda x: x.get('label', 'Unknown'))
 
+    #for i in sorted_items:
+    #    print(i)
+    
+
+    return sorted_items
 
 def find_top_node_with_most_children(graph):
+    log.checkpoint()
     """
     Main function to find the top node with the most children.
     """
-    excluded_labels = {'select', 'body', 'head', 'svg', 'html'}
+    
 
-    node_children_count = calculate_children_count(graph, excluded_labels)
+    top_node = calculate_children_count(graph)
+    print("top_node3:", top_node)
+    # exit()
 
-    top_node_info = get_top_node_with_most_children(node_children_count, graph)
-    if top_node_info is None:
-        return None
-    top_node, top_children_count, top_node_label = top_node_info
     children_details = collect_child_details(graph, top_node)
-    total_descendants = calculate_total_descendants(graph, top_node)
+    # print("children_details:", children_details)
 
+    attributes = graph.nodes[top_node]
+    # # exit()
+
+    #for key,value in attributes.items():
+    #    print("key  :", key)
+    #    print("value:", value)
+    #    print("----")
+    # # exit()
+
+    #print("children_details:", type(children_details))
+    #for i in children_details:
+    #    for key, value in i.items():
+    #        print(key, value)
+    #    print("================================")
 
     return {
-        "top_node": {
-            "label": top_node_label,
-            "children_count": top_children_count,
-            "attributes": graph.nodes[top_node]
-        },
         "children": children_details,
-        "total_descendants": total_descendants
     }
 
 def process_soup(soup):
+    log.checkpoint()
     """Main function to process a BeautifulSoup object and return analysis."""
     # print("[process_soup] Processing soup into graph.")
     graph = html_to_graph(soup)
+    # search_graph_for_string(graph, search_string="2015 Honda")
     node_with_most_children = find_top_node_with_most_children(graph)
+
     return node_with_most_children
 
 def process_results(result):
     """Process and print the results from the top node analysis."""
     if not result:
-        print("No valid nodes found in the graph.")
+        # print("No valid nodes found in the graph.")
         return
-
-    top_node = result["top_node"]
     
     all_data = []
     for child in result["children"]:
@@ -338,8 +603,13 @@ def remove_larger_strings(data, length_threshold=100):
 
 def full_conversion(soup):
     result = process_soup(soup)
+
     data = process_results(result)
+    
+    # print("data:", len(data))
+
     flattended_data = remove_larger_strings(data, length_threshold=100)
+    # print(" flattended_data", len( flattended_data))
 
     final_classified_data = []
     for i in flattended_data:
@@ -365,25 +635,29 @@ def full_conversion(soup):
     return final_classified_data
 
 if __name__ == '__main__':
-    urls = [
-        'https://www.cars.com/shopping/results/?stock_type=all&makes%5B%5D=bmw&models%5B%5D=bmw-128&maximum_distance=all&zip=48061',
-        'https://www.autotrader.ca/cars/?rcp=0&rcs=0&prx=100&hprc=True&wcp=True&sts=New-Used&inMarket=basicSearch&mdl=Accord&make=Honda&loc=N5V%204E1',
-        'https://www.edmunds.com/inventory/srp.html?make=honda&model=honda%7Ccivic',
-        'https://www.cargurus.ca/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?sourceContext=carGurusHomePageModel&srpVariation=SEARCH_AS_FILTERS&makeModelTrimPaths=m6%2Fd586&zip=N5Z',
-        'https://www.kijiji.ca/b-cars-trucks/peterborough/new__used/c174l1700218a49',
-        'https://londonon.craigslist.org/search/cta',
-    ]
-    for url in urls:
-        print("=====================================")
-        print("url:", url)
-        site_url = url 
-        driver = open_site_selenium(site=site_url)
-        maximize_the_window(driver)
-        soup = get_driver_soup(driver)
+    import instance
+    browser = instance.Browser(
+        driver_choice="selenium", 
+        headless=False, 
+        use_tor=False,
+        default_profile=False
+    )  
 
-        final_classified_data = full_conversion(soup)
-        for i in final_classified_data:
-            for j in i:
-                log_function(log_string=j)
-            log_function(log_string="================================================================================")
-        close_driver(driver)    
+    # 
+    browser.go_to_site("https://www.carmax.com/cars?search=honda+civic") 
+    soup = browser.return_current_soup()
+    log.log_function(soup)
+    exit()
+    # soup = log.load_file_as_soup("./logs/2025/01/19/2025-01-19.txt")
+    file = "testerino"
+    final_classified_data = full_conversion(soup)
+
+    iteration = 1
+    for i in final_classified_data:
+        for j in i:
+            log.log_function(log_string=f"{iteration}:{j}", file_name=file)
+        log.log_function(log_string="================================================================================", file_name=file)
+        iteration+=1
+        # # input("----")
+    # input("--")
+    print("I GOT TO THE END??")

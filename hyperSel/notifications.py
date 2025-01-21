@@ -1,6 +1,8 @@
 import requests
 import json
 
+'''NEED TOOLING TO CREATE THE TELEGRAM BOT TOO'''
+
 # Load the BOT_TOKEN from config.json
 with open('./hypersel_extras/config.json', 'r') as config_file:
     config = json.load(config_file)
