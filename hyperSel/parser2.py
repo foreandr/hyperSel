@@ -8,7 +8,7 @@ def soup_to_graph(soup):
     """
     Converts a Beautiful Soup object into a NetworkX graph.
     Skips certain metadata tags defined in the skippers list.
-    Excludes specific nodes and children tags from the graph.
+    Includes all nodes in the graph but excludes specific heads and children tags from counts.
     """
     skippers = [
         'class', 'data-testid', 'height', 'width', 'aria-hidden',
@@ -16,15 +16,15 @@ def soup_to_graph(soup):
         'lang', "type"
     ]
 
-    exclude_nodes = ["head"]  # Nodes to completely exclude from the graph
-    exclude_children = ["link"]  # Children tags to exclude from parent-child relationships
+    exclude_heads = ["body", "head"]  # Nodes to include in the graph but exclude from being the "most children" candidate
+    exclude_children = ["link", "a"]  # Tags to exclude from child counts
 
     # Initialize the graph
     G = nx.DiGraph()
 
     # Recursive function to traverse the DOM
     def build_graph(node, parent=None):
-        if node.name and node.name not in exclude_nodes:  # Process HTML tags, excluding specific nodes
+        if node.name:  # Process HTML tags
             # Extract metadata, excluding skippers
             metadata = {k: v for k, v in node.attrs.items() if k not in skippers}
             metadata["tag"] = node.name  # Add the tag name
@@ -35,8 +35,8 @@ def soup_to_graph(soup):
             G.add_node(tag_id)  # Add the node with a simple ID
             G.nodes[tag_id]["metadata"] = metadata  # Store metadata in a single attribute
 
-            # Add edge from parent to this node if not excluded as a child
-            if parent and metadata["tag"] not in exclude_children:
+            # Add edge from parent to this node
+            if parent:
                 G.add_edge(parent, tag_id, relationship="child")
 
             # Process child nodes recursively
@@ -58,6 +58,20 @@ def soup_to_graph(soup):
     mapping = {n: f"node_{i}" for i, n in enumerate(G.nodes())}
     G = nx.relabel_nodes(G, mapping)
 
+    # Calculate child counts excluding specific children
+    for node in G.nodes:
+        G.nodes[node]["child_count"] = sum(
+            1 for child in G.successors(node)
+            if G.nodes[child]["metadata"].get("tag") not in exclude_children
+        )
+
+    # Mark excluded heads so they are not considered for "most children"
+    for node in G.nodes:
+        if G.nodes[node]["metadata"].get("tag") in exclude_heads:
+            G.nodes[node]["exclude_from_most_children"] = True
+        else:
+            G.nodes[node]["exclude_from_most_children"] = False
+
     return G
 
 def visualize_graph_pyvis(graph):
@@ -67,11 +81,16 @@ def visualize_graph_pyvis(graph):
     """
     net = Network(notebook=False, height="800px", width="100%", directed=True)
 
-    # Find the node with the most children
+    # Find the node with the most children, excluding specified heads
     def count_children(node):
-        return len(list(graph.successors(node)))
+        return graph.nodes[node]["child_count"]
 
-    most_children_node = max(graph.nodes, key=count_children)
+    valid_nodes = [
+        node for node in graph.nodes
+        if not graph.nodes[node].get("exclude_from_most_children", False)
+    ]
+
+    most_children_node = max(valid_nodes, key=count_children)
 
     # Add nodes and edges from the NetworkX graph
     for node, data in graph.nodes(data=True):
