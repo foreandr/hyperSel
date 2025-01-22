@@ -644,7 +644,7 @@ if __name__ == '__main__':
     )  
 
     # 
-    browser.go_to_site("https://www.carmax.com/cars?search=honda+civic") 
+    browser.go_to_site("https://londonon.craigslist.org/search/cta#search=1~gallery~0~0") 
     soup = browser.return_current_soup()
     log.log_function(soup)
     exit()

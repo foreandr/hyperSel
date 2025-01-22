@@ -386,6 +386,25 @@ def close_process_by_pid(pid):
     
     return False
 
+def write_to_csv(data, filename):
+    """
+    Writes a list of lists to a CSV file.
+    """
+    with open(filename, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
+    print(f"Data written to {filename}")
+
+def read_from_csv(filename):
+    """
+    Reads a CSV file and returns the data as a list of lists.
+    """
+    with open(filename, mode="r", newline="", encoding="utf-8") as file:
+        reader = csv.reader(file)
+        data = [row for row in reader]
+    print(f"Data loaded from {filename}")
+    return data
+
 html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -405,123 +424,59 @@ html = """
     </script>
 </head>
 <body>
-    <header id="main-header" class="header">
+    <header id="main-header" class="header" data-label="Shopzilla">
         <h1>Shopzilla</h1>
         <nav>
             <ul>
-                <li><a href="home.html">Home</a></li>
-                <li><a href="categories.html">Categories</a></li>
-                <li><a href="deals.html">Deals</a></li>
-                <li><a href="contact.html">Contact</a></li>
+                <li><a href="home.html" data-label="Home">Home</a></li>
+                <li><a href="categories.html" data-label="Categories">Categories</a></li>
+                <li><a href="deals.html" data-label="Deals">Deals</a></li>
+                <li><a href="contact.html" data-label="Contact">Contact</a></li>
             </ul>
         </nav>
         <form action="/search" method="get" class="search-bar">
-            <input type="text" name="query" placeholder="Search for products...">
-            <button type="submit">Search</button>
+            <input type="text" name="query" placeholder="Search for products..." data-placeholder="Search for products...">
+            <button type="submit" data-label="Search">Search</button>
         </form>
     </header>
 
     <main>
-        <section id="promotions">
-            <h2>Today's Deals</h2>
-            <div class="promo-banner">
-                <p>50% off all electronics! Use code <strong>HALFOFF</strong>.</p>
-            </div>
-        </section>
 
-        <section id="categories">
-            <h2>Product Categories</h2>
-            <div class="category">
-                <h3>Electronics</h3>
-                <div class="product">
-                    <h4>Smartphone</h4>
-                    <p>Latest model with amazing features.</p>
-                    <p>Price: $699</p>
-                    <button>Add to Cart</button>
-                </div>
-                <div class="product">
-                    <h4>4K TV</h4>
-                    <p>Ultra HD television with vibrant colors.</p>
-                    <p>Price: $1199</p>
-                    <button>Add to Cart</button>
-                </div>
-                <div class="product">
-                    <h4>Wireless Headphones</h4>
-                    <p>Noise-cancelling, high-quality sound.</p>
-                    <p>Price: $199</p>
-                    <button>Add to Cart</button>
-                </div>
+        <section id="reviews" data-label="Customer Reviews">
+            <h2 data-label="Reviews">What Customers Are Saying</h2>
+            <div class="review" data-reviewer="John Doe">
+                <h4 data-label="Reviewer Name"></h4>
+                <p data-label="Review">"Amazing quality and fast shipping!"</p>
             </div>
-
-            <div class="category">
-                <h3>Home & Kitchen</h3>
-                <div class="product">
-                    <h4>Blender</h4>
-                    <p>Perfect for smoothies and shakes.</p>
-                    <p>Price: $49</p>
-                    <button>Add to Cart</button>
-                </div>
-                <div class="product">
-                    <h4>Air Fryer</h4>
-                    <p>Cook healthier meals with less oil.</p>
-                    <p>Price: $129</p>
-                    <button>Add to Cart</button>
-                </div>
-                <div class="product">
-                    <h4>Dishwasher</h4>
-                    <p>Energy-efficient with a sleek design.</p>
-                    <p>Price: $799</p>
-                    <button>Add to Cart</button>
-                </div>
+            <div class="review" data-reviewer="Jane Smith1">
+                <h4 data-label="Reviewer Name"></h4>
+                <p data-label="Review">"Great prices and excellent customer service."</p>
             </div>
-        </section>
-
-        <section id="featured">
-            <h2>Featured Products</h2>
-            <div class="product">
-                <h4>Laptop</h4>
-                <p>High performance for gaming and work.</p>
-                <p>Price: $999</p>
-                <button>Add to Cart</button>
+                        <div class="review" data-reviewer="Jane Smith2">
+                <h4 data-label="Reviewer Name"></h4>
+                <p data-label="Review">"Great prices and excellent customer service."</p>
             </div>
-            <div class="product">
-                <h4>Smartwatch</h4>
-                <p>Track your fitness and stay connected.</p>
-                <p>Price: $249</p>
-                <button>Add to Cart</button>
+                        <div class="review" data-reviewer="Jane Smith3">
+                <h4 data-label="Reviewer Name"></h4>
+                <p data-label="Review">"Great prices and excellent customer service."</p>
             </div>
-        </section>
-
-        <section id="locations">
-            <h2>Our Locations</h2>
-            <ul>
-                <li>New York, NY</li>
-                <li>Los Angeles, CA</li>
-                <li>Chicago, IL</li>
-                <li>Houston, TX</li>
-                <li>Miami, FL</li>
-            </ul>
-        </section>
-
-        <section id="reviews">
-            <h2>What Customers Are Saying</h2>
-            <div class="review">
-                <h4>John Doe</h4>
-                <p>"Amazing quality and fast shipping!"</p>
+                        <div class="review" data-reviewer="Jane Smith4">
+                <h4 data-label="Reviewer Name"></h4>
+                <p data-label="Review">"Great prices and excellent customer service."</p>
             </div>
-            <div class="review">
-                <h4>Jane Smith</h4>
-                <p>"Great prices and excellent customer service."</p>
+                        <div class="review" data-reviewer="Jane Smith5">
+                <h4 data-label="Reviewer Name"></h4>
+                <p data-label="Review">"Great prices and excellent customer service."</p>
             </div>
         </section>
     </main>
 
-    <footer>
-        <p>&copy; 2025 Shopzilla | <a href="privacy.html">Privacy Policy</a></p>
+    <footer data-label="Footer">
+        <p data-label="Copyright">&copy; 2025 Shopzilla | <a href="privacy.html" data-label="Privacy Policy">Privacy Policy</a></p>
         <form action="/newsletter" method="post">
-            <label for="newsletter-email">Subscribe to our newsletter:</label>
-            <input type="email" id="newsletter-email" name="email" placeholder="Enter your email">
-            <button type="submit">Subscribe</button>
+            <label for="newsletter-email" data-label="Newsletter Label">Subscribe to our newsletter:</label>
+            <input type="email" id="newsletter-email" name="email" placeholder="Enter your email" data-placeholder="Enter your email">
+            <button type="submit" data-label="Subscribe">Subscribe</button>
         </form>
     </footer>
 </body>
