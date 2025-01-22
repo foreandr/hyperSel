@@ -34,6 +34,7 @@ valid_html_tags = [
     "slider-back-arrow", "gallery-inner", "cl-gallery", "icon", "separator", 
     "posting-title", "text-only", "cl-app-anchor", "app-root", "app-header", "app-footer", 
     "dynamic-content", "shadow-root", "swipe-wrap", "slider-forward-arrow", "gallery-card", "dots",
+    'text',"0"
 ]
 
 start = time.time()

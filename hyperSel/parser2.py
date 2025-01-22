@@ -2,35 +2,67 @@ import graph
 import log
 import csv
 import util
+from collections import deque
 
 
 def find_most_children_node(G):
     """
-    Finds the node with the most children based on the criteria and returns a list of the children's text content.
-    Removes nodes where the text is an empty list.
+    Finds the node with the most children and returns the node ID and its children's metadata.
     """
     def count_children(node):
         return G.nodes[node]["child_count"]
 
-    # Remove nodes where text is an empty list
-    nodes_to_remove = [node for node in G.nodes if G.nodes[node]["metadata"].get("text") == []]
-    G.remove_nodes_from(nodes_to_remove)
+    # Remove nodes with empty text
+    #nodes_to_remove = [node for node in G.nodes if G.nodes[node]["metadata"].get("text") == []]
+    #G.remove_nodes_from(nodes_to_remove)
 
+    # Filter valid nodes for the "most children" computation
     valid_nodes = [
         node for node in G.nodes
         if not G.nodes[node].get("exclude_from_most_children", False)
     ]
 
+    # Find the node with the most children
     most_children_node = max(valid_nodes, key=count_children)
 
-    # Get all children of the node
+    # Get the children of this node
     children = list(G.successors(most_children_node))
 
-    # Collect the text content of each child
-    children_texts = [G.nodes[child]["metadata"].get("text", []) for child in children]
+    # Collect metadata for each child
+    children_metadata = []
+    for child in children:
+        # Debugging: print the current child
+        # print("Processing child:", G.nodes[child])
 
-    return children_texts
+        # Initialize a set to collect all unique elements
+        flat_metadata = set()
 
+        # Perform a breadth-first traversal
+        queue = deque([child])
+
+        while queue:
+            current_node = queue.popleft()
+            current_metadata = G.nodes[current_node]["metadata"]
+
+            # Add all values from metadata to the set
+            for value in current_metadata.values():
+                if isinstance(value, list):
+                    flat_metadata.update(value)  # Add each item from the list
+                elif isinstance(value, str):
+                    flat_metadata.add(value)  # Add string values directly
+
+            # Add children of the current node to the queue
+            queue.extend(G.successors(current_node))
+
+        # Convert the set to a flat list
+        unique_metadata_list = list(flat_metadata)
+
+        # Print the resulting flattened metadata list
+        # print("Flattened Metadata:", unique_metadata_list)
+        children_metadata.append(unique_metadata_list)
+        
+
+    return most_children_node, children_metadata
 
 def main(soup):
     """
@@ -39,45 +71,46 @@ def main(soup):
     G = graph.soup_to_graph(soup)
 
     # Use Pyvis interactive visualization
-    # graph.visualize_graph_pyvis(graph)
+    graph.visualize_graph_pyvis(G)
+    print("GOT HERE")
+    # exit()
 
-    children_texts = find_most_children_node(G)
-    data = data_preprocessing(data=children_texts)
+    most_children_node, children_metadata = find_most_children_node(G)
+    
+
+    data = data_preprocessing(data=children_metadata)
     file = "./logs/temp_data2.csv"
     util.write_to_csv(data, filename=file)
 
     # Example: Load the data back
     loaded_data = util.read_from_csv(file)
-    print(loaded_data)
+    for i in loaded_data:
+        print(i)
+        print('======================')
 
 def data_preprocessing(data, root_url=None):
-    """
-    Preprocesses the extracted data by:
-    - Removing unwanted symbols and characters.
-    - Adding the root URL to relevant items if they are relative URLs.
-    """
-    
-    
-    # Create a comprehensive list of unwanted symbols
-    unwanted_symbols = set(util.valid_html_tags + util.things_to_add_in_multiple_of_n)
-    
-    processed_data = []
-    for row in data:
-        clean_row = []
-        for item in row:
-            # Skip unwanted symbols
-            if item in unwanted_symbols or all(char in unwanted_symbols for char in item):
+    final_data = []
+
+    for i in data:
+        # print(i)
+        sub_data = []
+        for j in i:
+            if j in util.valid_html_tags:
                 continue
-            # Add root URL to relative URLs
-            if item.startswith("/"):
-                item = f"{str(root_url)}{item}"
-            clean_row.append(item)
-        if clean_row:
-            processed_data.append(clean_row)
+            else:
+                sub_data.append(j)
+        final_data.append(sub_data)
+        # print("---")
     
-    return processed_data
+    #for i in final_data:
+    #    print(i)
+
+    return final_data
+
+
 
 if __name__ == "__main__":
+    '''
     import instance
     browser = instance.Browser(
         driver_choice="selenium", 
@@ -89,6 +122,11 @@ if __name__ == "__main__":
     # 
     browser.go_to_site("https://londonon.craigslist.org/search/cta#search=1~gallery~0~0") 
     soup = browser.return_current_soup()
+    
+    
+    log.log_function(soup)
+    exit()
+    '''
 
-    # soup = log.load_file_as_soup(file_path="./logs/2025/01/21/2025-01-21.txt")
+    soup = log.load_file_as_soup(file_path="./logs/2025/01/21/2025-01-21.txt")
     main(soup)
