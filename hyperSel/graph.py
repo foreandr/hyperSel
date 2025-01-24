@@ -5,72 +5,78 @@ from datetime import datetime
 import log
 import parser2
 
-def soup_to_graph(soup):
+def initialize_graph():
     """
-    Converts a Beautiful Soup object into a NetworkX graph.
-    Extracts URLs and image sources, skipping certain metadata tags.
+    Initializes a directed graph using NetworkX.
     """
-    skippers = [
-        'class', 'data-testid', 'height', 'width', 'aria-hidden',
-        'style', 'loading', 'id', "viewbox", "aria-pressed", "aria-label", "role",
-        'lang', "type"
-    ]
+    return nx.DiGraph()
 
-    exclude_heads = ["body", "head"]
-    exclude_children = ["link", "a"]
+def process_html_node(node, skippers):
+    """
+    Processes a single HTML node to extract metadata.
+    """
+    metadata = {}
+    
+    # Filter attributes, excluding those in skippers
+    for k, v in node.attrs.items():
+        if k not in skippers:
+            metadata[k] = v
+    
+    # Add tag name
+    metadata["tag"] = node.name
+    
+    # Add text content
+    metadata["text"] = []
+    for string in node.stripped_strings:
+        metadata["text"].append(string)
+    
+    # Add specific attributes like src and href
+    if "src" in node.attrs:
+        metadata["src"] = node["src"]
+    if "href" in node.attrs:
+        metadata["href"] = node["href"]
+    
+    return metadata
 
-    G = nx.DiGraph()
 
-    def build_graph(node, parent=None):
-        if node.name:  # Process HTML tags
-            
-            # Extract metadata, excluding skippers
-            metadata = {k: v for k, v in node.attrs.items() if k not in skippers}
-            
-            # Add tag name
-            metadata["tag"] = node.name
-            
-            # Add text content
-            metadata["text"] = list(node.stripped_strings)
-            
-            # Extract specific attributes like src and href
-            if "src" in node.attrs:
-                metadata["src"] = node["src"]  # Image sources
-                # print('node["src"]', node["src"])
+def add_node_to_graph(G, node_id, metadata, parent=None):
+    """
+    Adds a node and its metadata to the graph. Creates an edge to the parent if provided.
+    """
+    G.add_node(node_id)
+    G.nodes[node_id]["metadata"] = metadata
+    
+    if parent:
+        G.add_edge(parent, node_id, relationship="child")
 
-            if "href" in node.attrs:
-                metadata["href"] = node["href"]  # Hyperlinks
 
-            # Use a simplified node ID
-            tag_id = f"node_{id(node)}"
-            #if "1960 GMC suburban" in str(metadata):
-            #    print(f"Node {tag_id} Metadata: {metadata}")
-            #    input("---")
+def traverse_and_build_graph(node, parent, G, skippers):
+    """
+    Recursively traverses the HTML tree and builds the graph.
+    """
+    if node.name:  # Process HTML tags
+        metadata = process_html_node(node, skippers)
+        node_id = f"node_{id(node)}"
+        add_node_to_graph(G, node_id, metadata, parent)
 
-            G.add_node(tag_id)
-            G.nodes[tag_id]["metadata"] = metadata  # Store metadata directly
+        for child in node.children:
+            traverse_and_build_graph(child, node_id, G, skippers)
 
-            # Add edge from parent to this node
-            if parent:
-                G.add_edge(parent, tag_id, relationship="child")
+    elif isinstance(node, str) and node.strip():  # Process text content
+        text_id = f"text_{id(node)}"
+        G.add_node(text_id)
+        G.nodes[text_id]["metadata"] = {
+            "tag": "text",
+            "text": [node.strip()],
+        }
+        if parent:
+            G.add_edge(parent, text_id, relationship="text")
 
-            # Process child nodes recursively
-            for child in node.children:
-                build_graph(child, tag_id)
 
-        elif isinstance(node, str) and node.strip():  # Process text content
-            # Add text content as a separate node
-            text_id = f"text_{id(node)}"
-            G.add_node(text_id)
-            G.nodes[text_id]["metadata"] = {
-                "tag": "text",
-                "text": [node.strip()],
-            }
-            if parent:
-                G.add_edge(parent, text_id, relationship="text")
-
-    build_graph(soup)
-
+def finalize_graph(G, exclude_children, exclude_heads):
+    """
+    Finalizes the graph by relabeling nodes and adding computed properties.
+    """
     # Map nodes to compatible IDs for visualization
     mapping = {n: f"node_{i}" for i, n in enumerate(G.nodes())}
     G = nx.relabel_nodes(G, mapping)
@@ -86,6 +92,30 @@ def soup_to_graph(soup):
     for node in G.nodes:
         G.nodes[node]["exclude_from_most_children"] = G.nodes[node]["metadata"].get("tag") in exclude_heads
 
+    return G
+
+
+def soup_to_graph(soup):
+    """
+    Converts a Beautiful Soup object into a NetworkX graph.
+    """
+    skippers = [
+        'class', 'data-testid', 'height', 'width', 'aria-hidden',
+        'style', 'loading', 'id', "viewbox", "aria-pressed", "aria-label", "role",
+        'lang', "type"
+    ]
+
+    exclude_heads = ["body", "head"]
+    exclude_children = ["link", "a"]
+
+    # Step 1: Initialize the graph
+    G = initialize_graph()
+
+    # Step 2: Build the graph recursively
+    traverse_and_build_graph(soup, parent=None, G=G, skippers=skippers)
+
+    # Step 3: Finalize the graph
+    G = finalize_graph(G, exclude_children=exclude_children, exclude_heads=exclude_heads)
 
     return G
 
@@ -139,6 +169,7 @@ def visualize_graph_pyvis(graph):
     net.write_html(html_file)
 
     add_custom_section(html_file)
+    print("VISUALIZED GRAPH")
 
 
 def add_custom_section(html_file):

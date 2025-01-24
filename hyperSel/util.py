@@ -389,11 +389,24 @@ def close_process_by_pid(pid):
 
 def write_to_csv(data, filename):
     """
-    Writes a list of lists to a CSV file.
+    Writes a 2D list (list of lists) to a CSV file.
+    Strips whitespace, replaces newlines with spaces, and ensures consistent formatting.
     """
     with open(filename, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerows(data)
+
+        for row in data:
+            cleaned_row = []
+            for item in row:
+                if isinstance(item, str):
+                    # Strip whitespace and replace newlines with spaces
+                    cleaned_item = item.strip().replace("\n", " ").replace("\r", " ")
+                else:
+                    # Leave non-string items untouched
+                    cleaned_item = item
+                cleaned_row.append(cleaned_item)
+            writer.writerow(cleaned_row)
+    
     print(f"Data written to {filename}")
 
 def read_from_csv(filename):
