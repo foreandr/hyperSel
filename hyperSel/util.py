@@ -1,6 +1,5 @@
 #AGAIN
 import subprocess
-import psutil
 import string
 import random
 from screeninfo import get_monitors

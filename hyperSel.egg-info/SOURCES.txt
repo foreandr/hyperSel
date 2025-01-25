@@ -2,11 +2,13 @@ MANIFEST.in
 README.md
 setup.py
 hyperSel/__init__.py
-hyperSel/browser.py
 hyperSel/classifier.py
 hyperSel/compiler.py
+hyperSel/config.py
 hyperSel/db.py
+hyperSel/graph.py
 hyperSel/gui.py
+hyperSel/instance.py
 hyperSel/log.py
 hyperSel/notifications.py
 hyperSel/parser.py

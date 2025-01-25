@@ -1,7 +1,12 @@
 import networkx as nx
 from pyvis.network import Network
 from datetime import datetime
-import parser
+
+
+try:
+    from . import parser as parser
+except:
+    import parser
 
 def initialize_graph():
     """

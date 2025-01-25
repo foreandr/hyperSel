@@ -6,9 +6,6 @@ import socket
 import asyncio
 from subprocess import Popen
 import atexit
-
-import tor_util
-import util
 import nodriver as nd
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -19,6 +16,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from playwright.sync_api import sync_playwright
+
+try:
+    from . import tor_util as tor_util
+    from . import util as util
+except:
+    import tor_util
+    import util
 
 '''TODO
 ALL THESE VARS SHOUDL BE LISTS, AND WE WILL ASSIGN AN INDEX TO EACH browser
