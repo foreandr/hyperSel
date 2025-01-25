@@ -1,3 +1,0 @@
-'''FOR SQLITE DB STUFF, BECAUSE THAT GETS STORED LOCALLY OR SOMETHING'''
-def insert_data(data):
-    pass
