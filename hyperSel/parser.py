@@ -489,28 +489,59 @@ def data_preprocessing(data, root_url=None):
 if __name__ == "__main__":
    
     urls = [
-        "https://www.cars.com/shopping/results/?stock_type=all&makes%5B%5D=bmw&models%5B%5D=bmw-128&maximum_distance=all&zip=48061",
-        "https://www.autotrader.ca/cars/?rcp=0&rcs=0&prx=100&hprc=True&wcp=True&sts=New-Used&inMarket=basicSearch&mdl=Accord&make=Honda&loc=N5V%204E1",
-        "https://www.kijiji.ca/b-peterborough/cars/k0l1700218?dc=true",
-        "https://www.edmunds.com/inventory/srp.html?make=honda&model=honda%7Ccivic",
-        "https://www.ebay.com/b/Ford-Cars-and-Trucks/6001/bn_24016471",
-        "https://londonon.craigslist.org/search/cta",
-        "https://www.truecar.com/used-cars-for-sale/listings/honda/"
+        #"https://www.cars.com/shopping/results/?stock_type=all&makes%5B%5D=bmw&models%5B%5D=bmw-128&maximum_distance=all&zip=48061",
+        #"https://www.autotrader.ca/cars/?rcp=0&rcs=0&prx=100&hprc=True&wcp=True&sts=New-Used&inMarket=basicSearch&mdl=Accord&make=Honda&loc=N5V%204E1",
+        #"https://www.kijiji.ca/b-peterborough/cars/k0l1700218?dc=true",
+        #"https://www.edmunds.com/inventory/srp.html?make=honda&model=honda%7Ccivic",
+        #"https://www.ebay.com/b/Ford-Cars-and-Trucks/6001/bn_24016471",
+        #"https://londonon.craigslist.org/search/cta",
+        #"https://www.truecar.com/used-cars-for-sale/listings/honda/",
+        #"https://www.autotempest.com/results?make=honda&zip=N5V4E1&radius=500",
+        # "https://www.autolist.com/listings#limit=20&make=Honda&page=1&radius=100",
+        "https://www.carpages.ca/used-cars/search/?search_radius=250&province_code=on&city=peterborough&ll=44.302336,-78.364672",
+
+        #"https://www.hemmings.com/classifieds/cars-for-sale",
+        #"https://www.carsdirect.com/acura",
+        
+    
+        
+        
+        
+        
+        
     ]
-    for i, url in enumerate(urls):
-        import instance
-        browser = instance.Browser(
+
+
+# https://www.asiaautosales.ca/
+# https://www.autocango.com/
+# https://www.pickles.com.au/pickles-cars?srsltid=AfmBOooX8Gdm_DE31Ql2o2yc-KBgsYJeseKpD0xUwVoWWAfWVBndr4oo
+# ERROR "https://www.carmax.com/cars?searchToken=v2.0:xgAAAB-LCAAAAAAAAAMUy8EOATEUBdB_uetHOrTaeTuxsREJYiMWb0aHRrUxHbMg_l2c_flARjCWo4QoTfSHfOglFWmHbb_Kj5Cu-5wTCO8WjEpXVoMwdPJPMR79LbTRFxBeJYAXytSEKGA9nyq1qKypa-3sXBlCzOCJdVM3U9YYpbRzM1cRSgaj8WV4yNDeQOjGDnz6oAFj55-v0HsQRvAJ65wugjOhS2Bs5O7xPX9_AAAA__8",
+# https://www.blocket.se/bilar/sok?filter=%7B%22key%22%3A%22make%22%2C%22values%22%3A%5B%22BMW%22%5D%7D
+# https://www.kbb.com/
+
+#hemming, cars direct, carmax, carvana
+
+    import instance
+    browser = instance.Browser(
                 driver_choice="selenium", 
                 headless=False, 
                 use_tor=False,
                 default_profile=False
         )  
-        browser.go_to_site( url) 
-        time.sleep(2)
-        soup = browser.return_current_soup()
-        # exit()
-        # soup = log.load_file_as_soup(file_path="./logs/2025/01/21/2025-01-21.txt")
-        main(soup, i)
 
+    for i, url in enumerate(urls):
+        try:
+            browser.go_to_site( url) 
+            time.sleep(2)
+            soup = browser.return_current_soup()
+            # exit()
+            # soup = log.load_file_as_soup(file_path="./logs/2025/01/21/2025-01-21.txt")
+            main(soup, i)
+            input("---")
+
+        except Exception as e:
+            print(e)
+            print(url)
+            input("URL FAILED")
     
     # input("-------")
