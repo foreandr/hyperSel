@@ -1,9 +1,7 @@
 import networkx as nx
-from bs4 import BeautifulSoup
 from pyvis.network import Network
 from datetime import datetime
-import log
-import parser2
+import parser
 
 def initialize_graph():
     """
@@ -127,7 +125,7 @@ def visualize_graph_pyvis(graph):
     net = Network(notebook=False, height="800px", width="100%", directed=True)
 
     # Identify the node with the most children
-    most_children_node, _ = parser2.find_most_children_node(graph)
+    most_children_node, _ = parser.find_most_children_node(graph)
 
     # Add nodes and edges from the NetworkX graph
     for node, data in graph.nodes(data=True):
