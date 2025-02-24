@@ -635,7 +635,7 @@ class Browser:
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
-    def take_screenshot(self, path="./pics"):
+    def take_screenshot(self, path="./pics.png"):
         global WEBDRIVER
         if self.driver_choice == 'selenium':
             WEBDRIVER.save_screenshot(path)

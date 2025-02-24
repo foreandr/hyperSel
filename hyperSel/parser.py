@@ -3,6 +3,7 @@ import util
 import config
 from collections import Counter
 import time
+import log
 
 def print_children_metadata(node, G):
     """
@@ -41,6 +42,7 @@ def print_metadata(final_data, G):
                 metadata_length = len(str(metadata))
                 if metadata_length in values:  # Check if the metadata length matches any value
                     print(f"  Child: {child}, Metadata: {metadata}")
+                    log.log_function()
             print("-" * 40)  # Separator for readability
 
 def calculate_median(values):
@@ -72,7 +74,7 @@ def calculate_mode(values):
     mode_data = counter.most_common(1)
     return mode_data[0][0] if mode_data else 0
 
-def preclean_data(array_of_dicts, G, track_string=None):
+def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     """
     Pre-clean the data by removing values below min_chars or above max_chars.
     Also, filter out invalid metadata for each key and its child nodes in the graph G.
@@ -236,6 +238,8 @@ def preclean_data(array_of_dicts, G, track_string=None):
         print(f"'{track_string}' was filtered out after values above CHARS_MAXIMUM filter.")
         input("Press Enter to continue...")
 
+    print_metadata(step2_data, G)
+
     # Step 3: Filter out entries with insufficient children
     final_data = []
     for i in step2_data:
@@ -245,10 +249,14 @@ def preclean_data(array_of_dicts, G, track_string=None):
                 cleaned_entry[key] = value
         if cleaned_entry:
             final_data.append(cleaned_entry)
+            
     print(f"After filtering entries with insufficient children: {len(final_data)}")
     if track_string and not is_string_in_metadata(final_data, track_string):
         print(f"'{track_string}' was filtered out after insufficient children filter.")
+        
         input("Press Enter to continue...")
+        
+
     # exit()
     # At this point, `final_data` contains the result after all filtering steps.
     # print_metadata(final_data, G)
@@ -313,6 +321,8 @@ def flatten_matching_children(matching_children):
 def child_arr_processor(G, array_of_dicts=[{}]):
     # Pre-clean the data
     cleaned_data = preclean_data(array_of_dicts, G) # , track_string='$7,399'
+    input("---???")
+
     finalists_calculated = calc_best_score(cleaned_data)
     scored_finalists = score_finalists(finalists_calculated)
     winner_key = scored_finalists["winner"]
@@ -430,7 +440,7 @@ def find_most_children_node(G):
     if best_node == None:
         print("LITERALLY NOTHING")
         return None, []
-
+    input("-")
     return best_node, flattened_metadata
 
 def main(soup, i):
@@ -483,6 +493,15 @@ def data_preprocessing(data, root_url=None):
 
 if __name__ == "__main__":
    
+    '''OTHER SITES TO CHECK:
+    # https://www.asiaautosales.ca/
+    # https://www.autocango.com/
+    # https://www.pickles.com.au/pickles-cars?srsltid=AfmBOooX8Gdm_DE31Ql2o2yc-KBgsYJeseKpD0xUwVoWWAfWVBndr4oo
+    # https://www.blocket.se/bilar/sok?filter=%7B%22key%22%3A%22make%22%2C%22values%22%3A%5B%22BMW%22%5D%7D
+    # https://www.kbb.com/
+   
+    '''
+
     urls = [
         #"https://www.cars.com/shopping/results/?stock_type=all&makes%5B%5D=bmw&models%5B%5D=bmw-128&maximum_distance=all&zip=48061",
         #"https://www.autotrader.ca/cars/?rcp=0&rcs=0&prx=100&hprc=True&wcp=True&sts=New-Used&inMarket=basicSearch&mdl=Accord&make=Honda&loc=N5V%204E1",
@@ -497,29 +516,21 @@ if __name__ == "__main__":
 
         #"https://www.hemmings.com/classifieds/cars-for-sale",
         #"https://www.carsdirect.com/acura",
-        
-    
-        
-        
-        
-        
-        
     ]
 
 
-# https://www.asiaautosales.ca/
-# https://www.autocango.com/
-# https://www.pickles.com.au/pickles-cars?srsltid=AfmBOooX8Gdm_DE31Ql2o2yc-KBgsYJeseKpD0xUwVoWWAfWVBndr4oo
-# ERROR "https://www.carmax.com/cars?searchToken=v2.0:xgAAAB-LCAAAAAAAAAMUy8EOATEUBdB_uetHOrTaeTuxsREJYiMWb0aHRrUxHbMg_l2c_flARjCWo4QoTfSHfOglFWmHbb_Kj5Cu-5wTCO8WjEpXVoMwdPJPMR79LbTRFxBeJYAXytSEKGA9nyq1qKypa-3sXBlCzOCJdVM3U9YYpbRzM1cRSgaj8WV4yNDeQOjGDnz6oAFj55-v0HsQRvAJ65wugjOhS2Bs5O7xPX9_AAAA__8",
-# https://www.blocket.se/bilar/sok?filter=%7B%22key%22%3A%22make%22%2C%22values%22%3A%5B%22BMW%22%5D%7D
-# https://www.kbb.com/
 
-#hemming, cars direct, carmax, carvana
 
+    
+    ''''''
+    urls = [
+        # "https://www.carvana.com/cars/filters?cvnaid=eyJmaWx0ZXJzIjp7Im1ha2VzIjpbeyJuYW1lIjoiSG9uZGEiLCJwYXJlbnRNb2RlbHMiOlt7Im5hbWUiOiJDaXZpYyIsInRyaW1zIjpbXX1dLCJtb2RlbHMiOltdfV19fQ%3D%3D"
+        "https://www.facebook.com/marketplace/107401009289940/cars/"
+    ]
     import instance
     browser = instance.Browser(
                 driver_choice="selenium", 
-                headless=False, 
+                headless=True, 
                 use_tor=False,
                 default_profile=False
         )  
@@ -528,9 +539,12 @@ if __name__ == "__main__":
         try:
             browser.go_to_site( url) 
             time.sleep(2)
+            browser.take_screenshot()
+            input("934-1298243")
+            exit()
+            
             soup = browser.return_current_soup()
-            # exit()
-            # soup = log.load_file_as_soup(file_path="./logs/2025/01/21/2025-01-21.txt")
+            log.log_function(soup)
             main(soup, i)
             input("---")
 
@@ -539,4 +553,5 @@ if __name__ == "__main__":
             print(url)
             input("URL FAILED")
     
-    # input("-------")
+    soup = log.load_file_as_soup("./logs/log.txt")
+    main(soup, i=1)

@@ -1,5 +1,8 @@
 ticketmaster?
 
+
+# ADD THIS Remove-Item -Recurse -Force build, dist, *.egg-info
+
 # KEEP THE END  GOAL IN MIND, 
 # KEEP THE REVOLUTION IN MIND
 # KEEP MANKIND IN MIND

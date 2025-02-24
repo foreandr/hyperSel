@@ -2,7 +2,6 @@ import networkx as nx
 from pyvis.network import Network
 from datetime import datetime
 
-
 try:
     from . import parser as parser
 except:

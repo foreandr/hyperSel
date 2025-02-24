@@ -20,7 +20,7 @@ class GUI(ctk.CTk):
     
     # --------------- Initialization and Main Window Setup ---------------
     
-    def __init__(self, scrapers, path="./logs/crawl_data.json"):
+    def __init__(self, path="./logs/crawl_data.json"):
         super().__init__()
         self.title("Hypersel")
         self.after(100, lambda: self.state("zoomed"))
@@ -153,8 +153,9 @@ class GUI(ctk.CTk):
 
         # --------------- Crawlers Tab ---------------
         # Dynamically initialize scraper threads and stop events for each scraper
-        self.meta_data = {name: {"running_time": 0, "total_data": 0, "rate_per_hour": 0, "duplicate_count": 0} for name in scrapers}
-        self.scraper_threads = {name: {"thread": None, "stop_event": None} for name in scrapers}
+        #TODO:
+        #self.meta_data = {name: {"running_time": 0, "total_data": 0, "rate_per_hour": 0, "duplicate_count": 0} for name in scrapers}
+        #self.scraper_threads = {name: {"thread": None, "stop_event": None} for name in scrapers}
 
         # UI for ScrapersTab with dynamic Start/Stop Buttons
         crawlers_tab = self.tabview.add("Scrapers")
@@ -189,6 +190,7 @@ class GUI(ctk.CTk):
         # Create UI for each scraper
         self.metadata_labels = {}
         # Inside the loop where you create UI for each scraper
+        '''
         for scraper_name, scraper_func in scrapers.items():
             # Frame for each scraper's controls
             scraper_frame = ctk.CTkFrame(crawlers_tab)
@@ -217,7 +219,8 @@ class GUI(ctk.CTk):
             metadata_label = ctk.CTkLabel(scraper_frame, text=self.get_metadata_text(scraper_name))
             metadata_label.pack(side="left", padx=20)
             self.metadata_labels[scraper_name] = metadata_label
-
+        '''
+        
         # --------------- Reports Tab ---------------
 
         reports_tab = self.tabview.add("Reports")
@@ -569,13 +572,5 @@ class GUI(ctk.CTk):
 
 # Run the app with a specific path
 if __name__ == "__main__":
-    import fake_crawlers
-    scrapers = {
-        "scraper1": fake_crawlers.scraper1,
-        "scraper2": fake_crawlers.scraper2,
-        "scraper3": fake_crawlers.scraper3,
-        # Add more scrapers here as needed
-    }
-
-    app = GUI(scrapers=scrapers, path="./logs/crawl_data.json")
+    app = GUI(path="./logs/crawl_data.json")
     app.mainloop()
