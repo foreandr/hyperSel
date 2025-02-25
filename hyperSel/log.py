@@ -3,8 +3,6 @@ import inspect
 import datetime
 import json
 from bs4 import BeautifulSoup
-import os
-import json
 import csv
 import xml.etree.ElementTree as ET
 import datetime

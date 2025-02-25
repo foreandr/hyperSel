@@ -1,9 +1,14 @@
 import sqlite3
 import json
-from datetime import datetime
 from datetime import datetime, timedelta
-import config
-import log
+
+try:
+    from . import config
+    from . import log
+except:
+    import hyperSel.config as config
+    import hyperSel.log as log
+
 file_path = "./logs/data.json"
 
 # Function to create the table

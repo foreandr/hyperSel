@@ -3,9 +3,9 @@ from pyvis.network import Network
 from datetime import datetime
 
 try:
-    from . import parser as parser
+    from . import parser
 except:
-    import parser
+    import hyperSel.parser as parser
 
 def initialize_graph():
     """

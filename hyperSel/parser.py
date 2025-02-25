@@ -1,9 +1,17 @@
-import graph
-import util
-import config
+try:
+    from . import util
+    from . import graph
+    from . import util
+    from . import log
+except:
+    import hyperSel.util as util
+    import hyperSel.graph as graph
+    import hyperSel.config as config
+    import hyperSel.config as log
+
+
 from collections import Counter
 import time
-import log
 
 def print_children_metadata(node, G):
     """
