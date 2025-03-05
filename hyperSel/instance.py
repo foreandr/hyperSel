@@ -20,9 +20,11 @@ from playwright.sync_api import sync_playwright
 try:
     from . import tor_util as tor_util
     from . import util as util
+    from . import log
 except:
     import tor_util
     import util
+    import log
 
 '''TODO
 ALL THESE VARS SHOUDL BE LISTS, AND WE WILL ASSIGN AN INDEX TO EACH browser
@@ -108,6 +110,7 @@ class Browser:
             return driver
         except Exception as e:
             print(f"Error connecting to Chrome: {e}")
+            input("------------")
             raise
 
     def open_site_selenium(self):
@@ -139,12 +142,20 @@ class Browser:
         global WEBDRIVER
         if self.driver_choice == 'selenium':
             if self.default_profile:
+                log.print_colored(text="STARTING WITH IN BUILT CHROME", color="red")
                 port = 9222  # Default debugging port
                 try:
+                    log.checkpoint()
                     # Attempt to start Chrome with the Default profile
                     self.start_chrome_with_default_profile(port)
+                    log.checkpoint()
                     WEBDRIVER = self.connect_to_chrome(port)
+                    log.checkpoint()
+                    input("stop here and check")
                 except Exception as e:
+                    log.print_colored(text="ERROR FAILURE", color="red")
+                    log.checkpoint(pause=True)
+
                     print(f"Failed to connect to local Chrome instance: {e}")
                     print("Falling back to a fresh Selenium session...")
                     WEBDRIVER = self.open_site_selenium()

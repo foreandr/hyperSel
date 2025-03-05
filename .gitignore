@@ -9,6 +9,7 @@ tor/
 hyperSel/__pycache__/
 hyperSel/__pycache__/
 hyperSel/__pycache__/
+
 hyperSel/logs
 parsing_papers/
 hyperSel/config.json
@@ -68,3 +69,4 @@ wheels/
 .installed.cfg
 *.egg
 hyperSel/foo_trial.spec
+hyperSel/test.py

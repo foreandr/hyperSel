@@ -9,6 +9,23 @@ import datetime
 
 GLOBAL_CHECKPOINT = 0
 
+def print_colored(text, color="red"):
+    colors = {
+        "black": "\033[30m",
+        "red": "\033[91m",
+        "green": "\033[92m",
+        "yellow": "\033[93m",
+        "blue": "\033[94m",
+        "magenta": "\033[95m",
+        "cyan": "\033[96m",
+        "white": "\033[97m",
+        "reset": "\033[0m"
+    }
+
+    color_code = colors.get(color.lower(), colors["red"])  # Default to red if color is not found
+    print(f"{color_code}{text}{colors['reset']}")
+
+
 def check_file_exists(file_path):
     return os.path.exists(file_path)
 
@@ -223,29 +240,28 @@ def log_data(data_object, file_name='data', unique_criterion=None, verbose=False
 
 def checkpoint(pause=False, str_to_print=None):
     global GLOBAL_CHECKPOINT
-    # Get the current frame and then the caller's frame
     frame = inspect.currentframe().f_back
-    
-    # Get the current timestamp
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Get the file name of the calling function
     current_file = inspect.getfile(frame)
-    
-    # Get the name of the calling function
     caller_function_name = frame.f_code.co_name
-    
-    # Print the file, line number, function name, GLOBAL_CHECKPOINT, and current timestamp
-    log_str = f"[CHECKPOINT:{GLOBAL_CHECKPOINT}][FILE:{current_file}][FUNC:{caller_function_name}][TIME:{current_time}][LINE:{frame.f_lineno}]"
-    print(log_str)
 
-    if str_to_print != None:
-        print(str_to_print)
+    log_str = (
+        f"\n\033[92m[CHECKPOINT:{GLOBAL_CHECKPOINT}]"
+        f"\n[TIME:{current_time}][LINE:{frame.f_lineno}]\033[0m"
+        f"\n[FILE:{current_file}]"
+        f"\n[FUNC:{caller_function_name}]"
+        
+    )
+    
+    print(f"{log_str}")
+
+
+    if str_to_print is not None:
+        print(f"\033[92m{str_to_print}\033[0m")  # Print message in green
 
     if pause:
-        input("STOPPING UNTIL YOU TYPE SOMETHIN")
+        input("\033[92mSTOPPING UNTIL YOU TYPE SOMETHIN\033[0m")
 
-    # Increment the global checkpoint
     GLOBAL_CHECKPOINT += 1
 
 def test_locally():
