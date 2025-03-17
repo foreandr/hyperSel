@@ -18,13 +18,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from playwright.sync_api import sync_playwright
 
 try:
-    from . import tor_util as tor_util
+    from . import tor_chrome_util as tor_chrome_util
     from . import util as util
-    from . import log
+    from . import log as log
 except:
-    import tor_util
-    import util
-    import log
+    import tor_chrome_util as tor_chrome_util
+    import util as util
+    import log as log
 
 '''TODO
 ALL THESE VARS SHOUDL BE LISTS, AND WE WILL ASSIGN AN INDEX TO EACH browser
@@ -39,7 +39,7 @@ class Browser:
     def __init__(self, driver_choice, headless, use_tor, default_profile=True):
         if use_tor:
             print("TOR INIT")
-            tor_util.start_tor()
+            tor_chrome_util.start_tor()
 
         valid_drivers = {'selenium', 'nodriver', 'playwright'}
         if driver_choice not in valid_drivers:

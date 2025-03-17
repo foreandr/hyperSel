@@ -70,3 +70,5 @@ wheels/
 *.egg
 hyperSel/foo_trial.spec
 hyperSel/test.py
+/hyperSel/tests
+hyperSel/screenshots/

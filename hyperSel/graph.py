@@ -5,7 +5,7 @@ from datetime import datetime
 try:
     from . import parser
 except:
-    import hyperSel.parser as parser
+    import parser as parser
 
 def initialize_graph():
     """

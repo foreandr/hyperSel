@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 try:
     from . import util
 except:
-    import hyperSel.util as util
+    import util as util
 
 def get_soup(url, extra_headers=None, tor=False):
     """

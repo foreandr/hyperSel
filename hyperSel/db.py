@@ -6,8 +6,8 @@ try:
     from . import config
     from . import log
 except:
-    import hyperSel.config as config
-    import hyperSel.log as log
+    import config as config
+    import log as log
 
 file_path = "./logs/data.json"
 

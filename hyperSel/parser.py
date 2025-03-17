@@ -4,14 +4,16 @@ try:
     from . import util
     from . import log
 except:
-    import hyperSel.util as util
-    import hyperSel.graph as graph
-    import hyperSel.config as config
-    import hyperSel.config as log
+    import util as util
+    import graph as graph
+    import config as config
+    import log as log
 
 
 from collections import Counter
 import time
+
+TESTING = False
 
 def print_children_metadata(node, G):
     """
@@ -50,7 +52,7 @@ def print_metadata(final_data, G):
                 metadata_length = len(str(metadata))
                 if metadata_length in values:  # Check if the metadata length matches any value
                     print(f"  Child: {child}, Metadata: {metadata}")
-                    log.log_function()
+                    # log.log_function()
             print("-" * 40)  # Separator for readability
 
 def calculate_median(values):
@@ -82,7 +84,7 @@ def calculate_mode(values):
     mode_data = counter.most_common(1)
     return mode_data[0][0] if mode_data else 0
 
-def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
+def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
     """
     Pre-clean the data by removing values below min_chars or above max_chars.
     Also, filter out invalid metadata for each key and its child nodes in the graph G.
@@ -108,7 +110,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"Initial data count: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' not found in initial metadata.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Criterion 0: Skip entries where the key's tag is in a specified list
     skip_tags = ["head", "body"]
@@ -126,7 +129,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After key tag filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after key tag filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Criterion 1: Remove children with metadata length > max_chars
     new_data = []
@@ -146,7 +150,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After max_chars filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after max_chars filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Criterion 2: Remove children with metadata length < min_chars
     new_data = []
@@ -166,7 +171,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After min_chars filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after min_chars filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Criterion 3: Remove children with tags 'script' or 'style'
     new_data = []
@@ -186,7 +192,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After tag filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after tag filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Criterion 4: Remove children with empty 'text'
     new_data = []
@@ -206,7 +213,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After text filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after text filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Criterion 5: Filter values step by step
     # Step 1: Filter values below CHARS_MINIMUM
@@ -226,7 +234,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After filtering values below CHARS_MINIMUM: {len(step1_data)}")
     if track_string and not is_string_in_metadata(step1_data, track_string):
         print(f"'{track_string}' was filtered out after values below CHARS_MINIMUM filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
     # Step 2: Filter values above CHARS_MAXIMUM
     step2_data = []
@@ -244,9 +253,11 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After filtering values above CHARS_MAXIMUM: {len(step2_data)}")
     if track_string and not is_string_in_metadata(step2_data, track_string):
         print(f"'{track_string}' was filtered out after values above CHARS_MAXIMUM filter.")
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
 
-    print_metadata(step2_data, G)
+    if TESTING:
+        print_metadata(step2_data, G)
 
     # Step 3: Filter out entries with insufficient children
     final_data = []
@@ -261,8 +272,8 @@ def preclean_data(array_of_dicts, G, track_string="1976 BMW 2002"):
     print(f"After filtering entries with insufficient children: {len(final_data)}")
     if track_string and not is_string_in_metadata(final_data, track_string):
         print(f"'{track_string}' was filtered out after insufficient children filter.")
-        
-        input("Press Enter to continue...")
+        if TESTING:
+            input("Press Enter to continue...")
         
 
     # exit()
@@ -329,10 +340,14 @@ def flatten_matching_children(matching_children):
 def child_arr_processor(G, array_of_dicts=[{}]):
     # Pre-clean the data
     cleaned_data = preclean_data(array_of_dicts, G) # , track_string='$7,399'
-    input("---???")
+    if TESTING:
+        input("---???")
 
     finalists_calculated = calc_best_score(cleaned_data)
     scored_finalists = score_finalists(finalists_calculated)
+    if scored_finalists == None:
+        return None, None
+
     winner_key = scored_finalists["winner"]
     winner_data = scored_finalists["data"]
     matching_children = get_matching_children(G, winner_key, winner_data)
@@ -340,7 +355,11 @@ def child_arr_processor(G, array_of_dicts=[{}]):
     return winner_key, flattened_data
 
 def score_finalists(finalists):
-    print(finalists)
+    print("finalists:", finalists)
+    if finalists == None:
+        return None
+    # input("ALSDHFALKJHDS")
+
     """Score each finalist based on various criteria and return the overall winner with data."""
     # Define the criteria for scoring
     criteria = {
@@ -353,8 +372,18 @@ def score_finalists(finalists):
         "longest_list": lambda x: len(x["data"]),  # Length of the list
     }
 
+    scores = {}
     # Initialize scores and raw criterion tracking
-    scores = {key: {"score": 0, "criteria": [], "raw_scores": {}} for finalist in finalists for key in finalist if key.startswith("node_")}
+    for finalist in finalists:
+        for key in finalist:
+            if key.startswith("node_"):
+                scores[key] = {
+                    "score": 0,
+                    "criteria": [],
+                    "raw_scores": {}
+                }    
+    
+    
     total_criteria = len(criteria)
 
     # Determine the winner for each criterion and track scores
@@ -448,10 +477,13 @@ def find_most_children_node(G):
     if best_node == None:
         print("LITERALLY NOTHING")
         return None, []
-    input("-")
+    
+    if TESTING:
+        input("-")
+
     return best_node, flattened_metadata
 
-def main(soup, i):
+def main(soup, i=1):
     """
     Main function to build the graph and visualize it interactively.
     """
@@ -461,18 +493,17 @@ def main(soup, i):
     graph.visualize_graph_pyvis(G)
 
     most_children_node, children_metadata = find_most_children_node(G)
-    
+
     data = data_preprocessing(data=children_metadata)
     file = f"./logs/temp_data{i}.csv"
     util.write_to_csv(data, filename=file)
 
     # Example: Load the data back
-    loaded_data = util.read_from_csv(file)
-    for j in loaded_data:
-        print(j)
-        print('======================')
-
-    print(F"FINISHED READING FROM CSV [{i}]")
+    #loaded_data = util.read_from_csv(file)
+    #for j in loaded_data:
+    #    print(j)
+    #    print('======================')
+    #print(F"FINISHED READING FROM CSV [{i}]")
 
 def data_preprocessing(data, root_url=None):
     '''
@@ -498,8 +529,7 @@ def data_preprocessing(data, root_url=None):
     return final_data
 
 
-
-if __name__ == "__main__":
+def some_earlier_testing_to_bo_back_to_later():
    
     '''OTHER SITES TO CHECK:
     # https://www.asiaautosales.ca/
@@ -563,3 +593,8 @@ if __name__ == "__main__":
     
     soup = log.load_file_as_soup("./logs/log.txt")
     main(soup, i=1)
+    
+
+if __name__ == "__main__":
+    soup = log.load_file_as_soup("./logs/2025/03/17/2025-03-17.txt")
+    main(soup)
