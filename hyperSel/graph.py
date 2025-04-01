@@ -15,29 +15,36 @@ def initialize_graph():
 
 def process_html_node(node, skippers):
     """
-    Processes a single HTML node to extract metadata.
+    Processes a single HTML node to extract metadata, removing duplicates.
     """
     metadata = {}
-    
+
     # Filter attributes, excluding those in skippers
     for k, v in node.attrs.items():
         if k not in skippers:
             metadata[k] = v
-    
+
     # Add tag name
     metadata["tag"] = node.name
-    
-    # Add text content
+
+    # Add text content (remove duplicates while preserving order)
+    seen_text = set()
     metadata["text"] = []
     for string in node.stripped_strings:
-        metadata["text"].append(string)
-    
-    # Add specific attributes like src and href
-    if "src" in node.attrs:
-        metadata["src"] = node["src"]
-    if "href" in node.attrs:
-        metadata["href"] = node["href"]
-    
+        if string not in seen_text:
+            metadata["text"].append(string)
+            seen_text.add(string)
+
+    # Search for 'href' and 'src' in all descendant nodes, removing duplicates
+    metadata["href"] = list(set(a["href"] for a in node.find_all("a", href=True)))
+    metadata["src"] = list(set(img["src"] for img in node.find_all("img", src=True)))
+
+    # Remove empty lists if no links or images exist
+    if not metadata["href"]:
+        del metadata["href"]
+    if not metadata["src"]:
+        del metadata["src"]
+
     return metadata
 
 
@@ -53,6 +60,8 @@ def add_node_to_graph(G, node_id, metadata, parent=None):
 
 
 def traverse_and_build_graph(node, parent, G, skippers):
+    # print("NOTE IF THERE IS DATA MISSING, IT IS PROBABLY THIS FUNCTION")
+
     """
     Recursively traverses the HTML tree and builds the graph.
     """
@@ -65,6 +74,11 @@ def traverse_and_build_graph(node, parent, G, skippers):
             traverse_and_build_graph(child, node_id, G, skippers)
 
     elif isinstance(node, str) and node.strip():  # Process text content
+
+        #print("\n\n========================================")
+        #print("node:", node)
+        #input("--")
+
         text_id = f"text_{id(node)}"
         G.add_node(text_id)
         G.nodes[text_id]["metadata"] = {
@@ -167,7 +181,7 @@ def visualize_graph_pyvis(graph):
     """)
 
     # Save the HTML file
-    html_file = "graph.html"
+    html_file = "site_graph.html"
     net.write_html(html_file)
 
     add_custom_section(html_file)

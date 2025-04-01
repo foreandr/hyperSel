@@ -12,6 +12,7 @@ except:
 
 from collections import Counter
 import time
+import datetime
 
 TESTING = False
 
@@ -107,7 +108,9 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
 
     # Start with the initial dataset
     current_data = array_of_dicts
-    print(f"Initial data count: {len(current_data)}")
+
+    if TESTING:
+        print(f"Initial data count: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' not found in initial metadata.")
         if TESTING:
@@ -126,7 +129,9 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
         if cleaned_entry:
             new_data.append(cleaned_entry)
     current_data = new_data
-    print(f"After key tag filter: {len(current_data)}")
+
+    if TESTING:
+        print(f"After key tag filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after key tag filter.")
         if TESTING:
@@ -147,7 +152,9 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
         if cleaned_entry:
             new_data.append(cleaned_entry)
     current_data = new_data
-    print(f"After max_chars filter: {len(current_data)}")
+
+    if TESTING:
+        print(f"After max_chars filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after max_chars filter.")
         if TESTING:
@@ -168,7 +175,9 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
         if cleaned_entry:
             new_data.append(cleaned_entry)
     current_data = new_data
-    print(f"After min_chars filter: {len(current_data)}")
+    if TESTING:
+        print(f"After min_chars filter: {len(current_data)}")
+        
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after min_chars filter.")
         if TESTING:
@@ -184,12 +193,17 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
                 metadata = G.nodes[child].get("metadata", {})
                 if metadata.get("tag") not in ["script", "style", "link"]:
                     filtered_children.append(child)
+
+    
             if filtered_children:
                 cleaned_entry[key] = value
         if cleaned_entry:
             new_data.append(cleaned_entry)
+
     current_data = new_data
-    print(f"After tag filter: {len(current_data)}")
+    if TESTING:
+        print(f"After tag filter: {len(current_data)}")
+
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after tag filter.")
         if TESTING:
@@ -210,7 +224,9 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
         if cleaned_entry:
             new_data.append(cleaned_entry)
     current_data = new_data
-    print(f"After text filter: {len(current_data)}")
+
+    if TESTING:
+        print(f"After text filter: {len(current_data)}")
     if track_string and not is_string_in_metadata(current_data, track_string):
         print(f"'{track_string}' was filtered out after text filter.")
         if TESTING:
@@ -231,7 +247,8 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
         if cleaned_entry:
             step1_data.append(cleaned_entry)
 
-    print(f"After filtering values below CHARS_MINIMUM: {len(step1_data)}")
+    if TESTING:
+        print(f"After filtering values below CHARS_MINIMUM: {len(step1_data)}")
     if track_string and not is_string_in_metadata(step1_data, track_string):
         print(f"'{track_string}' was filtered out after values below CHARS_MINIMUM filter.")
         if TESTING:
@@ -250,7 +267,9 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
                 cleaned_entry[key] = filtered_values
         if cleaned_entry:
             step2_data.append(cleaned_entry)
-    print(f"After filtering values above CHARS_MAXIMUM: {len(step2_data)}")
+
+    if TESTING:
+        print(f"After filtering values above CHARS_MAXIMUM: {len(step2_data)}")
     if track_string and not is_string_in_metadata(step2_data, track_string):
         print(f"'{track_string}' was filtered out after values above CHARS_MAXIMUM filter.")
         if TESTING:
@@ -268,25 +287,15 @@ def preclean_data(array_of_dicts, G, track_string=None): # 1976 BMW 2002
                 cleaned_entry[key] = value
         if cleaned_entry:
             final_data.append(cleaned_entry)
-            
-    print(f"After filtering entries with insufficient children: {len(final_data)}")
+    
+    if TESTING:
+        print(f"After filtering entries with insufficient children: {len(final_data)}")
+
     if track_string and not is_string_in_metadata(final_data, track_string):
         print(f"'{track_string}' was filtered out after insufficient children filter.")
         if TESTING:
             input("Press Enter to continue...")
         
-
-    # exit()
-    # At this point, `final_data` contains the result after all filtering steps.
-    # print_metadata(final_data, G)
-
-
-    #print(final_data)
-    #node = list(final_data[0].keys())[0]
-    #print_children_metadata(node, G)
-    
-    # Return the final cleaned data
-    # input("--")
     return final_data
 
 def get_matching_children(G, winner_key, winner_data):
@@ -302,26 +311,30 @@ def get_matching_children(G, winner_key, winner_data):
     - A list of dictionaries containing matching children and their metadata.
     """
     matching_children = []
+    # print("\n\n\nTESTING SHIT IN THE CHILD")
     for child in G.successors(winner_key):
+
         child_metadata = G.nodes[child].get("metadata", {})
         child_metadata_length = len(str(child_metadata))
 
         if child_metadata.get("tag") in ["script", "style"]:  # Skip 'script' or 'style' tags
-            # print(child_metadata)
-            # exit()
             continue
         if child_metadata.get("text") == []:  # Skip if 'text' is empty
             continue
 
         # If the length of the metadata matches a value in the winner's data, add it
         if child_metadata_length in winner_data:
-            matching_children.append({"child": child, "metadata": child_metadata})
+            child_data = G.nodes[child]
+            matching_children.append({
+                "child": child, 
+                "metadata": child_data
+            })
 
     return matching_children
 
 def flatten_matching_children(matching_children):
     """
-    Flattens the metadata text of matching children into a list of lists.
+    Flattens the text data from matching children's metadata into a list of lists.
     
     Parameters:
     - matching_children: List of dictionaries containing child nodes and their metadata.
@@ -331,10 +344,19 @@ def flatten_matching_children(matching_children):
     """
     flattened_data = []
     for child_info in matching_children:
-        metadata = child_info.get("metadata", {})
-        text_data = metadata.get("text", [])
-        if text_data:  # Ensure there is text data to process
-            flattened_data.append(text_data)
+        local_arr = []
+        data = child_info.get("metadata", {})
+        # print(metadata)
+        for key, value in data['metadata'].items():
+            # print(key, value)
+            if type(value) == str:
+                local_arr.append(value)
+            elif type(value) == list:
+                for i in value:
+                    local_arr.append(i)
+
+        flattened_data.append(local_arr)
+
     return flattened_data
 
 def child_arr_processor(G, array_of_dicts=[{}]):
@@ -355,7 +377,7 @@ def child_arr_processor(G, array_of_dicts=[{}]):
     return winner_key, flattened_data
 
 def score_finalists(finalists):
-    print("finalists:", finalists)
+    # print("finalists:", finalists)
     if finalists == None:
         return None
     # input("ALSDHFALKJHDS")
@@ -474,7 +496,7 @@ def find_most_children_node(G):
 
     best_node, flattened_metadata = child_arr_processor(G, array_of_dicts)
 
-    if best_node == None:
+    if best_node == None:   
         print("LITERALLY NOTHING")
         return None, []
     
@@ -483,27 +505,35 @@ def find_most_children_node(G):
 
     return best_node, flattened_metadata
 
-def main(soup, i=1):
+def main(soup):
     """
     Main function to build the graph and visualize it interactively.
     """
     G = graph.soup_to_graph(soup)
 
     # Use Pyvis interactive visualization
-    graph.visualize_graph_pyvis(G)
+    # graph.visualize_graph_pyvis(G)# VERY COOL PIECE OF CODE FOR VISUALIZING
 
     most_children_node, children_metadata = find_most_children_node(G)
 
     data = data_preprocessing(data=children_metadata)
-    file = f"./logs/temp_data{i}.csv"
-    util.write_to_csv(data, filename=file)
+    for i in data:
+        print(i)
+        print("======")
+    input("---GETTING HERE?")
+    write_to_csv = False
+    current_datetime = datetime.datetime.now()
+    if write_to_csv:
+        file = f"./logs/temp_data{current_datetime}.csv"
+        util.write_to_csv(data, filename=file)
 
-    # Example: Load the data back
-    #loaded_data = util.read_from_csv(file)
-    #for j in loaded_data:
-    #    print(j)
-    #    print('======================')
-    #print(F"FINISHED READING FROM CSV [{i}]")
+        # Example: Load the data back
+        loaded_data = util.read_from_csv(file)
+        for j in loaded_data:
+            print(j)
+            print('======================')
+
+    return data
 
 def data_preprocessing(data, root_url=None):
     '''
@@ -578,8 +608,6 @@ def some_earlier_testing_to_bo_back_to_later():
             browser.go_to_site( url) 
             time.sleep(2)
             browser.take_screenshot()
-            input("934-1298243")
-            exit()
             
             soup = browser.return_current_soup()
             log.log_function(soup)
@@ -596,5 +624,24 @@ def some_earlier_testing_to_bo_back_to_later():
     
 
 if __name__ == "__main__":
-    soup = log.load_file_as_soup("./logs/2025/03/17/2025-03-17.txt")
-    main(soup)
+    '''
+    import instance
+    browser = instance.Browser(
+                driver_choice="selenium", 
+                headless=False, 
+                use_tor=False,
+                default_profile=False
+        ) 
+    browser.init_browser()
+
+    url = "https://toronto.craigslist.org/search/cta#search=2~gallery~0"
+    browser.go_to_site(url)
+    time.sleep(1)
+    soup = browser.return_current_soup()
+    log.log_function(soup)'
+    '''
+
+    soup = log.load_file_as_soup("./logs/2025/04/01/2025-04-01.txt")
+    data = main(soup)
+    for i in range(len(data)):
+        print(i, data[i])

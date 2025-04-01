@@ -8,7 +8,7 @@ except:
 
 def get_soup(url, extra_headers=None, tor=False):
     """
-    Fetch and parse a URL into a BeautifulSoup object, with optional Tor or proxy routing.
+    Fetch and parse a URL into a BeautifulSoup object, with optional Tor routing.
     """
     # Headers
     headers = {
@@ -18,20 +18,23 @@ def get_soup(url, extra_headers=None, tor=False):
     if extra_headers:
         headers.update(extra_headers)
 
-    if tor:
-        proxies = {
-            'http': 'socks5h://127.0.0.1:9050',
-            'https': 'socks5h://127.0.0.1:9050'
-        }
-        print("Routing requests through Tor...")
+    # Only set proxies if using Tor
+    proxies = {
+        'http': 'socks5h://127.0.0.1:9050',
+        'https': 'socks5h://127.0.0.1:9050'
+    } if tor else None
 
     try:
-        response = requests.get(url, headers=headers, proxies=proxies, timeout=10)
+        if tor:
+            print("Routing requests through Tor...")
+            response = requests.get(url, headers=headers, proxies=proxies, timeout=10)
+        else:
+            response = requests.get(url, headers=headers, timeout=10)  # No proxies argument
+        
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         return soup
     except requests.exceptions.RequestException as e:
-        # Simplified error handling
         print(f"Error fetching URL: {e}")
         return None
 

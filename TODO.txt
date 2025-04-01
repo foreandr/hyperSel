@@ -16,6 +16,14 @@ ticketmaster?
 when we do the snif, if we find big json, we add it to the root of the tree, and so the samething
 so all those json will be brothers do the head
 
+'''
+THIS WORKS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+CLOSE BROWSER EVERY TIME, SPOOF USER USER_AGENTS
+TRRY WITH SWITCHING LOCATIONS,
+GOTTA GET THE P2P WORKING
+AND THEN WE CAN JUST SELL THE ZILLOW FOR NOW'
+'''
 
 # THE PARSER COULD REALLY USE A SECOND LOOK, IT HAS TONS OF BLOAT IN THE LOGIC IT DOESNT NEED
 

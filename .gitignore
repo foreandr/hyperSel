@@ -72,3 +72,6 @@ hyperSel/foo_trial.spec
 hyperSel/test.py
 /hyperSel/tests
 hyperSel/screenshots/
+hyperSel/site_graph.html
+hyperSel/test_zillow.py
+hyperSel/test_internal_tor.py

@@ -29,6 +29,8 @@ except:
 '''TODO
 ALL THESE VARS SHOUDL BE LISTS, AND WE WILL ASSIGN AN INDEX TO EACH browser
 CUZ I MAY WANT 5 OF THESE OPEN
+
+I NEED GETTERS AND SETTERS FOR THE PARAMS
 '''
 
 WEBDRIVER = None
@@ -36,7 +38,14 @@ PAGE = None
 PID = None
 
 class Browser:
-    def __init__(self, driver_choice, headless, use_tor, default_profile=True):
+    def __init__(
+            self, 
+            driver_choice="selenium", 
+            headless=False, use_tor=False, 
+            default_profile=False, 
+            zoom_level=100, 
+            port=9222
+        ):
         if use_tor:
             print("TOR INIT")
             tor_chrome_util.start_tor()
@@ -49,7 +58,8 @@ class Browser:
         self.headless = bool(headless)
         self.use_tor = bool(use_tor)
         self.default_profile = default_profile
-        self.init_browser()
+        self.zoom_level = zoom_level
+        self.port = port
 
     def find_chrome_path(self):
         """Find the Chrome executable path."""
@@ -62,12 +72,12 @@ class Browser:
                 return path
         raise FileNotFoundError("Chrome executable not found. Please install Google Chrome or specify the path manually.")
 
-    def is_port_in_use(self, port):
+    def is_port_in_use(self):
         """Check if a port is already in use."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            return s.connect_ex(("127.0.0.1", port)) == 0
+            return s.connect_ex(("127.0.0.1", self.port)) == 0
 
-    def start_chrome_with_default_profile(self, port):
+    def start_chrome_with_default_profile(self):
         """Start Chrome with the Default profile and remote debugging port."""
         try:
             # Ensure Chrome executable is found
@@ -75,14 +85,14 @@ class Browser:
             profile_path = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")  # Parent directory of profiles
 
             # Check if the port is already in use
-            if self.is_port_in_use(port):
-                print(f"Port {port} is already in use. Assuming Chrome is already running.")
+            if self.is_port_in_use(self.port):
+                print(f"Port {self.port} is already in use. Assuming Chrome is already running.")
                 return  # Do not start a new Chrome instance
 
             # Command to start Chrome
             cmd = [
                 chrome_path,
-                f"--remote-debugging-port={port}",
+                f"--remote-debugging-port={self.port}",
                 f"--user-data-dir={profile_path}",
                 "--disable-blink-features=AutomationControlled",
                 "--start-maximized",
@@ -101,11 +111,11 @@ class Browser:
             print(f"Error starting Chrome: {e}")
             raise
 
-    def connect_to_chrome(self, port):
+    def connect_to_chrome(self):
         """Use Selenium to connect to Chrome running on the specified port."""
         try:
             options = Options()
-            options.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+            options.add_experimental_option("debuggerAddress", f"127.0.0.1:{self.port}")
             driver = webdriver.Chrome(service=Service(), options=options)
             return driver
         except Exception as e:
@@ -114,42 +124,60 @@ class Browser:
             raise
 
     def open_site_selenium(self):
-        """Open a Selenium driver without using a profile."""
+        """Open a Selenium driver with anti-detection measures."""
         global PID
         options = Options()
+        
         if self.headless:
             options.add_argument("--headless")  # Run in headless mode
 
-        # Add user-agent
+        # Add user-agent spoofing
         options.add_argument(f"--user-agent={util.generate_random_user_agent()}")
+
+        # Prevent detection as an automated bot
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--incognito")  # Open in Incognito Mode
 
         # Use Tor if specified
         if self.use_tor:
             print("Routing requests through Tor...")
             options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
 
-        options.add_argument("--log-level=3")  # Suppress unnecessary logs
+        # Suppress unnecessary logs
+        options.add_argument("--log-level=3")  
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        
+        # Spoof Host Resolver Rules (If Needed)
         options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
+
+        # Adjust Zoom Level
+        scale_factor = self.zoom_level / 100.0  
+        options.add_argument(f"--force-device-scale-factor={scale_factor}")
+
+        # Maximize Window (For More Human-Like Behavior)
+        options.add_argument("--start-maximized")
 
         # Initialize the driver
         service = Service()  # Default ChromeDriver service
-        driver =  webdriver.Chrome(service=service, options=options)
+        driver = webdriver.Chrome(service=service, options=options)
         PID = service.process.pid if service.process else None
         return driver
+
 
     def init_browser(self):
         global WEBDRIVER
         if self.driver_choice == 'selenium':
             if self.default_profile:
                 log.print_colored(text="STARTING WITH IN BUILT CHROME", color="red")
-                port = 9222  # Default debugging port
                 try:
                     log.checkpoint()
                     # Attempt to start Chrome with the Default profile
-                    self.start_chrome_with_default_profile(port)
+                    self.start_chrome_with_default_profile()
                     log.checkpoint()
-                    WEBDRIVER = self.connect_to_chrome(port)
+                    WEBDRIVER = self.connect_to_chrome()
                     log.checkpoint()
                     input("stop here and check")
                 except Exception as e:
