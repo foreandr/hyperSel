@@ -317,10 +317,10 @@ def get_matching_children(G, winner_key, winner_data):
         child_metadata = G.nodes[child].get("metadata", {})
         child_metadata_length = len(str(child_metadata))
 
-        if child_metadata.get("tag") in ["script", "style"]:  # Skip 'script' or 'style' tags
-            continue
         if child_metadata.get("text") == []:  # Skip if 'text' is empty
             continue
+
+        # print("child_metadata:", child_metadata)
 
         # If the length of the metadata matches a value in the winner's data, add it
         if child_metadata_length in winner_data:
@@ -329,6 +329,7 @@ def get_matching_children(G, winner_key, winner_data):
                 "child": child, 
                 "metadata": child_data
             })
+        # break
 
     return matching_children
 
@@ -517,10 +518,7 @@ def main(soup):
     most_children_node, children_metadata = find_most_children_node(G)
 
     data = data_preprocessing(data=children_metadata)
-    for i in data:
-        print(i)
-        print("======")
-    input("---GETTING HERE?")
+
     write_to_csv = False
     current_datetime = datetime.datetime.now()
     if write_to_csv:
@@ -624,7 +622,7 @@ def some_earlier_testing_to_bo_back_to_later():
     
 
 if __name__ == "__main__":
-    '''
+    ''' '''
     import instance
     browser = instance.Browser(
                 driver_choice="selenium", 
@@ -636,12 +634,13 @@ if __name__ == "__main__":
 
     url = "https://toronto.craigslist.org/search/cta#search=2~gallery~0"
     browser.go_to_site(url)
-    time.sleep(1)
+    time.sleep(5)
     soup = browser.return_current_soup()
-    log.log_function(soup)'
-    '''
+    #log.log_function(soup)'
+   
 
-    soup = log.load_file_as_soup("./logs/2025/04/01/2025-04-01.txt")
+    # soup = log.load_file_as_soup("./logs/2025/04/01/2025-04-01.txt")
     data = main(soup)
     for i in range(len(data)):
-        print(i, data[i])
+        print(i, data[i])   
+        input("----")

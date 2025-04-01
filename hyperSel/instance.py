@@ -43,7 +43,7 @@ class Browser:
             driver_choice="selenium", 
             headless=False, use_tor=False, 
             default_profile=False, 
-            zoom_level=100, 
+            zoom_level=20, 
             port=9222
         ):
         if use_tor:
