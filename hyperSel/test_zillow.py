@@ -1,22 +1,18 @@
 import time
 import os
 import random
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-import parser
-from bs4 import BeautifulSoup
 import csv
 from datetime import datetime
-import instance
 
 try:
-
     from . import log as log
+    from . import parser as parser
+    from . import instance as instance
 except:
 
     import log as log
+    import parser as parser
+    import instance as instance
 
 
 # 📁 Create a directory for storing screenshots

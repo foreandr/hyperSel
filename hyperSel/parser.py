@@ -1,17 +1,15 @@
 try:
-    from . import util
-    from . import graph
-    from . import util
-    from . import log
+    from . import util as util
+    from . import graph as graph
+    from . import config as config
+    from . import log as log
 except:
     import util as util
     import graph as graph
     import config as config
     import log as log
 
-
 from collections import Counter
-import time
 import datetime
 
 TESTING = False

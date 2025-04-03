@@ -1,5 +1,3 @@
-import os
-import subprocess
 from setuptools import setup, find_packages
 
 # Read the README.md file for the long description
@@ -8,8 +6,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 # Setup configuration
 setup(
-    name="hyperSel",
-    version=5.7,
+    name="hypersel",
+    version=5.8,
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description

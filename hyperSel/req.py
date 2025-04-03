@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 try:
-    from . import util
+    from . import util as util
 except:
     import util as util
 
