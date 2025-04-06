@@ -13,4 +13,5 @@ screeninfo
 customtkinter
 pillow
 pyinstaller
+networkx
 html5lib

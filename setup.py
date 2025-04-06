@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Setup configuration
 setup(
     name="hypersel",
-    version=5.8,
+    version=5.9,
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description
@@ -28,6 +28,7 @@ setup(
         "customtkinter",
         "pillow",
         "pyinstaller",
+        "networkx",
         "html5lib",
     ],
     include_package_data=True,  # Include additional files from MANIFEST.in or other configurations
