@@ -14,4 +14,5 @@ customtkinter
 pillow
 pyinstaller
 networkx
+pyvis
 html5lib
