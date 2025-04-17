@@ -7,38 +7,26 @@ import sys
 def modify_file_for_trial(file_name, free_trial, trial_duration_minutes=10000, email="foreandr@gmail.com"):
     """
     Modifies the given Python file to include free trial logic if free_trial is True.
-
-    :param file_name: The Python file to modify.
-    :param free_trial: Boolean to decide whether to add free trial code.
-    :param trial_duration_minutes: Trial duration in minutes.
-    :param email: Contact email to display when the trial ends.
     """
     if free_trial:
-        # Record the compilation time
         compile_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Inject trial logic that checks if the app has expired based on compile time
+        # Inject trial code at the top of the file
         trial_code = f"""
 # Free Trial Logic
 import datetime
 import customtkinter as ctk
 import sys
 
-# Compilation time
 compile_time_str = "{compile_time}"
 compile_time = datetime.datetime.strptime(compile_time_str, "%Y-%m-%d %H:%M:%S")
-
-# Trial duration in minutes
 trial_duration = {trial_duration_minutes}
 trial_end_time = compile_time + datetime.timedelta(minutes=trial_duration)
-
-# Check trial status
 current_time = datetime.datetime.now()
 elapsed_time = (current_time - compile_time).total_seconds()
 elapsed_minutes = elapsed_time / 60
 
 if current_time > trial_end_time:
-    # Create a customtkinter GUI to inform the user
     def trial_expired_popup():
         root = ctk.CTk()
         root.title("Trial Expired")
@@ -53,10 +41,7 @@ if current_time > trial_end_time:
             f"Contact {email} for the full version."
         )
 
-        label = ctk.CTkLabel(
-            root, text=details, font=("Arial", 12),
-            wraplength=450, justify="left"
-        )
+        label = ctk.CTkLabel(root, text=details, font=("Arial", 12), wraplength=450, justify="left")
         label.pack(pady=20)
 
         button = ctk.CTkButton(root, text="Close", command=root.destroy)
@@ -72,11 +57,11 @@ if current_time > trial_end_time:
             original_code = f.read()
             f.seek(0, 0)
             f.write(trial_code + "\n" + original_code)
-        print("Trial logic added successfully with the following details:")
+        print("Trial logic added successfully:")
         print(f"- Compilation Time: {compile_time}")
         print(f"- Trial Duration: {trial_duration_minutes} minutes")
         print(f"- Contact Email: {email}")
-        return original_code  # For restoring later
+        return original_code
     else:
         print("Free trial logic not added since free_trial is False.")
         return None
@@ -85,9 +70,6 @@ if current_time > trial_end_time:
 def restore_original_file(file_name, original_code):
     """
     Restores the original file content after compilation.
-
-    :param file_name: The file to restore.
-    :param original_code: The original content of the file.
     """
     if original_code:
         print("Restoring the original file content...")
@@ -96,46 +78,53 @@ def restore_original_file(file_name, original_code):
         print("File restored successfully.")
 
 
-def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True, include_folders=None):
+def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True, include_folders=None, build_folder="WebWeb"):
     """
     Compiles a Python script into a standalone executable using PyInstaller.
+    All output files will be placed inside the folder specified by `build_folder`.
     
     :param file_name: Path to the .py file to compile.
     :param is_gui: If True, suppresses the console window (--noconsole).
     :param free_trial: If True, injects trial logic into the script.
-    :param include_folders: List of folder names to include as --add-data.
+    :param include_folders: List of folders to bundle with the executable.
+    :param build_folder: The folder where all build outputs will go (default: "WebWeb").
     """
     if not file_name.endswith(".py"):
         print("❌ Error: File must be a Python script with a '.py' extension.")
         return
 
-    # Inject trial logic if enabled
+    # Add trial logic if enabled
     original_code = modify_file_for_trial(file_name, free_trial)
 
-    # Generate output name
+    # Output name based on base filename
     base_name = os.path.splitext(os.path.basename(file_name))[0]
     output_name = f"{base_name}_trial" if free_trial else base_name
 
-    # Log basic info
+    # Create output folder if it doesn't exist
+    os.makedirs(build_folder, exist_ok=True)
+
     print(f"\n🔧 Building: {file_name}")
     print(f"🛠️  Output Name: {output_name}")
     print(f"🖼️  GUI Mode: {is_gui}")
     print(f"🔓 Free Trial: {free_trial}")
     print(f"📁 Including Folders: {include_folders or []}")
+    print(f"📂 Output Directory: {build_folder}")
 
-    # Construct base PyInstaller command
+    # Base pyinstaller command
     command = [
         "pyinstaller",
         "--onefile",
-        file_name,
-        "--name",
-        output_name
+        "--distpath", build_folder,
+        "--workpath", os.path.join(build_folder, "build"),
+        "--specpath", build_folder,
+        "--name", output_name,
+        file_name
     ]
 
     if is_gui:
         command.append("--noconsole")
 
-    # Include additional folders (like data/)
+    # Add folders with --add-data
     if include_folders:
         sep = ";" if os.name == "nt" else ":"
         for folder in include_folders:
@@ -145,7 +134,6 @@ def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True, include
                 print(f"⚠️  Skipping non-existent folder: {folder}")
 
     try:
-        # Run PyInstaller command
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = process.communicate()
 
@@ -155,10 +143,12 @@ def run_pyinstaller(file_name="./foo.py", is_gui=False, free_trial=True, include
             print("\n❗ PyInstaller Errors:")
             print(stderr)
 
+        print(f"\n✅ Compilation complete! Output is in: {build_folder}/")
+
     except FileNotFoundError:
-        print("❌ PyInstaller not found. Make sure it is installed.")
+        print("❌ PyInstaller not found. Install it with 'pip install pyinstaller'")
     except Exception as e:
-        print(f"❌ Unexpected error during compilation: {e}")
+        print(f"❌ Unexpected error during build: {e}")
     finally:
         restore_original_file(file_name, original_code)
 
@@ -169,5 +159,6 @@ if __name__ == "__main__":
         file_name="./crawlRealEstate.py",
         is_gui=False,
         free_trial=False,
-        include_folders=["data"]  # <-- Add any folders your app depends on
+        include_folders=["data"],         # Folders you want to bundle
+        build_folder="WebWeb"             # Folder where .exe and files will go
     )
