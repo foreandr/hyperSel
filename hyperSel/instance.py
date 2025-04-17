@@ -10,6 +10,7 @@ import nodriver as nd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -138,6 +139,7 @@ class Browser:
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--incognito")  # Open in Incognito Mode
+        options.add_argument("--disable-3d-apis")
 
         # Use Tor if specified
         if self.use_tor:
@@ -422,8 +424,6 @@ class Browser:
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
-
-
     def get_multiple_elements(self):
         global WEBDRIVER
         if self.driver_choice == 'selenium':
@@ -695,8 +695,12 @@ def cleanup():
     """Cleanup logic at script exit."""
     print("Script is exiting.")
     # util.close_process_by_pid(PID)
-    
-    WEBDRIVER.quit()
+
+    try:
+        WEBDRIVER.quit() # DIDINT INIT THE CHROMEDRIVER
+    except:
+        pass
+
     gc.collect()
 
 atexit.register(cleanup)

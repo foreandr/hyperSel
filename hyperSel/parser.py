@@ -443,7 +443,8 @@ def score_finalists(finalists):
 def calc_best_score(finalists):
     """Process and display results for finalists."""
     if not finalists:
-        print("NONE FIT, FUCK")
+        if TESTING:
+            print("NONE FIT, FUCK")
         return None
 
     # Add additional statistics to each finalist
@@ -496,7 +497,10 @@ def find_most_children_node(G):
     best_node, flattened_metadata = child_arr_processor(G, array_of_dicts)
 
     if best_node == None:   
-        print("LITERALLY NOTHING")
+        if TESTING:
+            print("LITERALLY NOTHING")
+
+        
         return None, []
     
     if TESTING:
