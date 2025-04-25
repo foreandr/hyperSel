@@ -32,10 +32,6 @@ CUZ I MAY WANT 5 OF THESE OPEN
 I NEED GETTERS AND SETTERS FOR THE PARAMS
 '''
 
-WEBDRIVER = None
-PAGE = None
-PID = None
-
 class Browser:
     def __init__(
             self, 
