@@ -59,6 +59,8 @@ class Browser:
         self.default_profile = default_profile
         self.zoom_level = zoom_level
         self.port = port
+        self.WEBDRIVER = None
+        self.PID = None
 
     def find_chrome_path(self):
         """Find the Chrome executable path."""
@@ -124,7 +126,6 @@ class Browser:
 
     def open_site_selenium(self):
         """Open a Selenium driver with anti-detection measures."""
-        global PID
         options = Options()
         
         if self.headless:
@@ -163,12 +164,11 @@ class Browser:
         # Initialize the driver
         service = Service()  # Default ChromeDriver service
         driver = webdriver.Chrome(service=service, options=options)
-        PID = service.process.pid if service.process else None
+        self.PID = service.process.pid if service.process else None
         return driver
 
 
     def init_browser(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             if self.default_profile:
                 log.print_colored(text="STARTING WITH IN BUILT CHROME", color="red")
@@ -177,7 +177,7 @@ class Browser:
                     # Attempt to start Chrome with the Default profile
                     self.start_chrome_with_default_profile()
                     log.checkpoint()
-                    WEBDRIVER = self.connect_to_chrome()
+                    self.WEBDRIVER = self.connect_to_chrome()
                     log.checkpoint()
                     input("stop here and check")
                 except Exception as e:
@@ -186,37 +186,12 @@ class Browser:
 
                     print(f"Failed to connect to local Chrome instance: {e}")
                     print("Falling back to a fresh Selenium session...")
-                    WEBDRIVER = self.open_site_selenium()
+                    self.WEBDRIVER = self.open_site_selenium()
             else:
                 print("Default profile disabled. Starting fresh Selenium session...")
-                WEBDRIVER = self.open_site_selenium()
+                self.WEBDRIVER = self.open_site_selenium()
 
-            WEBDRIVER.maximize_window()
-
-        elif self.driver_choice == 'nodriver':
-            async def open_nodriver(headless=False, tor=False):
-                browser_args = ["--start-maximized"]
-                browser_args.append(f"--user-agent={util.generate_random_user_agent()}")
-
-                if tor:
-                    browser_args.append("--proxy-server=socks5://127.0.0.1:9050")
-
-                browser = await nd.start(
-                    headless=headless,
-                    browser_args=browser_args,
-                    lang="en-US",
-                )
-                return browser
-            
-            async def asyc_open_browser(headless, tor):
-                browser = await open_nodriver(headless, tor)
-                return browser
-
-            def open_browser(headless=False, tor=False):
-                return asyncio.run(asyc_open_browser(headless, tor))
-
-            browser = open_browser(headless=self.headless, tor=self.use_tor)
-            WEBDRIVER = browser 
+            self.WEBDRIVER.maximize_window()
 
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
@@ -272,11 +247,10 @@ class Browser:
         return main(url)
     
     def close_browser(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
-                WEBDRIVER.quit()
-                WEBDRIVER = None
+                self.WEBDRIVER.quit()
+                self.WEBDRIVER = None
                 gc.collect()
             except Exception as e:
                 print(f"Error closing Selenium browser: {e}")
@@ -285,25 +259,14 @@ class Browser:
             print("GETTING HERE?")
             gc.collect()
 
-        elif self.driver_choice == 'nodriver':
-            async def custom_kill_browser(browser):
-                util.kill_process_by_pid(browser._process_pid)
-
-            def kill_browser(browser):
-                asyncio.run(custom_kill_browser(browser))
-
-            kill_browser(WEBDRIVER)
-            WEBDRIVER = None
-
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
         
     def get_many_elements_by_xpath(self, xpath,time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
                 # Wait for the elements to be present and visible
-                elements = WebDriverWait(WEBDRIVER, time).until(
+                elements = WebDriverWait(self.WEBDRIVER, time).until(
                     EC.presence_of_all_elements_located((By.XPATH, xpath))
                 )
                 return elements
@@ -319,11 +282,10 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
         
     def get_many_elements_by_css_selector(self, css_selector,time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
                 # Wait for the elements to be present and visible
-                elements = WebDriverWait(WEBDRIVER, time).until(
+                elements = WebDriverWait(self.WEBDRIVER, time).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, css_selector))
                 )
                 return elements
@@ -339,11 +301,10 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
     
     def get_many_elements_by_class(self, class_name,time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
                 # Wait for the elements to be present and visible
-                elements = WebDriverWait(WEBDRIVER, time).until(
+                elements = WebDriverWait(self.WEBDRIVER, time).until(
                     EC.presence_of_all_elements_located((By.CLASS_NAME, class_name))
                 )
                 return elements
@@ -359,9 +320,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_element_by_xpath(self, xpath, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            element = WebDriverWait(WEBDRIVER, time).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            element = WebDriverWait(self.WEBDRIVER, time).until(EC.element_to_be_clickable((By.XPATH, xpath)))
             return element
         elif self.driver_choice == 'playwright':
             pass
@@ -371,9 +331,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_element_by_class(self, class_name, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            element = WebDriverWait(WEBDRIVER, time).until(EC.element_to_be_clickable((By.CLASS_NAME, class_name)))
+            element = WebDriverWait(self.WEBDRIVER, time).until(EC.element_to_be_clickable((By.CLASS_NAME, class_name)))
             return element
         elif self.driver_choice == 'playwright':
             pass
@@ -383,9 +342,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_element_by_id(self, element_id, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            select_element = WebDriverWait(WEBDRIVER, time).until(EC.element_to_be_clickable((By.ID, element_id)))
+            select_element = WebDriverWait(self.WEBDRIVER, time).until(EC.element_to_be_clickable((By.ID, element_id)))
             return select_element
         elif self.driver_choice == 'playwright':
             pass
@@ -395,12 +353,11 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_element_by_css_selector(self, css_selector, condition="visible", time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             if condition == "visible":
-                element = WebDriverWait(WEBDRIVER, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, css_selector)))
+                element = WebDriverWait(self.WEBDRIVER, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, css_selector)))
             elif condition == "clickable":
-                element = WebDriverWait(WEBDRIVER, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, css_selector)))
+                element = WebDriverWait(self.WEBDRIVER, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, css_selector)))
             else:
                 raise ValueError("Invalid condition. Use 'visible' or 'clickable'.")
             
@@ -414,7 +371,6 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_element_by_css_class(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             pass
         elif self.driver_choice == 'playwright':
@@ -425,7 +381,6 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_multiple_elements(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             pass
         elif self.driver_choice == 'playwright':
@@ -436,33 +391,19 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def go_to_site(self, site):
-        global WEBDRIVER
-        global PAGE
         sleep_time = 2
         
         if self.driver_choice == 'selenium':
-            WEBDRIVER.get(site)
+            self.WEBDRIVER.get(site)
             time.sleep(sleep_time)
-
-        elif self.driver_choice == 'nodriver':
-            async def async_go_to_site(browser, url):
-                page = await browser.get(url=url)
-                return page
-            
-            def go_to_site(browser, url):
-                return asyncio.run(async_go_to_site(browser, url))
-
-            page = go_to_site(WEBDRIVER, site)    
-            PAGE = page
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def clear_input_field_by_xpath(self, xpath, timeout=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
                 # Wait for the input field to be present and visible
-                input_field = WebDriverWait(WEBDRIVER, timeout).until(
+                input_field = WebDriverWait(self.WEBDRIVER, timeout).until(
                     EC.visibility_of_element_located((By.XPATH, xpath))
                 )
                 # Clear the input field
@@ -479,9 +420,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def enter_text_into_input_field_by_xpath(self, xpath, content_to_enter, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            input_field =  WebDriverWait(WEBDRIVER, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
+            input_field =  WebDriverWait(self.WEBDRIVER, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
             input_field.clear()
             input_field.send_keys(content_to_enter)
         elif self.driver_choice == 'playwright':
@@ -492,9 +432,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def enter_text_into_input_field_by_class(self, element_class, content_to_enter, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            element = WebDriverWait(WEBDRIVER, time).until(EC.visibility_of_element_located((By.CLASS_NAME, element_class)))
+            element = WebDriverWait(self.WEBDRIVER, time).until(EC.visibility_of_element_located((By.CLASS_NAME, element_class)))
             element.clear()  # Optional: Clear any existing content in the input field
             element.send_keys(content_to_enter)
         elif self.driver_choice == 'playwright':
@@ -505,9 +444,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def click_button_by_xpath(self, xpath, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            element = WebDriverWait(WEBDRIVER, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
+            element = WebDriverWait(self.WEBDRIVER, time).until(EC.presence_of_element_located((By.XPATH, xpath)))
             element.click()
         elif self.driver_choice == 'playwright':
             pass
@@ -518,9 +456,8 @@ class Browser:
     
 
     def click_button_by_tag(self, tag_name, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            button = WebDriverWait(WEBDRIVER, time).until(EC.element_to_be_clickable((By.TAG_NAME, tag_name)))
+            button = WebDriverWait(self.WEBDRIVER, time).until(EC.element_to_be_clickable((By.TAG_NAME, tag_name)))
             button.click()
         elif self.driver_choice == 'playwright':
             pass
@@ -530,9 +467,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def click_button_by_class(self, class_name, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            button = WebDriverWait(WEBDRIVER, time).until(EC.element_to_be_clickable((By.CLASS_NAME, class_name)))
+            button = WebDriverWait(self.WEBDRIVER, time).until(EC.element_to_be_clickable((By.CLASS_NAME, class_name)))
             button.click()
         elif self.driver_choice == 'playwright':
             pass
@@ -542,9 +478,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def click_button_by_id(self, button_id, time=10):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            button = WebDriverWait(WEBDRIVER, time).until(EC.element_to_be_clickable((By.ID, button_id)))
+            button = WebDriverWait(self.WEBDRIVER, time).until(EC.element_to_be_clickable((By.ID, button_id)))
             button.click()
         elif self.driver_choice == 'playwright':
             pass
@@ -554,13 +489,12 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def scroll_to_bottom(self, time_between_scrolls=0.1):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            height = WEBDRIVER.execute_script("return document.body.scrollHeight")
+            height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
             while True:
                 time.sleep(time_between_scrolls)  # Add a 1-second delay
-                WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                new_height = WEBDRIVER.execute_script("return document.body.scrollHeight")
+                self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
                 if new_height == height:
                     break
                 height = new_height
@@ -573,9 +507,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
     
     def scroll_to_item_in_view(self, element):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            WEBDRIVER.execute_script("arguments[0].scrollIntoView(true);", element)
+            self.WEBDRIVER.execute_script("arguments[0].scrollIntoView(true);", element)
         elif self.driver_choice == 'playwright':
             pass
         elif self.driver_choice == 'nodriver':
@@ -584,16 +517,15 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def scroll_n_times_or_to_bottom(self, num_scrolls, time_between_scrolls=0):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             scroll_count = 0
 
             while scroll_count < num_scrolls:
-                height = WEBDRIVER.execute_script("return document.body.scrollHeight")
-                WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+                height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+                self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(time_between_scrolls)
 
-                new_height = WEBDRIVER.execute_script("return document.body.scrollHeight")
+                new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
                 if new_height == height:
                     break
 
@@ -606,7 +538,6 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def scroll_up_or_down_n_pixels(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             pass
         elif self.driver_choice == 'playwright':
@@ -617,35 +548,19 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def return_current_soup(self):
-        global WEBDRIVER
-        global PAGE
         if self.driver_choice == 'selenium':
-            html = WEBDRIVER.page_source
+            html = self.WEBDRIVER.page_source
             soup = BeautifulSoup(html, features="lxml")
             return soup
-        elif self.driver_choice == 'nodriver':
-
-            async def async_get_site_soup():
-                page = PAGE
-                content = await page.get_content()
-                soup = BeautifulSoup(content, 'html.parser')
-                return soup
-            
-            def get_site_soup():
-                return asyncio.run(async_get_site_soup())
-            
-            return get_site_soup()
-    
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def maximize_current_window(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            if WEBDRIVER is None:
+            if self.WEBDRIVER is None:
                 raise RuntimeError("Webdriver is not initialized. Please ensure the browser is started.")
             try:
-                WEBDRIVER.maximize_window()
+                self.WEBDRIVER.maximize_window()
             except Exception as e:
                 print(f"Error maximizing the window: {e}", "red")
         elif self.driver_choice == 'playwright':
@@ -658,10 +573,9 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def minimize_current_window(self):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
             try:
-                WEBDRIVER.minimize_window()
+                self.WEBDRIVER.minimize_window()
             except Exception as e:
                 print(e)
 
@@ -673,9 +587,8 @@ class Browser:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def take_screenshot(self, path="./pics.png"):
-        global WEBDRIVER
         if self.driver_choice == 'selenium':
-            WEBDRIVER.save_screenshot(path)
+            self.WEBDRIVER.save_screenshot(path)
         elif self.driver_choice == 'playwright':
             pass
         elif self.driver_choice == 'nodriver':
@@ -691,19 +604,22 @@ class Browser:
     
 # --- Ensure Cleanup on Script Exit ---
 def cleanup():
-    global PID
+
     """Cleanup logic at script exit."""
     print("Script is exiting.")
     # util.close_process_by_pid(PID)
 
-    try:
-        WEBDRIVER.quit() # DIDINT INIT THE CHROMEDRIVER
-    except:
-        pass
+    #try:
+    #    WEBDRIVER.quit() # DIDINT INIT THE CHROMEDRIVER
+    #except:
+    #    pass
 
     gc.collect()
 
 atexit.register(cleanup)
 
 if __name__ == "__main__":
+    browser = Browser(zoom_level=100)
+    browser.init_browser()
+    browser.go_to_site(site='https://www.fanshawec.ca/programs/gdp1-game-development-advanced-programming/next#group_admission')
     pass
