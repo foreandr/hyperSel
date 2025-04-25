@@ -508,14 +508,15 @@ def find_most_children_node(G):
 
     return best_node, flattened_metadata
 
-def main(soup):
+def main(soup, visualize_graph=False):
     """
     Main function to build the graph and visualize it interactively.
     """
     G = graph.soup_to_graph(soup)
 
     # Use Pyvis interactive visualization
-    # graph.visualize_graph_pyvis(G)# VERY COOL PIECE OF CODE FOR VISUALIZING
+    if visualize_graph:
+        graph.visualize_graph_pyvis(G)# VERY COOL PIECE OF CODE FOR VISUALIZING
 
     most_children_node, children_metadata = find_most_children_node(G)
 
@@ -534,7 +535,6 @@ def main(soup):
             print('======================')
 
     return data
-
 def data_preprocessing(data, root_url=None):
     '''
     TODO: get rid of anomalies in this data, there is still noise
