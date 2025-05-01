@@ -140,3 +140,4 @@ INTERESTING ALTERNATIVES:
         chrme plugins? check tiktok for scraping, they got google map sdata with ti
             https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda
             https://chatgpt.com/c/67237b1b-ca60-8008-8def-9384a55cc65e
+

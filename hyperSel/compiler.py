@@ -1,10 +1,9 @@
+# 🔧 FULL: compiler.py
 import os
 import shutil
 import subprocess
 
-def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=None, build_folder=None):
-    # print("GET FUCKED")
-
+def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=None, build_folder=None, icon_path=None, extra_data_files=None):
     if not file_name.endswith(".py"):
         print("❌ Error: File must be a Python script with a '.py' extension.")
         return
@@ -27,11 +26,29 @@ def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=N
         "--workpath", os.path.join(dist_dir, "build"),
         "--specpath", dist_dir,
         "--name", output_name,
-        os.path.abspath(file_name)
     ]
+
+    if icon_path:
+        abs_icon_path = os.path.abspath(icon_path)
+        if os.path.isfile(abs_icon_path):
+            command.extend(["--icon", abs_icon_path])
+        else:
+            print(f"⚠️ Icon file not found: {abs_icon_path}")
 
     if is_gui:
         command.append("--noconsole")
+
+    # ✅ Handle individual files passed from local_compile.py
+    if extra_data_files:
+        for data_file in extra_data_files:
+            abs_path = os.path.abspath(data_file)
+            if os.path.isfile(abs_path):
+                sep = ";" if os.name == "nt" else ":"
+                command.extend(["--add-data", f"{abs_path}{sep}."])
+            else:
+                print(f"⚠️ File not found: {abs_path}")
+
+    command.append(os.path.abspath(file_name))
 
     try:
         result = subprocess.run(command, capture_output=True, text=True)
@@ -41,13 +58,10 @@ def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=N
             print("\n❗ PyInstaller Errors:\n", result.stderr)
             print("=============================================\n")
         else:
-            # print("\nℹ️ PyInstaller Log (stderr):\n", result.stderr)
             pass
-
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
 
-    # ⏩ After build: manually copy folders
     if include_folders:
         for folder in include_folders:
             abs_source = os.path.abspath(folder)
