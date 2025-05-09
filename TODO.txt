@@ -1,6 +1,3 @@
-ticketmaster?
-
-
 # ADD THIS Remove-Item -Recurse -Force build, dist, *.egg-info
 
 # KEEP THE END  GOAL IN MIND, 
