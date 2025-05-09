@@ -138,3 +138,8 @@ INTERESTING ALTERNATIVES:
             https://chromewebstore.google.com/detail/crx-extractordownloader/ajkhmmldknmfjnmeedkbkkojgobmljda
             https://chatgpt.com/c/67237b1b-ca60-8008-8def-9384a55cc65e
 
+
+[pypi]
+  username = __token__
+  password = pypi-pypi-AgEIcHlwaS5vcmcCJDQ4OTkwYTdjLTFhODItNGY2YS04NDA4LTQ4ZGE0YjYxYTEwOQACKlszLCIzOGIwMGQyYy03M2IwLTQyMjgtOTQ0ZC00NzY2YzY1NDkxYjYiXQAABiBIpGnwRcnWruL_kdbunEg78AYIcC0AuLl491_ytnYSWg
+
