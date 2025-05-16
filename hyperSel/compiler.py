@@ -1,9 +1,10 @@
-# 🔧 FULL: compiler.py
+print("COMPILER MODULE LOADED")
+
 import os
 import shutil
 import subprocess
 
-def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=None, build_folder=None, icon_path=None, extra_data_files=None):
+def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=None, build_folder=None, icon_path=None, extra_data_files=None, use_onedir=False):
     if not file_name.endswith(".py"):
         print("❌ Error: File must be a Python script with a '.py' extension.")
         return
@@ -18,10 +19,11 @@ def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=N
     print(f"🛠️  Output Name: {output_name}")
     print(f"📁 Folders to Copy After: {include_folders}")
     print(f"📂 Output Directory: {dist_dir}")
+    print(f"📦 Mode: {'--onedir' if use_onedir else '--onefile'}")
 
     command = [
         "pyinstaller",
-        "--onefile",
+        "--onedir" if use_onedir else "--onefile",
         "--distpath", dist_dir,
         "--workpath", os.path.join(dist_dir, "build"),
         "--specpath", dist_dir,
@@ -38,7 +40,7 @@ def run_pyinstaller(file_name, is_gui=False, free_trial=False, include_folders=N
     if is_gui:
         command.append("--noconsole")
 
-    # ✅ Handle individual files passed from local_compile.py
+    # ✅ Include extra files
     if extra_data_files:
         for data_file in extra_data_files:
             abs_path = os.path.abspath(data_file)
