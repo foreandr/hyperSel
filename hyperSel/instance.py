@@ -15,6 +15,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from playwright.sync_api import sync_playwright
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+print("🧠 ChromeDriver path:", ChromeDriverManager().install())
+from selenium.webdriver.chrome.options import Options
 
 try:
     from . import tor_chrome_util as tor_chrome_util
@@ -123,42 +128,48 @@ class Browser:
     def open_site_selenium(self):
         """Open a Selenium driver with anti-detection measures."""
         options = Options()
-        
-        if self.headless:
-            options.add_argument("--headless")  # Run in headless mode
 
-        # Add user-agent spoofing
+        if self.headless:
+            options.add_argument("--headless")
+
+        # User-agent spoofing
         options.add_argument(f"--user-agent={util.generate_random_user_agent()}")
 
-        # Prevent detection as an automated bot
+    # Anti-bot and stealth
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-gpu")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--incognito")  # Open in Incognito Mode
+        options.add_argument("--incognito")
         options.add_argument("--disable-3d-apis")
 
-        # Use Tor if specified
+        # Use Tor if needed
         if self.use_tor:
             print("Routing requests through Tor...")
             options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
 
-        # Suppress unnecessary logs
-        options.add_argument("--log-level=3")  
+        # Suppress logs
+        options.add_argument("--log-level=3")
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        
-        # Spoof Host Resolver Rules (If Needed)
+
+        # Spoof DNS if needed
         options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
 
-        # Adjust Zoom Level
-        scale_factor = self.zoom_level / 100.0  
+        # Scale for screen emulation
+        scale_factor = self.zoom_level / 100.0
         options.add_argument(f"--force-device-scale-factor={scale_factor}")
 
-        # Maximize Window (For More Human-Like Behavior)
+        # Maximize to seem human
         options.add_argument("--start-maximized")
 
-        # Initialize the driver
-        service = Service()  # Default ChromeDriver service
+        # ✅ SAFELY locate the correct chromedriver.exe
+        raw_path = ChromeDriverManager().install()
+        driver_folder = os.path.dirname(raw_path)
+        driver_path = os.path.join(driver_folder, "chromedriver.exe")
+        print(f"👉 Using ChromeDriver at: {driver_path}")
+
+        service = Service(executable_path=driver_path)
+
         driver = webdriver.Chrome(service=service, options=options)
         self.PID = service.process.pid if service.process else None
         return driver
@@ -615,7 +626,5 @@ def cleanup():
 atexit.register(cleanup)
 
 if __name__ == "__main__":
-    browser = Browser(zoom_level=100)
-    browser.init_browser()
-    browser.go_to_site(site='https://www.fanshawec.ca/programs/gdp1-game-development-advanced-programming/next#group_admission')
+    
     pass
