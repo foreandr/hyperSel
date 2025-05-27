@@ -12,6 +12,9 @@ import html5lib
 import psutil
 import os
 import signal
+import urllib.request
+import requests
+import sys
 
 valid_html_tags = [
     # Comprehensive list of tags
@@ -496,3 +499,27 @@ html = """
 </html>
 
 """
+
+def get_public_ip():
+    return urllib.request.urlopen('https://api.ipify.org').read().decode('utf8')
+
+def get_location_from_ip(ip_address):
+    url = f"https://ipinfo.io/{ip_address}/json"
+    response = requests.get(url)
+    data = response.json()
+    city = data.get("city")
+    region = data.get("region")  # province/state
+    return city, region
+
+def get_runtime_mode():
+    """
+    Returns:
+        "exe"    - if running as a compiled PyInstaller executable
+        "script" - if running as a regular Python script
+    """
+    return "exe" if getattr(sys, 'frozen', False) else "script"
+
+def get_resource_path(filename):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, filename)
+    return os.path.abspath(filename)

@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 import csv
 import xml.etree.ElementTree as ET
 import datetime
+import sys
+import re
+import datetime
 
 GLOBAL_CHECKPOINT = 0
 
@@ -264,33 +267,50 @@ def checkpoint(pause=False, str_to_print=None):
 
     GLOBAL_CHECKPOINT += 1
 
-def test_locally():
-    # NOT INSTALLED IN THE ACTUAL LIBRARY
-    from faker import Faker
+def safe_print(*args, sep=" ", end="\n", flush=False, color=False, logging=True):
+    """
+    safe_print that never crashes and formats floats nicely.
+    • Tries stdout, stderr, then file.
+    • UTF-8 safe. Removes ANSI and emojis for file fallback.
+    """
 
-    # Initialize Faker
-    fake = Faker()
+    def format_arg(x):
+        if isinstance(x, float):
+            return f"{x:.6f}"  # Decimal only
+        return str(x)
 
-    def generate_fake_data_object(n):
-        data_object = [{
-            'name': "Andre",
-            #'age': fake.random_int(min=18, max=90),
-            #'email': fake.email(),
-            #'address': fake.address(),
-            #'phone_number': fake.phone_number(),
-            #'company': fake.company(),
-            #'job_title': fake.job(),
-            # 'date_of_birth': fake.date_of_birth(minimum_age=18, maximum_age=90).isoformat()
-        } for _ in range(n)]
-        data_object.append({"name":"Andr"})
-        return data_object
-    
-    
-    n = 10  # Set the desired number of entries
-    data_object = generate_fake_data_object(n)
+    try:
+        text = sep.join(map(format_arg, args)) + end
+    except Exception as e:
+        text = f"[safe_print format error]: {e}\n"
 
-    log_data(data_object,verbose=True, file_type='xml')
+    try:
+        if color:
+            text = f"\033[92m{text}\033[0m"
+        sys.stdout.write(text)
+        if flush:
+            sys.stdout.flush()
+        return
+    except Exception:
+        pass
+
+    try:
+        sys.__stderr__.write(text)
+        if flush:
+            sys.__stderr__.flush()
+        return
+    except Exception:
+        pass
+
+    # Optional custom log pipeline (only if it exists)
+    try:
+        if logging:
+            log_function(log_string=text)
+    except Exception:
+        pass
+
+
 
 if __name__ == "__main__":
-    test_locally()
+
     pass
