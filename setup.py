@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Setup configuration
 setup(
     name="hypersel",
-    version=7.17,
+    version=7.18,
     author="foreandr",  # Your name or username
     author_email="foreandr@gmail.com",  # Your email
     description="A Python-based web automation and data scraping framework",  # Short description
