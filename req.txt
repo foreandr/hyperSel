@@ -16,3 +16,4 @@ pyinstaller
 networkx
 pyvis
 html5lib
+twine
