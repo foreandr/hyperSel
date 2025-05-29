@@ -18,7 +18,7 @@ from playwright.sync_api import sync_playwright
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-print("🧠 ChromeDriver path:", ChromeDriverManager().install())
+# print("🧠 ChromeDriver path:", ChromeDriverManager().install())
 from selenium.webdriver.chrome.options import Options
 
 try:

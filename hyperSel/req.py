@@ -26,7 +26,7 @@ def get_soup(url, extra_headers=None, tor=False):
 
     try:
         if tor:
-            print("Routing requests through Tor...")
+            #print("Routing requests through Tor...")
             response = requests.get(url, headers=headers, proxies=proxies, timeout=10)
         else:
             response = requests.get(url, headers=headers, timeout=10)  # No proxies argument
@@ -35,7 +35,7 @@ def get_soup(url, extra_headers=None, tor=False):
         soup = BeautifulSoup(response.text, 'html.parser')
         return soup
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL: {e}")
+        #print(f"Error fetching URL: {e}")
         return None
 
 if __name__ == '__main__':
