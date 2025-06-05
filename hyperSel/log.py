@@ -9,6 +9,7 @@ import datetime
 import sys
 import re
 import datetime
+import time
 
 GLOBAL_CHECKPOINT = 0
 
@@ -37,15 +38,31 @@ def check_and_save_dir(path):
     if not isExist:
         os.makedirs(path)
         
-def log_function(log_string, msg_type='test', session_user="", function_name="", verbose=False, file_name=None, new_line=False):
+def log_function(
+    log_string,
+    msg_type='test',
+    session_user="",
+    function_name=None,
+    verbose=True,
+    file_name=None,
+    new_line=False,
+    max_retries=5,
+    retry_delay=0.1
+):
+    
+
     log_string = str(log_string)
-    
-    # Split the log_string by ", " and join it with newline characters
     split_log_string = '\n'.join(log_string.split(", "))
-    
     current_datetime = datetime.datetime.now()
     current_date = current_datetime.strftime('%Y-%m-%d')
-    
+
+    # Auto-detect caller if function_name not explicitly provided
+    if function_name is None:
+        stack = inspect.stack()
+        if len(stack) > 1:
+            function_name = stack[1].function
+        else:
+            function_name = "<unknown>"
 
     if verbose:
         err_string = f"[{current_datetime}][{msg_type}][{function_name}][{session_user}]-{split_log_string}\n"
@@ -56,30 +73,38 @@ def log_function(log_string, msg_type='test', session_user="", function_name="",
         if new_line:
             err_string += "\n"
 
-    day = current_date.split("-")[2]
-    mon = current_date.split("-")[1]
-    yea = current_date.split("-")[0]
+    day, mon, yea = current_date.split("-")[2], current_date.split("-")[1], current_date.split("-")[0]
     location_logger_dateless = f"{yea}/{mon}/{day}"
     location_logger = f"{yea}/{mon}/{day}/{current_date}"
-    
-    if msg_type == "error":      
+
+    if msg_type == "error":
         print(f"[{function_name}]==========LOGGING AN ERROR PLS NOTICE!=========")
-    
-    if file_name != None:
-        with open(f'./logs/{file_name}.txt', 'a+', encoding='utf-8') as f:
-            f.write(err_string)     
-        return 1
-    
-    try:
-        file = f"./logs/"
-        check_and_save_dir(f'{file}{location_logger_dateless}')
-        with open(f'{file}{location_logger}.txt', 'a+', encoding='utf-8') as f:
-            f.write(err_string) 
-    except:
-        file = f"../logs/"
-        check_and_save_dir(f'{file}{location_logger_dateless}')
-        with open(f'{file}{location_logger}.txt', 'a+', encoding='utf-8') as f:
-            f.write(err_string)
+
+    log_written = False
+    paths_to_try = ['./logs/', '../logs/']
+
+    for path_base in paths_to_try:
+        try:
+            check_and_save_dir(f'{path_base}{location_logger_dateless}')
+            target_file = f'{path_base}{file_name}.txt' if file_name else f'{path_base}{location_logger}.txt'
+
+            for attempt in range(max_retries):
+                try:
+                    with open(target_file, 'a+', encoding='utf-8') as f:
+                        f.write(err_string)
+                    log_written = True
+                    break
+                except Exception as e:
+                    time.sleep(retry_delay)
+            
+            if log_written:
+                return 1
+        except Exception:
+            continue  # Try next path
+
+    # If nothing succeeded
+    print(f"[{function_name}] ❌ Failed to write to log after retries.")
+    return 0
 
 def load_file_as_soup(file_path):
     """

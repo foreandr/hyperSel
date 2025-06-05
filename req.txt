@@ -17,3 +17,4 @@ networkx
 pyvis
 html5lib
 twine
+pure-python-adb
