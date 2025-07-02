@@ -18,3 +18,4 @@ pyvis
 html5lib
 twine
 pure-python-adb
+wheel
