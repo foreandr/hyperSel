@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from playwright.sync_api import sync_playwright
-
+import undetected_chromedriver as undetected_chromedriver_
 # Using webdriver_manager for ChromeDriverManager to handle driver installation
 try:
     from webdriver_manager.chrome import ChromeDriverManager
@@ -47,7 +47,7 @@ class Browser:
             print("TOR INIT")
             tor_chrome_util.start_tor()
 
-        valid_drivers = {'selenium', 'playwright'}
+        valid_drivers = {'selenium', 'playwright', 'undetected_chromedriver'}
         if driver_choice not in valid_drivers:
             raise ValueError(f"Invalid driver choice. Must be one of {valid_drivers}.")
 
@@ -187,6 +187,14 @@ class Browser:
         elif self.driver_choice == 'playwright':
             # Playwright initialization logic would go here if implemented
             pass
+        elif self.driver_choice == 'undetected_chromedriver':
+            driver = undetected_chromedriver_.Chrome(
+                headless=self.headless,
+                use_subprocess=False,
+                version_main=137  # 👈 match your actual Chrome version
+            )
+            self.WEBDRIVER = driver
+
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
@@ -273,7 +281,7 @@ class Browser:
             multiple (bool): If True, returns a list of elements; otherwise, a single element.
             condition (str): For single elements, 'visible' or 'clickable'.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             by_map = {
                 'xpath': By.XPATH,
                 'css': By.CSS_SELECTOR,
@@ -304,7 +312,7 @@ class Browser:
         Navigates the browser to a given URL.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             self.WEBDRIVER.get(site)
             time.sleep(2) # Retained sleep for page load
         else:
@@ -321,7 +329,7 @@ class Browser:
             content_to_enter (str): The text to enter.
             timeout (int): The maximum time to wait for the element.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
             # If element is None, get_elements already didn't find it, and we want that to propagate.
             # No need for an explicit check like `if element:`, just attempt the actions.
@@ -344,7 +352,7 @@ class Browser:
             delay_between_chunks (float): The delay in seconds between sending each chunk.
             timeout (int): The maximum time to wait for the element.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
             element.clear()
             print(f"Cleared element identified by {by_type}='{value}'.")
@@ -368,7 +376,7 @@ class Browser:
             value (str): The locator value.
             timeout (int): The maximum time to wait for the element to be clickable.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             element = self.get_elements(by_type, value, timeout=timeout, condition="clickable") # Pass 'timeout'
             # If element is None, get_elements already didn't find it, and we want that to propagate.
             element.click()
@@ -386,7 +394,7 @@ class Browser:
             time_between_scrolls (float): Delay in seconds between checking the scroll position
                                           (useful for smooth scrolling or dynamic content).
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             current_scroll_y = self.WEBDRIVER.execute_script("return window.pageYOffset;")
             target_scroll_y = current_scroll_y + pixels_to_scroll
             self.WEBDRIVER.execute_script(f"window.scrollTo(0, {target_scroll_y});")
@@ -399,7 +407,7 @@ class Browser:
         Scrolls to the very bottom of the page.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
             while True:
                 time.sleep(time_between_scrolls)
@@ -416,7 +424,7 @@ class Browser:
         Scrolls the page until the specified element is in view.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             self.WEBDRIVER.execute_script("arguments[0].scrollIntoView(true);", element)
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_item_in_view.")
@@ -426,7 +434,7 @@ class Browser:
         Scrolls the page 'n' times or until the bottom is reached, whichever comes first.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             scroll_count = 0
             while scroll_count < num_scrolls:
                 height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
@@ -444,7 +452,7 @@ class Browser:
         Returns a BeautifulSoup object of the current page source.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             html = self.WEBDRIVER.page_source
             soup = BeautifulSoup(html, features="lxml")
             return soup
@@ -456,7 +464,7 @@ class Browser:
         Maximizes the current browser window.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             if self.WEBDRIVER is None:
                 raise RuntimeError("Webdriver is not initialized. Please ensure the browser is started.")
             self.WEBDRIVER.maximize_window()
@@ -468,7 +476,7 @@ class Browser:
         Minimizes the current browser window.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             self.WEBDRIVER.minimize_window()
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for minimize_current_window.")
@@ -478,7 +486,7 @@ class Browser:
         Takes a screenshot of the current page.
         Removes internal try-except block to propagate exceptions.
         """
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             self.WEBDRIVER.save_screenshot(path)
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for take_screenshot.")
@@ -514,49 +522,15 @@ def cleanup():
 atexit.register(cleanup)
 
 if __name__ == "__main__":
-    print("Running minimal example...")
-    # Example using the unified methods
-    # Set use_tor=True to test the new function
-    browser_instance = Browser(headless=False, use_tor=False) # Run with Tor enabled
-
-    # Error handling for init_browser is still present in init_browser itself.
-    browser_instance.init_browser()
-
-    # All subsequent calls *will* raise exceptions if they fail,
-    # so you'd wrap them in try-except blocks in your main script.
-    try:
-        browser_instance.go_to_site("https://www.google.com")
-
-        # Example usage of unified get_elements, clear_and_enter_text, click_element
-        search_bar_xpath = '//*[@name="q"]' # Google's search input is a textarea
-        long_text_to_enter = "This is a very long string of text that we want to enter into the search bar in multiple chunks to demonstrate the new functionality. This helps in scenarios where the webpage might struggle with receiving a large amount of input at once, reducing the chances of errors or unexpected behavior during automated testing or scraping. We'll use a chunk size of 10 characters to show the appending process clearly. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
-
-        print("\n--- Using clear_and_enter_text_in_chunks ---")
-        browser_instance.clear_and_enter_text_in_chunks('xpath', search_bar_xpath, long_text_to_enter, chunk_size=10, delay_between_chunks=0.05, timeout=15) # Pass 'timeout'
-        browser_instance.click_element('css', 'input[name="btnK"]')
-        print("Searched for the long text.")
-
-        time.sleep(3) # See results
-        browser_instance.take_screenshot("./Google Search_results_chunked_text.png")
-        print("Screenshot of chunked text search taken.")
-
-    except Exception as e:
-        print(f"An error occurred during browser interaction: {e}")
-        # You can log this error using hyperSel.log.log_function here if needed
-    finally:
-        browser_instance.close_browser()
-        print("Browser closed. Minimal example finished.")
-
-    # Example for sniff_site (Playwright-specific)
-    print("\nRunning sniff_site example (Playwright-specific)...")
-    playwright_browser_instance = Browser(driver_choice="playwright", headless=True)
-    try:
-        # sniff_site does not need init_browser for playwright as it creates its own browser instance
-        captured_urls = playwright_browser_instance.sniff_site("https://jsonplaceholder.typicode.com/posts/1", timeout=2) # Pass 'timeout'
-        print(f"Captured URLs (Playwright): {captured_urls}")
-    except ValueError as e:
-        print(f"Error: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred with sniff_site: {e}")
-    finally:
-        pass # No explicit close_browser needed for sniff_site as it manages its own browser instance
+    browser = Browser(
+        driver_choice="undetected_chromedriver",
+        headless=False,
+        use_tor=False, 
+        default_profile=False,
+        zoom_level=100,
+        port=9222,
+        chrome_options=None
+    )
+    browser.init_browser()
+    browser.go_to_site("https://fish.audio/auth/")
+    input("jsdahlkajsdhlkjadsh")

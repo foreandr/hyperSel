@@ -20,3 +20,4 @@ twine
 pure-python-adb
 wheel
 stem
+undetected-chromedriver
