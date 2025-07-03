@@ -1,7 +1,7 @@
 import os
 import re
 import gc
-import time
+import time # This import is crucial for time.sleep()
 import socket
 from subprocess import Popen, PIPE
 import atexit
@@ -47,10 +47,10 @@ class Browser:
             print("TOR INIT")
             tor_chrome_util.start_tor()
 
-        valid_drivers = {'selenium', 'playwright'} 
+        valid_drivers = {'selenium', 'playwright'}
         if driver_choice not in valid_drivers:
             raise ValueError(f"Invalid driver choice. Must be one of {valid_drivers}.")
-        
+
         self.driver_choice = driver_choice
         self.headless = bool(headless)
         self.use_tor = bool(use_tor)
@@ -106,7 +106,7 @@ class Browser:
             print(f"Starting Chrome with Default profile via Popen: {cmd}")
             self.chrome_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
             time.sleep(5)
-            
+
         except Exception as e:
             print(f"Error starting Chrome with default profile: {e}")
             raise
@@ -117,7 +117,7 @@ class Browser:
         try:
             options_for_connection = Options()
             options_for_connection.add_experimental_option("debuggerAddress", f"127.0.0.1:{self.port}")
-            
+
             if ChromeDriverManager is None:
                 raise RuntimeError("ChromeDriverManager is not available. Please install 'webdriver-manager'.")
             driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options_for_connection)
@@ -186,11 +186,11 @@ class Browser:
                 self.WEBDRIVER = self.open_site_selenium()
         elif self.driver_choice == 'playwright':
             # Playwright initialization logic would go here if implemented
-            pass 
+            pass
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
-    
-    def sniff_site(self, url, wait_time=5):
+
+    def sniff_site(self, url, timeout=5): # Renamed 'wait_time' to 'timeout' for consistency
         """
         Captures network requests for a given URL using Playwright,
         filtering for JSON responses and skipping certain patterns.
@@ -213,16 +213,16 @@ class Browser:
         skip_patterns = [
             r'\.png', r'\.jpg', r'\.css', r'\.webp', r'\.js', r'ads', r'google', r'jsdata'
         ]
-        
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=False)
             page = browser.new_page()
 
-            page.on("response", lambda response: requests.append(response.url) 
+            page.on("response", lambda response: requests.append(response.url)
                                  if is_json_response(response) and not should_skip(response.url, skip_patterns) else None)
 
             page.goto(url)
-            time.sleep(wait_time)
+            time.sleep(timeout) # Use 'timeout' here
             # This specific try-except is retained because `page.wait_for_load_state`
             # is a Playwright-specific wait that might timeout, and it's a
             # controlled internal error handling for this specific function's purpose.
@@ -235,7 +235,7 @@ class Browser:
         for request_url in requests:
             print(request_url)
         return requests
-    
+
     def close_browser(self):
         # This method retains its try-except blocks because browser closing
         # is a cleanup operation that shouldn't propagate errors to the main logic flow.
@@ -247,7 +247,7 @@ class Browser:
                     self.chrome_process.wait(timeout=5)
                     if self.chrome_process.poll() is None:
                         self.chrome_process.kill()
-                
+
                 if self.WEBDRIVER:
                     print("Quitting Selenium WebDriver...")
                     self.WEBDRIVER.quit()
@@ -260,8 +260,8 @@ class Browser:
             gc.collect()
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
-        
-    def get_elements(self, by_type, value, time=10, multiple=False, condition="clickable"):
+
+    def get_elements(self, by_type, value, timeout=10, multiple=False, condition="clickable"):
         """
         Generic method to get single or multiple elements using various locators.
         Removes internal try-except block to propagate exceptions.
@@ -269,7 +269,7 @@ class Browser:
         Args:
             by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
             value (str): The locator value (e.g., '//div[@id="myId"]', '.my-class').
-            time (int): The maximum time to wait for the element(s).
+            timeout (int): The maximum time to wait for the element(s).
             multiple (bool): If True, returns a list of elements; otherwise, a single element.
             condition (str): For single elements, 'visible' or 'clickable'.
         """
@@ -285,8 +285,8 @@ class Browser:
             if not by:
                 raise ValueError(f"Invalid by_type: {by_type}. Must be one of {list(by_map.keys())}.")
 
-            wait = WebDriverWait(self.WEBDRIVER, time)
-            
+            wait = WebDriverWait(self.WEBDRIVER, timeout)
+
             if multiple:
                 return wait.until(EC.presence_of_all_elements_located((by, value)))
             else:
@@ -310,7 +310,7 @@ class Browser:
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for go_to_site.")
 
-    def clear_and_enter_text(self, by_type, value, content_to_enter, time=10):
+    def clear_and_enter_text(self, by_type, value, content_to_enter, timeout=10): # Renamed 'time' to 'timeout'
         """
         Clears an input field and enters text into it.
         Removes internal try-except block to propagate exceptions.
@@ -319,10 +319,10 @@ class Browser:
             by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
             value (str): The locator value.
             content_to_enter (str): The text to enter.
-            time (int): The maximum time to wait for the element.
+            timeout (int): The maximum time to wait for the element.
         """
         if self.driver_choice == 'selenium':
-            element = self.get_elements(by_type, value, time=time, condition="visible")
+            element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
             # If element is None, get_elements already didn't find it, and we want that to propagate.
             # No need for an explicit check like `if element:`, just attempt the actions.
             # If element is None, the next line will raise an AttributeError.
@@ -332,7 +332,33 @@ class Browser:
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for clear_and_enter_text.")
 
-    def click_element(self, by_type, value, time=10):
+    def clear_and_enter_text_in_chunks(self, by_type, value, content_to_enter, chunk_size=50, delay_between_chunks=0.1, timeout=10): # Renamed 'time' to 'timeout'
+        """
+        Clears an input field and enters text into it in smaller chunks.
+
+        Args:
+            by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
+            value (str): The locator value.
+            content_to_enter (str): The text to enter.
+            chunk_size (int): The number of characters per chunk.
+            delay_between_chunks (float): The delay in seconds between sending each chunk.
+            timeout (int): The maximum time to wait for the element.
+        """
+        if self.driver_choice == 'selenium':
+            element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
+            element.clear()
+            print(f"Cleared element identified by {by_type}='{value}'.")
+
+            for i in range(0, len(content_to_enter), chunk_size):
+                chunk = content_to_enter[i:i + chunk_size]
+                element.send_keys(chunk)
+                time.sleep(delay_between_chunks) # This 'time' now correctly refers to the imported module
+                print(f"Appended chunk of text to element: '{chunk}'")
+            print(f"All text entered successfully in chunks into element identified by {by_type}='{value}'.")
+        else:
+            raise ValueError(f"Driver '{self.driver_choice}' is not supported for clear_and_enter_text_in_chunks.")
+
+    def click_element(self, by_type, value, timeout=10): # Renamed 'time' to 'timeout'
         """
         Clicks an element using various locators.
         Removes internal try-except block to propagate exceptions.
@@ -340,10 +366,10 @@ class Browser:
         Args:
             by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
             value (str): The locator value.
-            time (int): The maximum time to wait for the element to be clickable.
+            timeout (int): The maximum time to wait for the element to be clickable.
         """
         if self.driver_choice == 'selenium':
-            element = self.get_elements(by_type, value, time=time, condition="clickable")
+            element = self.get_elements(by_type, value, timeout=timeout, condition="clickable") # Pass 'timeout'
             # If element is None, get_elements already didn't find it, and we want that to propagate.
             element.click()
         else:
@@ -384,7 +410,7 @@ class Browser:
                 height = new_height
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_bottom.")
-    
+
     def scroll_to_item_in_view(self, element):
         """
         Scrolls the page until the specified element is in view.
@@ -459,38 +485,26 @@ class Browser:
 
     def reset_tor_ip(self):
         """
-        Requests Tor to reset its circuit, effectively getting a new IP address.
-        This method is only effective if 'use_tor' was set to True during Browser initialization.
-        Removes internal try-except block to propagate exceptions.
+        Resets the Tor IP address. This function assumes tor_chrome_util is properly configured
+        and can signal Tor to get a new circuit/IP.
         """
-        if not self.use_tor:
-            print("Warning: Tor is not enabled for this Browser instance. Cannot request new IP.")
-            return
-
-        if self.driver_choice == 'selenium':
-            print("Requesting new Tor IP circuit...")
-            # This assumes tor_chrome_util has a function to renew the circuit.
-            tor_chrome_util.renew_tor_circuit() 
-            print("New Tor IP circuit requested. It might take a few seconds to take effect.")
-            
-            # Optionally, refresh the current page to use the new IP
-            if self.WEBDRIVER:
-                current_url = self.WEBDRIVER.current_url
-                # Avoid refreshing about:blank or if no page loaded
-                if current_url and not current_url.startswith('data:') and current_url != 'about:blank': 
-                    print(f"Refreshing current page ({current_url}) to use new IP...")
-                    self.WEBDRIVER.refresh()
-                    time.sleep(2) # Give it a moment to load with new IP
+        if self.use_tor:
+            print("Attempting to reset Tor IP...")
+            try:
+                tor_chrome_util.renew_tor_circuit()
+                print("Tor IP reset initiated. It may take a few moments for a new circuit to establish.")
+            except Exception as e:
+                print(f"Failed to reset Tor IP: {e}")
+                raise
         else:
-            raise ValueError(f"Driver '{self.driver_choice}' is not supported for resetting Tor IP. This method requires 'selenium' with Tor enabled.")
-
+            print("Tor is not enabled for this browser instance. IP reset skipped.")
 
     def __repr__(self):
         return (
             f"Browser(driver_choice='{self.driver_choice}', "
             f"headless={self.headless}, use_tor={self.use_tor})"
         )
-    
+
 # --- Ensure Cleanup on Script Exit ---
 def cleanup():
     """Cleanup logic at script exit."""
@@ -503,41 +517,28 @@ if __name__ == "__main__":
     print("Running minimal example...")
     # Example using the unified methods
     # Set use_tor=True to test the new function
-    browser_instance = Browser(headless=False, use_tor=True) # Run with Tor enabled
-    
+    browser_instance = Browser(headless=False, use_tor=False) # Run with Tor enabled
+
     # Error handling for init_browser is still present in init_browser itself.
     browser_instance.init_browser()
-    
+
     # All subsequent calls *will* raise exceptions if they fail,
     # so you'd wrap them in try-except blocks in your main script.
     try:
         browser_instance.go_to_site("https://www.google.com")
-        
-        # Get initial IP to verify change (requires an external IP check site)
-        print("Checking initial IP (visit a site like ipinfo.io or whatismyipaddress.com manually)")
 
         # Example usage of unified get_elements, clear_and_enter_text, click_element
-        search_bar = browser_instance.get_elements('css', 'textarea[name="q"]') # Google's search input is a textarea
-        
-        browser_instance.clear_and_enter_text('css', 'textarea[name="q"]', "What is my IP address?")
+        search_bar_xpath = '//*[@name="q"]' # Google's search input is a textarea
+        long_text_to_enter = "This is a very long string of text that we want to enter into the search bar in multiple chunks to demonstrate the new functionality. This helps in scenarios where the webpage might struggle with receiving a large amount of input at once, reducing the chances of errors or unexpected behavior during automated testing or scraping. We'll use a chunk size of 10 characters to show the appending process clearly. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+
+        print("\n--- Using clear_and_enter_text_in_chunks ---")
+        browser_instance.clear_and_enter_text_in_chunks('xpath', search_bar_xpath, long_text_to_enter, chunk_size=10, delay_between_chunks=0.05, timeout=15) # Pass 'timeout'
         browser_instance.click_element('css', 'input[name="btnK"]')
-        print("Searched for 'What is my IP address?'.")
-        
+        print("Searched for the long text.")
+
         time.sleep(3) # See results
-        browser_instance.take_screenshot("./Google Search_results_initial_ip.png")
-        print("Screenshot of initial IP search taken.")
-
-        # --- Test the new reset_tor_ip function ---
-        print("\n--- Resetting Tor IP ---")
-        browser_instance.reset_tor_ip()
-        time.sleep(5) # Give it time for the new circuit to establish and page to refresh if applicable
-
-        # Verify new IP (you'd need to manually check the page again or implement IP extraction)
-        print("Checking new IP (the browser should have refreshed to the new IP)")
-        browser_instance.go_to_site("https://check.torproject.org/") # Go to a site to verify Tor connection
-        time.sleep(5)
-        browser_instance.take_screenshot("./Google Search_results_new_ip.png")
-        print("Screenshot after Tor IP reset taken.")
+        browser_instance.take_screenshot("./Google Search_results_chunked_text.png")
+        print("Screenshot of chunked text search taken.")
 
     except Exception as e:
         print(f"An error occurred during browser interaction: {e}")
@@ -551,7 +552,7 @@ if __name__ == "__main__":
     playwright_browser_instance = Browser(driver_choice="playwright", headless=True)
     try:
         # sniff_site does not need init_browser for playwright as it creates its own browser instance
-        captured_urls = playwright_browser_instance.sniff_site("https://jsonplaceholder.typicode.com/posts/1", wait_time=2)
+        captured_urls = playwright_browser_instance.sniff_site("https://jsonplaceholder.typicode.com/posts/1", timeout=2) # Pass 'timeout'
         print(f"Captured URLs (Playwright): {captured_urls}")
     except ValueError as e:
         print(f"Error: {e}")
