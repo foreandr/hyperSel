@@ -355,14 +355,14 @@ class Browser:
         if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
             element.clear()
-            print(f"Cleared element identified by {by_type}='{value}'.")
+            # print(f"Cleared element identified by {by_type}='{value}'.")
 
             for i in range(0, len(content_to_enter), chunk_size):
                 chunk = content_to_enter[i:i + chunk_size]
                 element.send_keys(chunk)
                 time.sleep(delay_between_chunks) # This 'time' now correctly refers to the imported module
-                print(f"Appended chunk of text to element: '{chunk}'")
-            print(f"All text entered successfully in chunks into element identified by {by_type}='{value}'.")
+                # print(f"Appended chunk of text to element: '{chunk}'")
+            # print(f"All text entered successfully in chunks into element identified by {by_type}='{value}'.")
         else:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for clear_and_enter_text_in_chunks.")
 
