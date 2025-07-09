@@ -1,7 +1,7 @@
 import os
 import re
 import gc
-import time # This import is crucial for time.sleep()
+import time
 import socket
 from subprocess import Popen, PIPE
 import atexit
@@ -14,15 +14,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from playwright.sync_api import sync_playwright
 import undetected_chromedriver as undetected_chromedriver_
-# Using webdriver_manager for ChromeDriverManager to handle driver installation
+
 try:
     from webdriver_manager.chrome import ChromeDriverManager
 except ImportError:
     print("webdriver_manager not found. Please install it: pip install webdriver-manager")
-    ChromeDriverManager = None # Set to None if import fails, indicating it's unavailable
+    ChromeDriverManager = None
 
 
-# Assuming these are local imports from your project structure
 try:
     from . import tor_chrome_util as tor_chrome_util
     from . import util as util
@@ -41,7 +40,8 @@ class Browser:
         default_profile=False,
         zoom_level=20,
         port=9222,
-        chrome_options: Options = None
+        chrome_options: Options = None,
+        download_dir=None
     ):
         if use_tor:
             print("TOR INIT")
@@ -59,11 +59,27 @@ class Browser:
         self.port = port
         self.WEBDRIVER = None
         self.PID = None
-        self.chrome_options = chrome_options
+        self.chrome_options = chrome_options if chrome_options is not None else Options()
         self.chrome_process = None
 
+        if download_dir is None:
+            self.download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+        else:
+            self.download_dir = download_dir
+        os.makedirs(self.download_dir, exist_ok=True)
+        print(f"Configured browser to download files to: {self.download_dir}")
+
+        self.selenium_prefs = {
+            "download.default_directory": str(self.download_dir),
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safeBrowse.enabled": True,
+            "plugins.always_open_pdf_externally": True
+        }
+        self.selenium_args_for_downloads = ["--disable-features=DownloadBubble", "--disable-features=DownloadBubbleV2"]
+
+
     def find_chrome_path(self):
-        """Find the Chrome executable path."""
         possible_paths = [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
@@ -74,15 +90,10 @@ class Browser:
         raise FileNotFoundError("Chrome executable not found. Please install Google Chrome or specify the path manually.")
 
     def is_port_in_use(self, port):
-        """Check if a port is already in use."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex(("127.0.0.1", port)) == 0
 
     def start_chrome_with_default_profile(self):
-        """Start Chrome with the Default profile and remote debugging port."""
-        # Note: This method retains its try-except because its an internal setup function
-        # that might fail due to external system factors (port in use, chrome not found).
-        # It's not a "scroller, clicker, getter" that should pass errors up.
         try:
             chrome_path = self.find_chrome_path()
             profile_path = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")
@@ -112,11 +123,12 @@ class Browser:
             raise
 
     def connect_to_chrome(self):
-        """Use Selenium to connect to Chrome running on the specified port."""
-        # Note: This method retains its try-except as it's an internal connection helper.
         try:
-            options_for_connection = Options()
+            options_for_connection = self.chrome_options
             options_for_connection.add_experimental_option("debuggerAddress", f"127.0.0.1:{self.port}")
+            options_for_connection.add_experimental_option("prefs", self.selenium_prefs)
+            for arg in self.selenium_args_for_downloads:
+                options_for_connection.add_argument(arg)
 
             if ChromeDriverManager is None:
                 raise RuntimeError("ChromeDriverManager is not available. Please install 'webdriver-manager'.")
@@ -124,15 +136,10 @@ class Browser:
             return driver
         except Exception as e:
             print(f"Error connecting to Chrome on port {self.port}: {e}")
-            input("------------ (Error connecting to Chrome) ------------")
             raise
 
     def open_site_selenium(self):
-        """
-        Open a Selenium driver with anti-detection measures.
-        Custom ChromeOptions passed to Browser.__init__ will be applied here.
-        """
-        options = self.chrome_options if self.chrome_options is not None else Options()
+        options = self.chrome_options
 
         if self.headless:
             options.add_argument("--headless=new")
@@ -142,8 +149,9 @@ class Browser:
         options.add_argument("--disable-gpu")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--incognito")
+        # options.add_argument("--incognito") # Keep for standard Selenium if desired
         options.add_argument("--disable-3d-apis")
+        options.add_argument("--disable-popup-blocking") # Explicitly disable pop-up blocking
 
         if self.use_tor:
             print("Routing requests through Tor...")
@@ -152,6 +160,10 @@ class Browser:
         options.add_argument("--log-level=3")
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
         options.add_argument("--host-resolver-rules=MAP aa.online-metrix.net 127.0.0.1")
+
+        options.add_experimental_option("prefs", self.selenium_prefs)
+        for arg in self.selenium_args_for_downloads:
+            options.add_argument(arg)
 
         scale_factor = self.zoom_level / 100.0
         options.add_argument(f"--force-device-scale-factor={scale_factor}")
@@ -168,15 +180,12 @@ class Browser:
         return driver
 
     def init_browser(self):
-        # This method retains its try-except due to its role in initial browser setup
-        # and potential fallbacks, which are core to its robust initialization.
         if self.driver_choice == 'selenium':
             if self.default_profile:
                 log.print_colored(text="STARTING WITH IN BUILT CHROME (Default Profile)", color="red")
                 try:
                     self.start_chrome_with_default_profile()
                     self.WEBDRIVER = self.connect_to_chrome()
-                    input("stop here and check (Default Profile Mode)")
                 except Exception as e:
                     log.print_colored(text=f"ERROR: Failed to use Default Profile Chrome: {e}", color="red")
                     print("Falling back to a fresh Selenium session...")
@@ -185,58 +194,67 @@ class Browser:
                 print("Default profile disabled. Starting fresh Selenium session with provided options...")
                 self.WEBDRIVER = self.open_site_selenium()
         elif self.driver_choice == 'playwright':
-            # Playwright initialization logic would go here if implemented
             pass
         elif self.driver_choice == 'undetected_chromedriver':
+            print("Initializing undetected_chromedriver...")
+            uc_options = Options()
+            if self.headless:
+                uc_options.add_argument("--headless=new")
+
+            uc_options.add_argument(f"--user-agent={util.generate_random_user_agent()}")
+            uc_options.add_argument("--disable-gpu")
+            uc_options.add_argument("--no-sandbox")
+            uc_options.add_argument("--disable-dev-shm-usage")
+            # --- CRITICAL CHANGE: Removed --incognito for undetected_chromedriver ---
+            # It's likely interfering with tab management and internal profile handling.
+            # uc_options.add_argument("--incognito")
+            uc_options.add_argument("--disable-3d-apis")
+            uc_options.add_argument("--log-level=3")
+            uc_options.add_argument(f"--force-device-scale-factor={self.zoom_level / 100.0}")
+            uc_options.add_argument("--start-maximized")
+            # --- CRITICAL CHANGE: Add --disable-popup-blocking for undetected_chromedriver ---
+            # This directly addresses the potential "pop up block" issue.
+            uc_options.add_argument("--disable-popup-blocking")
+
+
             driver = undetected_chromedriver_.Chrome(
                 headless=self.headless,
                 use_subprocess=False,
-                version_main=137  # 👈 match your actual Chrome version
+                version_main=137, # Ensure this matches your Chrome version
+                options=uc_options
             )
             self.WEBDRIVER = driver
-
+            print(f"undetected_chromedriver initialized. Download path may default to browser's standard location: {self.download_dir}")
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
-    def sniff_site(self, url, timeout=5): # Renamed 'wait_time' to 'timeout' for consistency
-        """
-        Captures network requests for a given URL using Playwright,
-        filtering for JSON responses and skipping certain patterns.
-        """
+    def sniff_site(self, url, timeout=5):
         def should_skip(url, skip_patterns):
-            for pattern in skip_patterns:
+            for pattern in patterns:
                 if re.search(pattern, url):
                     return True
             return False
 
         def is_json_response(response):
-            content_type = response.headers.get("content-type", "")
-            return "application/json" in content_type
+            return "application/json" in response.headers.get("content-type", "")
 
-        # This entire method is Playwright-specific
         if self.driver_choice != 'playwright':
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for sniff_site. This method requires 'playwright'.")
 
         requests = []
-        skip_patterns = [
-            r'\.png', r'\.jpg', r'\.css', r'\.webp', r'\.js', r'ads', r'google', r'jsdata'
-        ]
+        patterns = [r'\.png', r'\.jpg', r'\.css', r'\.webp', r'\.js', r'ads', r'google', r'jsdata']
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=False)
             page = browser.new_page()
 
-            page.on("response", lambda response: requests.append(response.url)
-                                 if is_json_response(response) and not should_skip(response.url, skip_patterns) else None)
+            page.on("response", lambda response: requests.append(response.url) if is_json_response(response) and not should_skip(response.url, patterns) else None)
 
             page.goto(url)
-            time.sleep(timeout) # Use 'timeout' here
-            # This specific try-except is retained because `page.wait_for_load_state`
-            # is a Playwright-specific wait that might timeout, and it's a
-            # controlled internal error handling for this specific function's purpose.
+            time.sleep(timeout)
             try:
                 page.wait_for_load_state('networkidle')
-            except Exception: # Catch any exception during wait_for_load_state to prevent crash
+            except Exception:
                 pass
             browser.close()
 
@@ -245,9 +263,7 @@ class Browser:
         return requests
 
     def close_browser(self):
-        # This method retains its try-except blocks because browser closing
-        # is a cleanup operation that shouldn't propagate errors to the main logic flow.
-        if self.driver_choice == 'selenium':
+        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
             try:
                 if self.chrome_process and self.chrome_process.poll() is None:
                     print(f"Terminating Chrome process PID: {self.chrome_process.pid}")
@@ -257,255 +273,141 @@ class Browser:
                         self.chrome_process.kill()
 
                 if self.WEBDRIVER:
-                    print("Quitting Selenium WebDriver...")
+                    print("Quitting WebDriver...")
                     self.WEBDRIVER.quit()
                 self.WEBDRIVER = None
                 gc.collect()
             except Exception as e:
-                print(f"Error closing Selenium browser or Chrome process: {e}")
+                print(f"Error closing WebDriver or Chrome process: {e}")
         elif self.driver_choice == 'playwright':
-            print("Playwright browser closed (placeholder).") # Or add actual playwright close logic
+            print("Playwright browser closed (placeholder).")
             gc.collect()
         else:
             raise ValueError("Unsupported driver. This should never happen if validation is correct.")
 
     def get_elements(self, by_type, value, timeout=10, multiple=False, condition="clickable"):
-        """
-        Generic method to get single or multiple elements using various locators.
-        Removes internal try-except block to propagate exceptions.
-
-        Args:
-            by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
-            value (str): The locator value (e.g., '//div[@id="myId"]', '.my-class').
-            timeout (int): The maximum time to wait for the element(s).
-            multiple (bool): If True, returns a list of elements; otherwise, a single element.
-            condition (str): For single elements, 'visible' or 'clickable'.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            by_map = {
-                'xpath': By.XPATH,
-                'css': By.CSS_SELECTOR,
-                'class': By.CLASS_NAME,
-                'id': By.ID,
-                'tag': By.TAG_NAME
-            }
-            by = by_map.get(by_type)
-            if not by:
-                raise ValueError(f"Invalid by_type: {by_type}. Must be one of {list(by_map.keys())}.")
-
-            wait = WebDriverWait(self.WEBDRIVER, timeout)
-
-            if multiple:
-                return wait.until(EC.presence_of_all_elements_located((by, value)))
-            else:
-                if condition == "visible":
-                    return wait.until(EC.visibility_of_element_located((by, value)))
-                elif condition == "clickable":
-                    return wait.until(EC.element_to_be_clickable((by, value)))
-                else:
-                    raise ValueError("Invalid condition. Use 'visible' or 'clickable'.")
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for get_elements.")
 
+        by_map = {
+            'xpath': By.XPATH, 'css': By.CSS_SELECTOR, 'class': By.CLASS_NAME, 'id': By.ID, 'tag': By.TAG_NAME
+        }
+        by = by_map.get(by_type)
+        if not by:
+            raise ValueError(f"Invalid by_type: {by_type}. Must be one of {list(by_map.keys())}.")
+
+        wait = WebDriverWait(self.WEBDRIVER, timeout)
+        if multiple:
+            return wait.until(EC.presence_of_all_elements_located((by, value)))
+        else:
+            if condition == "visible":
+                return wait.until(EC.visibility_of_element_located((by, value)))
+            elif condition == "clickable":
+                return wait.until(EC.element_to_be_clickable((by, value)))
+            else:
+                raise ValueError("Invalid condition. Use 'visible' or 'clickable'.")
+
     def go_to_site(self, site):
-        """
-        Navigates the browser to a given URL.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            self.WEBDRIVER.get(site)
-            time.sleep(2) # Retained sleep for page load
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for go_to_site.")
+        self.WEBDRIVER.get(site)
+        time.sleep(3)
 
-    def clear_and_enter_text(self, by_type, value, content_to_enter, timeout=10): # Renamed 'time' to 'timeout'
-        """
-        Clears an input field and enters text into it.
-        Removes internal try-except block to propagate exceptions.
-
-        Args:
-            by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
-            value (str): The locator value.
-            content_to_enter (str): The text to enter.
-            timeout (int): The maximum time to wait for the element.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
-            # If element is None, get_elements already didn't find it, and we want that to propagate.
-            # No need for an explicit check like `if element:`, just attempt the actions.
-            # If element is None, the next line will raise an AttributeError.
-            element.clear()
-            element.send_keys(content_to_enter)
-            print(f"Text entered successfully into element identified by {by_type}='{value}'.")
-        else:
+    def clear_and_enter_text(self, by_type, value, content_to_enter, timeout=10):
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for clear_and_enter_text.")
+        element = self.get_elements(by_type, value, timeout=timeout, condition="visible")
+        element.clear()
+        element.send_keys(content_to_enter)
+        print(f"Text entered successfully into element identified by {by_type}='{value}'.")
 
-    def clear_and_enter_text_in_chunks(self, by_type, value, content_to_enter, chunk_size=50, delay_between_chunks=0.1, timeout=10): # Renamed 'time' to 'timeout'
-        """
-        Clears an input field and enters text into it in smaller chunks.
-
-        Args:
-            by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
-            value (str): The locator value.
-            content_to_enter (str): The text to enter.
-            chunk_size (int): The number of characters per chunk.
-            delay_between_chunks (float): The delay in seconds between sending each chunk.
-            timeout (int): The maximum time to wait for the element.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            element = self.get_elements(by_type, value, timeout=timeout, condition="visible") # Pass 'timeout'
-            element.clear()
-            # print(f"Cleared element identified by {by_type}='{value}'.")
-
-            for i in range(0, len(content_to_enter), chunk_size):
-                chunk = content_to_enter[i:i + chunk_size]
-                element.send_keys(chunk)
-                time.sleep(delay_between_chunks) # This 'time' now correctly refers to the imported module
-                # print(f"Appended chunk of text to element: '{chunk}'")
-            # print(f"All text entered successfully in chunks into element identified by {by_type}='{value}'.")
-        else:
+    def clear_and_enter_text_in_chunks(self, by_type, value, content_to_enter, chunk_size=50, delay_between_chunks=0.1, timeout=10):
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for clear_and_enter_text_in_chunks.")
+        element = self.get_elements(by_type, value, timeout=timeout, condition="visible")
+        element.clear()
+        for i in range(0, len(content_to_enter), chunk_size):
+            element.send_keys(content_to_enter[i:i + chunk_size])
+            time.sleep(delay_between_chunks)
 
-    def click_element(self, by_type, value, timeout=10): # Renamed 'time' to 'timeout'
-        """
-        Clicks an element using various locators.
-        Removes internal try-except block to propagate exceptions.
-
-        Args:
-            by_type (str): The type of locator ('xpath', 'css', 'class', 'id', 'tag').
-            value (str): The locator value.
-            timeout (int): The maximum time to wait for the element to be clickable.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            element = self.get_elements(by_type, value, timeout=timeout, condition="clickable") # Pass 'timeout'
-            # If element is None, get_elements already didn't find it, and we want that to propagate.
-            element.click()
-        else:
+    def click_element(self, by_type, value, timeout=10):
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for click_element.")
+        element = self.get_elements(by_type, value, timeout=timeout, condition="clickable")
+        element.click()
 
     def scroll_by_n_pixels(self, pixels_to_scroll, time_between_scrolls=0.1):
-        """
-        Scrolls the page by a finite number of pixels, either up or down.
-        Removes internal try-except block to propagate exceptions.
-
-        Args:
-            pixels_to_scroll (int): The number of pixels to scroll.
-                                    Positive values scroll down, negative values scroll up.
-            time_between_scrolls (float): Delay in seconds between checking the scroll position
-                                          (useful for smooth scrolling or dynamic content).
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            current_scroll_y = self.WEBDRIVER.execute_script("return window.pageYOffset;")
-            target_scroll_y = current_scroll_y + pixels_to_scroll
-            self.WEBDRIVER.execute_script(f"window.scrollTo(0, {target_scroll_y});")
-            time.sleep(time_between_scrolls)
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_by_n_pixels.")
+        current_scroll_y = self.WEBDRIVER.execute_script("return window.pageYOffset;")
+        target_scroll_y = current_scroll_y + pixels_to_scroll
+        self.WEBDRIVER.execute_script(f"window.scrollTo(0, {target_scroll_y});")
+        time.sleep(time_between_scrolls)
 
     def scroll_to_bottom(self, time_between_scrolls=0.1):
-        """
-        Scrolls to the very bottom of the page.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
-            while True:
-                time.sleep(time_between_scrolls)
-                self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
-                if new_height == height:
-                    break
-                height = new_height
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_bottom.")
+        height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+        while True:
+            time.sleep(time_between_scrolls)
+            self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+            if new_height == height:
+                break
+            height = new_height
 
     def scroll_to_item_in_view(self, element):
-        """
-        Scrolls the page until the specified element is in view.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            self.WEBDRIVER.execute_script("arguments[0].scrollIntoView(true);", element)
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_item_in_view.")
+        self.WEBDRIVER.execute_script("arguments[0].scrollIntoView(true);", element)
 
     def scroll_n_times_or_to_bottom(self, num_scrolls, time_between_scrolls=0):
-        """
-        Scrolls the page 'n' times or until the bottom is reached, whichever comes first.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            scroll_count = 0
-            while scroll_count < num_scrolls:
-                height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
-                self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight)")
-                time.sleep(time_between_scrolls)
-                new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
-                if new_height == height:
-                    break
-                scroll_count += 1
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_n_times_or_to_bottom.")
+        scroll_count = 0
+        while scroll_count < num_scrolls:
+            height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+            self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(time_between_scrolls)
+            new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+            if new_height == height:
+                break
+            scroll_count += 1
 
     def return_current_soup(self):
-        """
-        Returns a BeautifulSoup object of the current page source.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            html = self.WEBDRIVER.page_source
-            soup = BeautifulSoup(html, features="lxml")
-            return soup
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for return_current_soup.")
+        return BeautifulSoup(self.WEBDRIVER.page_source, features="lxml")
 
     def maximize_current_window(self):
-        """
-        Maximizes the current browser window.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            if self.WEBDRIVER is None:
-                raise RuntimeError("Webdriver is not initialized. Please ensure the browser is started.")
-            self.WEBDRIVER.maximize_window()
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for maximize_current_window.")
+        if self.WEBDRIVER is None:
+            raise RuntimeError("Webdriver is not initialized. Please ensure the browser is started.")
+        self.WEBDRIVER.maximize_window()
 
     def minimize_current_window(self):
-        """
-        Minimizes the current browser window.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            self.WEBDRIVER.minimize_window()
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for minimize_current_window.")
+        self.WEBDRIVER.minimize_window()
 
     def take_screenshot(self, path="./pics.png"):
-        """
-        Takes a screenshot of the current page.
-        Removes internal try-except block to propagate exceptions.
-        """
-        if self.driver_choice == 'selenium' or self.driver_choice == 'undetected_chromedriver':
-            self.WEBDRIVER.save_screenshot(path)
-        else:
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for take_screenshot.")
+        self.WEBDRIVER.save_screenshot(path)
 
     def reset_tor_ip(self):
-        """
-        Resets the Tor IP address. This function assumes tor_chrome_util is properly configured
-        and can signal Tor to get a new circuit/IP.
-        """
-        if self.use_tor:
-            print("Attempting to reset Tor IP...")
-            try:
-                tor_chrome_util.renew_tor_circuit()
-                print("Tor IP reset initiated. It may take a few moments for a new circuit to establish.")
-            except Exception as e:
-                print(f"Failed to reset Tor IP: {e}")
-                raise
-        else:
+        if not self.use_tor:
             print("Tor is not enabled for this browser instance. IP reset skipped.")
+            return
+
+        print("Attempting to reset Tor IP...")
+        try:
+            tor_chrome_util.renew_tor_circuit()
+            print("Tor IP reset initiated. It may take a few moments for a new circuit to establish.")
+        except Exception as e:
+            print(f"Failed to reset Tor IP: {e}")
+            raise
 
     def __repr__(self):
         return (
@@ -513,24 +415,163 @@ class Browser:
             f"headless={self.headless}, use_tor={self.use_tor})"
         )
 
+    # --- New Tab Navigation Methods ---
+
+    def _ensure_selenium_driver(self):
+        """Helper to ensure the driver is initialized and is Selenium-based."""
+        if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
+            raise ValueError(f"Tab navigation is not supported for driver '{self.driver_choice}'. Requires 'selenium' or 'undetected_chromedriver'.")
+        if not self.WEBDRIVER:
+            raise RuntimeError("WebDriver is not initialized. Cannot perform tab operations.")
+
+    def open_new_tab(self, url: str = None) -> str:
+        """
+        Opens a new browser tab and optionally navigates to a URL.
+        Returns the handle of the new tab.
+        """
+        self._ensure_selenium_driver()
+        current_handles = self.WEBDRIVER.window_handles
+        # print(f"Handles before open: {current_handles}") # Debugging
+
+        # Execute script to open a new tab
+        self.WEBDRIVER.execute_script("window.open('about:blank', '_blank');")
+
+        # Wait for the number of handles to change
+        # This WebDriverWait is critical.
+        WebDriverWait(self.WEBDRIVER, 10).until(
+            lambda driver: len(driver.window_handles) > len(current_handles)
+        )
+
+        all_handles = self.WEBDRIVER.window_handles
+        # print(f"Handles after open and wait: {all_handles}") # Debugging
+
+        # Find the newly opened tab handle
+        new_tab_handle = None
+        for handle in all_handles:
+            if handle not in current_handles:
+                new_tab_handle = handle
+                break
+
+        if new_tab_handle is None:
+            # Fallback if the above logic fails for some reason
+            # This is less robust but might catch an edge case where
+            # the handle count increases but the new handle isn't easily identifiable
+            # or if the wait times out but a new window still appears.
+            if len(all_handles) > len(current_handles):
+                 new_tab_handle = all_handles[-1] # Assume it's the last one if count increased
+
+            if new_tab_handle is None:
+                raise RuntimeError("Failed to open a new tab: A new window handle was not detected.")
+
+
+        self.WEBDRIVER.switch_to.window(new_tab_handle)
+        if url:
+            self.go_to_site(url)
+        print(f"Opened new tab with handle: {new_tab_handle}")
+        return new_tab_handle
+
+    def switch_to_tab(self, tab_handle: str):
+        """
+        Switches the WebDriver's focus to the tab specified by its handle.
+        """
+        self._ensure_selenium_driver()
+        if tab_handle not in self.WEBDRIVER.window_handles:
+            raise ValueError(f"Tab handle '{tab_handle}' does not exist.")
+        self.WEBDRIVER.switch_to.window(tab_handle)
+        print(f"Switched to tab with handle: {tab_handle}")
+
+    def get_current_tab_handle(self) -> str:
+        """
+        Returns the handle of the currently active tab.
+        """
+        self._ensure_selenium_driver()
+        return self.WEBDRIVER.current_window_handle
+
+    def get_all_tab_handles(self) -> list[str]:
+        """
+        Returns a list of all open tab handles.
+        """
+        self._ensure_selenium_driver()
+        return self.WEBDRIVER.window_handles
+
+    def close_current_tab(self):
+        """
+        Closes the currently active tab. If it's the last tab, it closes the browser.
+        Otherwise, it switches to the first available tab after closing.
+        """
+        self._ensure_selenium_driver()
+        if len(self.WEBDRIVER.window_handles) == 1:
+            print("Warning: Closing the last tab will close the browser entirely.")
+            self.WEBDRIVER.close()
+            self.WEBDRIVER = None
+        else:
+            current_handle = self.WEBDRIVER.current_window_handle
+            self.WEBDRIVER.close()
+            remaining_handles = self.WEBDRIVER.window_handles
+            if remaining_handles:
+                next_handle = [h for h in remaining_handles if h != current_handle]
+                if next_handle:
+                    self.WEBDRIVER.switch_to.window(next_handle[0])
+                    print(f"Closed current tab and switched to: {self.WEBDRIVER.current_window_handle}")
+                else:
+                    self.WEBDRIVER.switch_to.window(remaining_handles[0])
+                    print(f"Closed current tab and switched to: {self.WEBDRIVER.current_window_handle}")
+            else:
+                self.WEBDRIVER = None
+        print("Closed current tab.")
+
+
+    def close_tab_by_handle(self, tab_handle: str):
+        """
+        Closes a specific tab identified by its handle.
+        Switches back to the original active tab after closing, if possible.
+        """
+        self._ensure_selenium_driver()
+        if tab_handle not in self.WEBDRIVER.window_handles:
+            # print(f"Warning: Tab with handle '{tab_handle}' not found or already closed.")
+            return
+
+        current_active_handle = self.WEBDRIVER.current_window_handle
+
+        if current_active_handle == tab_handle and len(self.WEBDRIVER.window_handles) == 1:
+            self.close_current_tab()
+            # print(f"Closed the only remaining tab with handle: {tab_handle}")
+        else:
+            self.WEBDRIVER.switch_to.window(tab_handle)
+            self.WEBDRIVER.close()
+            # print(f"Closed tab with handle: {tab_handle}")
+
+            if current_active_handle in self.WEBDRIVER.window_handles:
+                self.WEBDRIVER.switch_to.window(current_active_handle)
+                # print(f"Switched back to original tab: {current_active_handle}")
+            else:
+                remaining_handles = self.WEBDRIVER.window_handles
+                if remaining_handles:
+                    self.WEBDRIVER.switch_to.window(remaining_handles[0])
+                    # print(f"Original tab closed. Switched to: {self.WEBDRIVER.current_window_handle}")
+                else:
+                    self.WEBDRIVER = None
+
+    def close_all_other_tabs(self):
+        """
+        Closes all tabs except the currently active one.
+        """
+        self._ensure_selenium_driver()
+        current_handle = self.WEBDRIVER.current_window_handle
+        all_handles = self.WEBDRIVER.window_handles
+        tabs_closed_count = 0
+        for handle in all_handles:
+            if handle != current_handle:
+                self.WEBDRIVER.switch_to.window(handle)
+                self.WEBDRIVER.close()
+                tabs_closed_count += 1
+        self.WEBDRIVER.switch_to.window(current_handle)
+        print(f"Closed {tabs_closed_count} other tabs. Current tab is: {current_handle}")
+
+
 # --- Ensure Cleanup on Script Exit ---
 def cleanup():
-    """Cleanup logic at script exit."""
-    print("Script is exiting.")
+    print("\nScript is exiting. Performing cleanup...")
     gc.collect()
 
 atexit.register(cleanup)
-
-if __name__ == "__main__":
-    browser = Browser(
-        driver_choice="undetected_chromedriver",
-        headless=False,
-        use_tor=False, 
-        default_profile=False,
-        zoom_level=100,
-        port=9222,
-        chrome_options=None
-    )
-    browser.init_browser()
-    browser.go_to_site("https://fish.audio/auth/")
-    input("jsdahlkajsdhlkjadsh")
