@@ -346,7 +346,7 @@ class Browser:
 
     def scroll_to_bottom(self, time_between_scrolls=0.1):
         if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
-            raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_bottom.")
+            raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_bottom.") # comment
         height = self.WEBDRIVER.execute_script("return document.documentElement.scrollHeight;")
         while True:
             self.WEBDRIVER.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
