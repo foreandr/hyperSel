@@ -347,11 +347,11 @@ class Browser:
     def scroll_to_bottom(self, time_between_scrolls=0.1):
         if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for scroll_to_bottom.")
-        height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+        height = self.WEBDRIVER.execute_script("return document.documentElement.scrollHeight;")
         while True:
+            self.WEBDRIVER.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
             time.sleep(time_between_scrolls)
-            self.WEBDRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            new_height = self.WEBDRIVER.execute_script("return document.body.scrollHeight")
+            new_height = self.WEBDRIVER.execute_script("return document.documentElement.scrollHeight;")
             if new_height == height:
                 break
             height = new_height
@@ -467,7 +467,7 @@ class Browser:
         self.WEBDRIVER.switch_to.window(new_tab_handle)
         if url:
             self.go_to_site(url)
-        print(f"Opened new tab with handle: {new_tab_handle}")
+        # print(f"Opened new tab with handle: {new_tab_handle}")
         return new_tab_handle
 
     def switch_to_tab(self, tab_handle: str):
@@ -478,7 +478,7 @@ class Browser:
         if tab_handle not in self.WEBDRIVER.window_handles:
             raise ValueError(f"Tab handle '{tab_handle}' does not exist.")
         self.WEBDRIVER.switch_to.window(tab_handle)
-        print(f"Switched to tab with handle: {tab_handle}")
+        # print(f"Switched to tab with handle: {tab_handle}")
 
     def get_current_tab_handle(self) -> str:
         """
