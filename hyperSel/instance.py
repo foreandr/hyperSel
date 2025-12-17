@@ -307,11 +307,11 @@ class Browser:
             else:
                 raise ValueError("Invalid condition. Use 'visible' or 'clickable'.")
 
-    def go_to_site(self, site):
+    def go_to_site(self, site, wait_time=3):
         if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
             raise ValueError(f"Driver '{self.driver_choice}' is not supported for go_to_site.")
         self.WEBDRIVER.get(site)
-        time.sleep(3)
+        time.sleep(wait_time)
 
     def clear_and_enter_text(self, by_type, value, content_to_enter, timeout=10):
         if self.driver_choice not in {'selenium', 'undetected_chromedriver'}:
